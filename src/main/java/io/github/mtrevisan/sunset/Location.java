@@ -36,8 +36,8 @@ public final class Location{
 	/**
 	 * Creates a new instance of <code>Location</code> with the given parameters.
 	 *
-	 * @param latitude  the latitude, in degrees, of this location. North latitude is positive, south negative.
-	 * @param longitude the longitude, in degrees of this location. East longitude is positive, west negative.
+	 * @param latitude	The latitude of this location [°]. North latitude is positive, south negative.
+	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
 	 * @return	An instance of a location.
 	 */
 	public static Location create(final String latitude, final String longitude){
@@ -47,8 +47,8 @@ public final class Location{
 	/**
 	 * Creates a new instance of <code>Location</code> with the given parameters.
 	 *
-	 * @param latitude  the latitude, in degrees, of this location. North latitude is positive, south negative.
-	 * @param longitude the longitude, in degrees of this location. East longitude is positive, west negative.
+	 * @param latitude	The latitude of this location [°]. North latitude is positive, south negative.
+	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
 	 * @return	An instance of a location.
 	 */
 	public static Location create(final double latitude, final double longitude){

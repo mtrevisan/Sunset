@@ -35,6 +35,15 @@ import java.time.temporal.TemporalAmount;
 
 /*
 https://github.com/mikereedell/sunrisesunsetlib-java
+
+https://web.archive.org/web/20161202180207/http://williams.best.vwh.net/sunrise_sunset_algorithm.htm
+https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
+https://en.wikipedia.org/wiki/Position_of_the_Sun
+
+others
+https://github.com/caarmen/SunriseSunset
+https://github.com/MenoData/Time4J/blob/master/base/src/main/java/net/time4j/calendar/astro/SolarTime.java
+https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone/commons/suncalc/SunTimes.java
 */
 public class SolarEventCalculator{
 
@@ -75,14 +84,12 @@ public class SolarEventCalculator{
 		final BigDecimal meanAnomaly = getMeanAnomaly(longitudeHour);
 		final BigDecimal sunTrueLong = getSunTrueLongitude(meanAnomaly);
 		final BigDecimal cosineSunLocalHour = getCosineSunLocalHour(sunTrueLong, solarZenith);
-		if((cosineSunLocalHour.doubleValue() < -1.0) || (cosineSunLocalHour.doubleValue() > 1.0))
+		if(cosineSunLocalHour.doubleValue() < -1. || cosineSunLocalHour.doubleValue() > 1.)
 			return null;
 
 		final BigDecimal sunLocalHour = getSunLocalHour(cosineSunLocalHour, sunrise);
 		final BigDecimal localMeanTime = getLocalMeanTime(sunTrueLong, longitudeHour, sunLocalHour);
-		final LocalTime localTime = getLocalTime(localMeanTime);
-
-		return localTime;
+		return getLocalTime(localMeanTime);
 	}
 
 	/**
@@ -91,14 +98,11 @@ public class SolarEventCalculator{
 	 * @return	Longitudinal time.
 	 */
 	private BigDecimal getLongitudeHour(final LocalDate date, final Boolean sunrise){
-		int offset = 18;
-		if(sunrise)
-			offset = 6;
-
-		final BigDecimal dividend = BigDecimal.valueOf(offset).subtract(getBaseLongitudeHour());
+		final BigDecimal dividend = BigDecimal.valueOf(sunrise? 6: 18).subtract(getBaseLongitudeHour());
+		//[day]
 		final BigDecimal addend = divideBy(dividend, BigDecimal.valueOf(24));
 		final BigDecimal longitudeHour = getDayOfYear(date).add(addend);
-		return setScale(longitudeHour);
+		return longitudeHour;
 	}
 
 	/**
@@ -120,8 +124,7 @@ public class SolarEventCalculator{
 	 * @return	The Suns mean anomaly [°].
 	 */
 	private BigDecimal getMeanAnomaly(final BigDecimal longitudeHour){
-		final BigDecimal meanAnomaly = multiplyBy(new BigDecimal("0.9856"), longitudeHour).subtract(new BigDecimal("3.289"));
-		return setScale(meanAnomaly);
+		return multiplyBy(new BigDecimal("0.9856"), longitudeHour).subtract(new BigDecimal("3.289"));
 	}
 
 	/**
@@ -136,12 +139,11 @@ public class SolarEventCalculator{
 		final BigDecimal sinDoubleMeanAnomaly = new BigDecimal(Math.sin(multiplyBy(meanAnomaly, BigDecimal.valueOf(2)).doubleValue()));
 
 		final BigDecimal firstPart = meanAnomaly.add(multiplyBy(sinMeanAnomaly, new BigDecimal("1.916")));
-		final BigDecimal secondPart = multiplyBy(sinDoubleMeanAnomaly, new BigDecimal("0.020")).add(new BigDecimal("282.634"));
-		BigDecimal trueLongitude = firstPart.add(secondPart);
+		final BigDecimal secondPart = multiplyBy(sinDoubleMeanAnomaly, new BigDecimal("0.020"));
+		BigDecimal trueLongitude = firstPart.add(secondPart).add(new BigDecimal("282.634"));
 		if(trueLongitude.doubleValue() > 360.)
 			trueLongitude = trueLongitude.subtract(BigDecimal.valueOf(360));
-
-		return setScale(trueLongitude);
+		return trueLongitude;
 	}
 
 	private BigDecimal getCosineSunLocalHour(final BigDecimal sunTrueLong, final Zenith zenith){
@@ -156,20 +158,17 @@ public class SolarEventCalculator{
 		final BigDecimal sinDeclinationTimesSinLat = sinSunDeclination.multiply(sinLatitude);
 		final BigDecimal dividend = cosineZenith.subtract(sinDeclinationTimesSinLat);
 		final BigDecimal divisor = cosineSunDeclination.multiply(cosLatitude);
-
-		return setScale(divideBy(dividend, divisor));
+		return divideBy(dividend, divisor);
 	}
 
 	private BigDecimal getSinOfSunDeclination(final BigDecimal sunTrueLong){
 		final BigDecimal sinTrueLongitude = BigDecimal.valueOf(Math.sin(convertDegreesToRadians(sunTrueLong).doubleValue()));
-		final BigDecimal sinOfDeclination = sinTrueLongitude.multiply(new BigDecimal("0.39782"));
-		return setScale(sinOfDeclination);
+		return sinTrueLongitude.multiply(new BigDecimal("0.39782"));
 	}
 
 	private BigDecimal getCosOfSunDeclination(final BigDecimal sinSunDeclination) {
 		final BigDecimal arcSinOfSinDeclination = BigDecimal.valueOf(Math.asin(sinSunDeclination.doubleValue()));
-		final BigDecimal cosDeclination = BigDecimal.valueOf(Math.cos(arcSinOfSinDeclination.doubleValue()));
-		return setScale(cosDeclination);
+		return BigDecimal.valueOf(Math.cos(arcSinOfSinDeclination.doubleValue()));
 	}
 
 	private BigDecimal getSunLocalHour(final BigDecimal cosSunLocalHour, final Boolean sunrise){
@@ -190,7 +189,7 @@ public class SolarEventCalculator{
 			localMeanTime = localMeanTime.add(BigDecimal.valueOf(24));
 		else if(localMeanTime.doubleValue() > 24)
 			localMeanTime = localMeanTime.subtract(BigDecimal.valueOf(24));
-		return setScale(localMeanTime);
+		return localMeanTime;
 	}
 
 	/**
@@ -205,7 +204,7 @@ public class SolarEventCalculator{
 
 		final BigDecimal innerParens = multiplyBy(convertRadiansToDegrees(tanL), new BigDecimal("0.91764"));
 		BigDecimal rightAscension = new BigDecimal(Math.atan(convertDegreesToRadians(innerParens).doubleValue()));
-		rightAscension = setScale(convertRadiansToDegrees(rightAscension));
+		rightAscension = convertRadiansToDegrees(rightAscension);
 		if(rightAscension.doubleValue() < 0)
 			rightAscension = rightAscension.add(BigDecimal.valueOf(360));
 		else if(rightAscension.doubleValue() > 360)
@@ -245,13 +244,8 @@ public class SolarEventCalculator{
 		return dividend.divide(divisor, 4, RoundingMode.HALF_EVEN);
 	}
 
-	private BigDecimal setScale(final BigDecimal number){
-		return number.setScale(4, RoundingMode.HALF_EVEN);
-	}
-
 	private BigDecimal getArcCosFor(final BigDecimal radians){
-		final BigDecimal arcCosine = BigDecimal.valueOf(Math.acos(radians.doubleValue()));
-		return setScale(arcCosine);
+		return BigDecimal.valueOf(Math.acos(radians.doubleValue()));
 	}
 
 	private BigDecimal convertDegreesToRadians(final BigDecimal degrees){

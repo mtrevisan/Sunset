@@ -35,7 +35,7 @@ public enum Zenith{
 	NAUTICAL("12"),
 	/** Civil sunrise/set (dawn/dusk) is when the sun is 6 degrees below the horizon. */
 	CIVIL("6"),
-	/** Official sunrise/set is when the sun is 50' below the horizon. */
+	/** Official sunrise/set is when the sun is 50' below the horizon (to account for refraction). */
 	OFFICIAL("0.5");
 
 
@@ -44,7 +44,7 @@ public enum Zenith{
 
 
 	Zenith(final String degrees){
-		this.radians = convertDegreesToRadians(new BigDecimal(degrees));
+		radians = convertDegreesToRadians(new BigDecimal(degrees));
 	}
 
 	public BigDecimal getRadians(){
