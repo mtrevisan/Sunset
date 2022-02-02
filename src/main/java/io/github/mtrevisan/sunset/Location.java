@@ -24,25 +24,12 @@
  */
 package io.github.mtrevisan.sunset;
 
-import java.math.BigDecimal;
-
 
 public final class Location{
 
-	private final BigDecimal latitude;
-	private final BigDecimal longitude;
+	private final double latitude;
+	private final double longitude;
 
-
-	/**
-	 * Creates a new instance of <code>Location</code> with the given parameters.
-	 *
-	 * @param latitude	The latitude of this location [°]. North latitude is positive, south negative.
-	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
-	 * @return	An instance of a location.
-	 */
-	public static Location create(final String latitude, final String longitude){
-		return new Location(latitude, longitude);
-	}
 
 	/**
 	 * Creates a new instance of <code>Location</code> with the given parameters.
@@ -56,14 +43,9 @@ public final class Location{
 	}
 
 
-	private Location(final String latitude, final String longitude){
-		this.latitude = new BigDecimal(latitude);
-		this.longitude = new BigDecimal(longitude);
-	}
-
 	private Location(final double latitude, final double longitude){
-		this.latitude = new BigDecimal(latitude);
-		this.longitude = new BigDecimal(longitude);
+		this.latitude = latitude;
+		this.longitude = longitude;
 	}
 
 
@@ -72,7 +54,7 @@ public final class Location{
 	 *
 	 * @return	The latitude.
 	 */
-	public BigDecimal getLatitude(){
+	public double getLatitude(){
 		return latitude;
 	}
 
@@ -81,7 +63,7 @@ public final class Location{
 	 *
 	 * @return	The longitude.
 	 */
-	public BigDecimal getLongitude(){
+	public double getLongitude(){
 		return longitude;
 	}
 

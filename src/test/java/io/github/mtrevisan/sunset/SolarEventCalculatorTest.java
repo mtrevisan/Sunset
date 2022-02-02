@@ -36,7 +36,7 @@ class SolarEventCalculatorTest{
 
 	@Test
 	void astronomicalSunset(){
-		Location location = Location.create("45.65", "12.19");
+		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.ASTRONOMICAL, LocalDate.of(2022, 12, 25));
@@ -46,7 +46,7 @@ class SolarEventCalculatorTest{
 
 	@Test
 	void civilSunset(){
-		Location location = Location.create("45.65", "12.19");
+		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.CIVIL, LocalDate.of(2022, 12, 25));
@@ -56,7 +56,7 @@ class SolarEventCalculatorTest{
 
 	@Test
 	void officialSunset(){
-		Location location = Location.create("45.65", "12.19");
+		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.OFFICIAL, LocalDate.of(2022, 12, 25));
