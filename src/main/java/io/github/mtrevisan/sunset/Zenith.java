@@ -24,19 +24,39 @@
  */
 package io.github.mtrevisan.sunset;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 
-public class Main{
+/** Defines the solar declination used in computing the sunrise/sunset. */
+public enum Zenith{
+	/** Astronomical sunrise/set is when the sun is 18 degrees below the horizon. */
+	ASTRONOMICAL("18"),
+	/** Nautical sunrise/set is when the sun is 12 degrees below the horizon. */
+	NAUTICAL("12"),
+	/** Civil sunrise/set (dawn/dusk) is when the sun is 6 degrees below the horizon. */
+	CIVIL("6"),
+	/** Official sunrise/set is when the sun is 50' below the horizon. */
+	OFFICIAL("0.5");
 
-	public static void main(final String[] args){
-		//TODO
-		Location location = Location.create(45.65, 12.19);
-		SolarEventCalculator calc = SolarEventCalculator.create(location);
-		LocalDate date = LocalDate.of(2022, 12, 25);
-		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.CIVIL, date);
-		System.out.println(datetime);
+
+	/** Solar declination [°]. */
+	private final BigDecimal radians;
+
+
+	Zenith(final String degrees){
+		this.radians = convertDegreesToRadians(new BigDecimal(degrees));
+	}
+
+	public BigDecimal getRadians(){
+		return radians;
+	}
+
+	private BigDecimal convertDegreesToRadians(final BigDecimal degrees){
+		return multiplyBy(degrees, BigDecimal.valueOf(Math.PI / 180.0));
+	}
+
+	private BigDecimal multiplyBy(final BigDecimal multiplicand, final BigDecimal multiplier){
+		return multiplicand.multiply(multiplier);
 	}
 
 }

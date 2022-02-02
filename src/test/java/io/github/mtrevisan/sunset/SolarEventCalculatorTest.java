@@ -24,19 +24,38 @@
  */
 package io.github.mtrevisan.sunset;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
-public class Main{
+@SuppressWarnings("ALL")
+class SolarEventCalculatorTest{
 
-	public static void main(final String[] args){
-		//TODO
-		Location location = Location.create(45.65, 12.19);
+	@Test
+	void astronomicalSunset(){
+		Location location = Location.create("39.9937", "-75.7850");
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
-		LocalDate date = LocalDate.of(2022, 12, 25);
-		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.CIVIL, date);
-		System.out.println(datetime);
+
+		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.ASTRONOMICAL, LocalDate.of(2008, 10, 1));
+
+		assertTimeEquals("06:01", datetime.toString());
+	}
+
+
+	private static void assertTimeEquals(final String expectedTime, final String actualTime){
+		final int expectedMinutes = getMinutes(expectedTime);
+		final int actualMinutes = getMinutes(actualTime);
+		Assertions.assertEquals(expectedMinutes, actualMinutes, 1);
+	}
+
+	private static int getMinutes(final String time){
+		final String[] timeParts = time.split("\\:");
+		if(timeParts[0].equals("00"))
+			timeParts[0] = "24";
+		return 60 * Integer.valueOf(timeParts[0]) + Integer.valueOf(timeParts[1]);
 	}
 
 }

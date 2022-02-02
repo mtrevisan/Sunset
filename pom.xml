@@ -98,7 +98,7 @@
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
 					<argLine>
-						--add-opens io.github.mtrevisan.sunset/io.github.mtrevisan.sunset=ALL-UNNAMED
+<!--						&#45;&#45;add-opens io.github.mtrevisan.sunset/io.github.mtrevisan.sunset=ALL-UNNAMED-->
 					</argLine>
 				</configuration>
 			</plugin>
