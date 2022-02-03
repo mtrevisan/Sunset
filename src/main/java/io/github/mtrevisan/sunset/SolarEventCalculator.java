@@ -126,8 +126,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double radiusVector2 = radiusVector(eccentricity, trueAnomaly);
 		final double apparentLongitude = apparentLongitude(trueGeometricLongitude, t);
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
-		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, t);
-		final double apparentEclipticObliquity = apparentEclipticObliquity(trueEclipticObliquity, apparentLongitude);
+		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, apparentLongitude);
 		final double apparentRightAscension = apparentRightAscension(apparentEclipticObliquity, apparentLongitude);
 		final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentLongitude);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
@@ -291,12 +290,12 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	/**
 	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, ɛ'.
 	 *
-	 * @param trueEclipticObliquity	True obliquity of the ecliptic [°].
+	 * @param meanEclipticObliquity	Mean obliquity of the ecliptic [°].
 	 * @param apparentLongitude	Apparent longitude of the Sun [°].
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private double apparentEclipticObliquity(final double trueEclipticObliquity, final double apparentLongitude){
-		return trueEclipticObliquity + 0.00256 * Math.cos(convertDegreesToRadians(apparentLongitude));
+	private double apparentEclipticObliquity(final double meanEclipticObliquity, final double apparentLongitude){
+		return meanEclipticObliquity + 0.00256 * Math.cos(convertDegreesToRadians(apparentLongitude));
 	}
 
 	/**
