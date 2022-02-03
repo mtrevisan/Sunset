@@ -25,10 +25,17 @@
 package io.github.mtrevisan.sunset;
 
 
-public final class Location{
+/**
+ * Describes a geographical position.
+ */
+public final class GNSSLocation{
 
+	//[°]
 	private final double latitude;
+	//[°]
 	private final double longitude;
+	//[m]
+	private final double altitude;
 
 
 	/**
@@ -38,21 +45,45 @@ public final class Location{
 	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
 	 * @return	An instance.
 	 */
-	public static Location create(final double latitude, final double longitude){
-		return new Location(latitude, longitude);
+	public static GNSSLocation create(final double latitude, final double longitude){
+		return create(latitude, longitude, 0.);
+	}
+
+	/**
+	 * Creates a new instance with the given parameters.
+	 *
+	 * @param latitude	The latitude of this location [°]. North latitude is positive, south negative.
+	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
+	 * @param altitude	The altitude of this location [m].
+	 * @return	An instance.
+	 */
+	public static GNSSLocation create(final double latitude, final double longitude, final double altitude){
+		return new GNSSLocation(latitude, longitude, altitude);
 	}
 
 
-	private Location(final double latitude, final double longitude){
+	private GNSSLocation(final double latitude, final double longitude, final double altitude){
+		if(!Double.isFinite(latitude))
+			throw new IllegalArgumentException("Latitude must be a finite value: " + latitude);
+		if(!Double.isFinite(longitude))
+			throw new IllegalArgumentException("Longitude must be a finite value: " + longitude);
+		if(latitude > 90. || latitude < -90.)
+			throw new IllegalArgumentException("Degrees out of range -90 <= latitude <= +90: " + latitude);
+		if(longitude >= 180. || longitude < -180.)
+			throw new IllegalArgumentException("Degrees out of range -180 <= longitude < +180: " + longitude);
+		if(altitude < 0. || altitude >= 11_000.)
+			throw new IllegalArgumentException("Meters out of range 0 <= altitude < +11000: " + altitude);
+
 		this.latitude = latitude;
 		this.longitude = longitude;
+		this.altitude = altitude;
 	}
 
 
 	/**
 	 * The latitude of the location.
 	 *
-	 * @return	The latitude.
+	 * @return	The latitude [°].
 	 */
 	public double getLatitude(){
 		return latitude;
@@ -61,10 +92,19 @@ public final class Location{
 	/**
 	 * The longitude of the location.
 	 *
-	 * @return	The longitude.
+	 * @return	The longitude [°].
 	 */
 	public double getLongitude(){
 		return longitude;
+	}
+
+	/**
+	 * The altitude of the location.
+	 *
+	 * @return	The altitude [m].
+	 */
+	public double getAltitude(){
+		return altitude;
 	}
 
 	@Override
@@ -72,6 +112,7 @@ public final class Location{
 		return "Location{"
 			+ "lat: " + StringHelper.degreeToDegMinSecString(latitude, 2)
 			+ ", lon: "  + StringHelper.degreeToDegMinSecString(longitude, 2)
+			+ ", alt: "  + altitude + " m"
 			+ '}';
 	}
 

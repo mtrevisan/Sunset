@@ -26,7 +26,16 @@ package io.github.mtrevisan.sunset;
 
 
 /**
- * @see <a href="https://en.wikipedia.org/wiki/Equatorial_coordinate_system">Equatorial Coordinate System</>
+ * Describes a celestial coordinate system which projects the Earth equator and poles onto the celestial sphere
+ * using right ascension and declination in the reference frame J2000 as epoch.
+ *
+ * <p>
+ * See also: <a href="https://en.wikipedia.org/wiki/Celestial_coordinate_system">Celestial coordinate system</a>.
+ * The effect of precession will have an impact on right ascension and declination if times far away
+ * from year 2000 are considered.
+ * </p>
+ *
+ * @see <a href="https://en.wikipedia.org/wiki/Equatorial_coordinate_system">Equatorial coordinate system</>
  */
 public final class EquatorialCoordinate{
 
@@ -57,7 +66,7 @@ public final class EquatorialCoordinate{
 	/**
 	 * The right ascension.
 	 *
-	 * @return	The right ascension.
+	 * @return	The right ascension [°].
 	 */
 	public double getRightAscension(){
 		return rightAscension;
@@ -66,7 +75,7 @@ public final class EquatorialCoordinate{
 	/**
 	 * The declination.
 	 *
-	 * @return	The declination.
+	 * @return	The declination [°].
 	 */
 	public double getLongitude(){
 		return declination;

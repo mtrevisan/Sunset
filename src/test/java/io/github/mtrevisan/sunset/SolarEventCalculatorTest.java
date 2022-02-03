@@ -37,68 +37,68 @@ class SolarEventCalculatorTest{
 
 	@Test
 	void sunPosition(){
-		Location location = Location.create(45.65, 12.19);
+		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
-		final double jd = SolarEventCalculator.julianDay(1957, 10, 4) + (19. + 29. / 60.) / 24.;
+		final double jd = JulianDay.of(1957, 10, 4) + (19. + 29. / 60.) / 24.;
 		EquatorialCoordinate coord = SolarEventCalculator.sunPosition(jd);
 
 		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.57s, δ: -4° 28' 17.22\"}", coord.toString());
 	}
 
-//	@Test
-//	void asd() throws SolarEventException{
-//		Location location = Location.create(52.2, 20.9);
-//		SolarEventCalculator calc = SolarEventCalculator.create(location);
-//
-//		LocalDateTime datetime = calc.sunset(LocalDate.of(2015, 12, 10), Zenith.ASTRONOMICAL);
-//
-//		assertTimeEquals("17:20", datetime);
-//	}
+	@Test
+	void asd() throws SolarEventException{
+		GNSSLocation location = GNSSLocation.create(
+			SolarEventCalculator.toDegrees(-3, 4, 0.),
+			SolarEventCalculator.toDegrees(37, 21, 33.));
+		SolarEventCalculator calc = SolarEventCalculator.create(location);
+
+		LocalDateTime datetime = calc.sunset(LocalDate.of(2017, 12, 22), Zenith.ASTRONOMICAL);
+
+		assertTimeEquals("18:47:47", datetime);
+	}
 
 	@Test
 	void astronomicalSunset() throws SolarEventException{
-		Location location = Location.create(45.65, 12.19);
+		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.ASTRONOMICAL);
 
-		assertTimeEquals("17:20", datetime);
+		assertTimeEquals("17:20:00", datetime);
 	}
 
 	@Test
 	void civilSunset() throws SolarEventException{
-		Location location = Location.create(45.65, 12.19);
+		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.CIVIL);
 
-		assertTimeEquals("16:06", datetime);
+		assertTimeEquals("16:06:00", datetime);
 	}
 
 	@Test
 	void officialSunset() throws SolarEventException{
-		Location location = Location.create(45.65, 12.19);
+		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.OFFICIAL);
 
-		assertTimeEquals("15:32", datetime);
+		assertTimeEquals("15:32:00", datetime);
 	}
 
 
 	private static void assertTimeEquals(final String expectedTime, final LocalDateTime actualTime){
-		final int expectedMinutes = getMinutes(expectedTime);
-		final int actualMinutes = getMinutes(actualTime.toLocalTime().toString());
-		Assertions.assertEquals(expectedMinutes, actualMinutes, 1,
+		final int expectedSeconds = getSeconds(expectedTime);
+		final int actualSeconds = getSeconds(actualTime.toLocalTime().toString());
+		Assertions.assertEquals(expectedSeconds, actualSeconds, 1,
 			"Expected " + expectedTime + ", got " + actualTime.format(DateTimeFormatter.ofPattern("HH:MM")));
 	}
 
-	private static int getMinutes(final String time){
+	private static int getSeconds(final String time){
 		final String[] timeParts = time.split("\\:");
-		if(timeParts[0].equals("00"))
-			timeParts[0] = "24";
-		return 60 * Integer.valueOf(timeParts[0]) + Integer.valueOf(timeParts[1]);
+		return 60 * (60 * Integer.valueOf(timeParts[0]) + Integer.valueOf(timeParts[1])) + Integer.valueOf(timeParts[2]);
 	}
 
 }

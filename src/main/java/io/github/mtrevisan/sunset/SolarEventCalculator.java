@@ -43,7 +43,7 @@ https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone
 */
 public class SolarEventCalculator{
 
-	private final Location location;
+	private final GNSSLocation location;
 
 
 	/**
@@ -51,12 +51,12 @@ public class SolarEventCalculator{
 	 *
 	 * @param location	Location of the place.
 	 */
-	public static SolarEventCalculator create(final Location location){
+	public static SolarEventCalculator create(final GNSSLocation location){
 		return new SolarEventCalculator(location);
 	}
 
 
-	private SolarEventCalculator(final Location location){
+	private SolarEventCalculator(final GNSSLocation location){
 		this.location = location;
 	}
 
@@ -65,58 +65,13 @@ public class SolarEventCalculator{
 	//https://squarewidget.com/solar-coordinates/
 
 	/**
-	 * Calculate Julian Day at 0 UTC.
-	 *
-	 * @param date	The date.
-	 * @return	The Julian Day [day].
-	 */
-	public static double julianDay(final LocalDateTime date){
-		final double jdNoon = julianDay(date.toLocalDate());
-		final double time = julianTime(date);
-		return jdNoon + time;
-	}
-
-	private static double julianTime(final LocalDateTime date){
-		return date.toLocalTime().toSecondOfDay() / (24. * 60. * 60.);
-	}
-
-	/**
-	 * Calculate Julian Day at 0 UTC.
-	 *
-	 * @param date	The date.
-	 * @return	The Julian Day [day].
-	 */
-	public static double julianDay(final LocalDate date){
-		return julianDay(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
-	}
-
-	/**
-	 * Calculate Julian Day at 0 UTC.
-	 *
-	 * @param year	The year.
-	 * @param month	The month (1 is January).
-	 * @param day	The day.
-	 * @return	The Julian Day [day].
-	 */
-	static double julianDay(int year, int month, final int day){
-		if(month <= 2){
-			year --;
-			month += 12;
-		}
-
-		final double a = StrictMath.floor(year / 100.);
-		final double b = 2. - a + StrictMath.floor(a / 4.);
-		return StrictMath.floor(365.25 * (year + 4716)) + StrictMath.floor(30.6001 * (month + 1)) + day + b - 1524.5;
-	}
-
-	/**
 	 * Calculated the Sun position.
 	 *
 	 * @param jd	The Julian Day [day].
 	 * @return	The Sun position.
 	 */
 	public static EquatorialCoordinate sunPosition(final double jd){
-		final double t = julianCentury(jd);
+		final double t = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = meanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
@@ -139,8 +94,8 @@ public class SolarEventCalculator{
 	 * @throws SolarEventException	Whenever the Sun never rises or sets.
 	 */
 	public final LocalDateTime sunset(final LocalDate date, final Zenith solarZenith) throws SolarEventException{
-		final double jd = julianDay(date);
-		final double t = julianCentury(jd);
+		final double jd = JulianDay.of(date);
+		final double t = JulianDay.centuryJ2000Of(jd);
 		final EquatorialCoordinate coord = sunPosition(jd);
 		//[hrs]
 		final double ra = convertDegreesToHours(coord.getRightAscension());
@@ -174,16 +129,6 @@ public class SolarEventCalculator{
 			sunsetLocalDateTime = LocalDateTime.of(date, localTime);
 		}while(!localDateTime.equals(sunsetLocalDateTime));
 		return sunsetLocalDateTime;
-	}
-
-	/**
-	 * Calculated the Julian Century since JDE2451545, that is J2000.0.
-	 *
-	 * @param jd	The Julian Day [day].
-	 * @return	The Julian Century.
-	 */
-	private static double julianCentury(final double jd){
-		return (jd - 2451545.) / 36525.;
 	}
 
 	/**
@@ -554,8 +499,8 @@ public class SolarEventCalculator{
 			throws SolarEventException{
 		final double longitudeHour = getLongitudeHour(date, sunrise);
 
-		final double jd = julianDay(date);
-		final double t = julianCentury(jd);
+		final double jd = JulianDay.of(date);
+		final double t = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = meanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
@@ -635,7 +580,7 @@ public class SolarEventCalculator{
 	}
 
 	private static double getDayOfYear(final LocalDateTime date){
-		return date.getDayOfYear() + julianTime(date);
+		return date.getDayOfYear() + JulianDay.timeOf(date);
 	}
 
 	private double getCosineSunLocalHour(final double sunTrueLong, final Zenith zenith){
@@ -699,7 +644,7 @@ public class SolarEventCalculator{
 
 
 
-	private static double toDegrees(final int degree, final int minute, final double second){
+	public static double toDegrees(final int degree, final int minute, final double second){
 		return degree + (minute + second / 60.) / 60.;
 	}
 
