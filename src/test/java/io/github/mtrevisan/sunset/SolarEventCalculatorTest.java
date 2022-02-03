@@ -41,10 +41,20 @@ class SolarEventCalculatorTest{
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
 		final double jd = SolarEventCalculator.julianDay(1957, 10, 4) + (19. + 29. / 60.) / 24.;
-		EquatorialCoordinate coord = calc.sunPosition(jd);
+		EquatorialCoordinate coord = SolarEventCalculator.sunPosition(jd);
 
 		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.57s, δ: -4° 28' 17.22\"}", coord.toString());
 	}
+
+//	@Test
+//	void asd() throws SolarEventException{
+//		Location location = Location.create(52.2, 20.9);
+//		SolarEventCalculator calc = SolarEventCalculator.create(location);
+//
+//		LocalDateTime datetime = calc.sunset(LocalDate.of(2015, 12, 10), Zenith.ASTRONOMICAL);
+//
+//		assertTimeEquals("17:20", datetime);
+//	}
 
 	@Test
 	void astronomicalSunset() throws SolarEventException{

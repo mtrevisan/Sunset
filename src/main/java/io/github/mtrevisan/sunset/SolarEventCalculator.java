@@ -38,7 +38,6 @@ https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
 https://en.wikipedia.org/wiki/Position_of_the_Sun
 
 others
-https://github.com/caarmen/SunriseSunset
 https://github.com/MenoData/Time4J/blob/master/base/src/main/java/net/time4j/calendar/astro/SolarTime.java
 https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone/commons/suncalc/SunTimes.java
 */
@@ -116,7 +115,7 @@ public class SolarEventCalculator{
 	 * @param jd	The Julian Day [day].
 	 * @return	The Sun position.
 	 */
-	public final EquatorialCoordinate sunPosition(final double jd){
+	public static EquatorialCoordinate sunPosition(final double jd){
 		final double t = julianCentury(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = meanAnomaly(t);
@@ -140,21 +139,6 @@ public class SolarEventCalculator{
 	 * @throws SolarEventException	Whenever the Sun never rises or sets.
 	 */
 	public final LocalDateTime sunset(final LocalDate date, final Zenith solarZenith) throws SolarEventException{
-/*
-// Calculate the time when the upper limb of the sun just crosses the
-// horizon.
-// Returns undef if the sun does not rise or set on that date at that latitude.
-sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
-{
-   edate = approxMidnight[date,long] + 17.5 hours
-   [ra, decl] = sunApparentRADecl[edate]
-   [rise, set] = approxRiseSet[edate, lat, long, ra, decl]
-   if set == undef
-      return undef
-   else
-      return sunSecantAltitude[set, lat, long, -16 arcmin, temp, pressure]
-}*/
-
 		final double jd = julianDay(date);
 		final double t = julianCentury(jd);
 		final EquatorialCoordinate coord = sunPosition(jd);
@@ -177,7 +161,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 
 		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(t);
 		final double greenwichApparentSiderealTime = greenwichApparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
-		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime, location);
+		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime);
 		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
 
 		LocalDateTime sunsetLocalDateTime = LocalDateTime.of(date, LocalTime.MIDNIGHT);
@@ -198,7 +182,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param jd	The Julian Day [day].
 	 * @return	The Julian Century.
 	 */
-	private double julianCentury(final double jd){
+	private static double julianCentury(final double jd){
 		return (jd - 2451545.) / 36525.;
 	}
 
@@ -208,7 +192,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The geometric mean longitude of the Sun [°].
 	 */
-	private double geometricMeanLongitude(final double t){
+	private static double geometricMeanLongitude(final double t){
 		return correctRangeDegree(eval(t, new double[]{toDegrees(280, 27, 59.26), 36000.76983, 0.0003032}));
 	}
 
@@ -218,7 +202,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The mean anomaly of the Sun [°].
 	 */
-	private double meanAnomaly(final double t){
+	private static double meanAnomaly(final double t){
 		return correctRangeDegree(eval(t, new double[]{357.52911, 35999.05029, -0.0001537}));
 	}
 
@@ -228,7 +212,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The eccentricity of Earth's orbit.
 	 */
-	private double earthOrbitEccentricity(final double t){
+	private static double earthOrbitEccentricity(final double t){
 		return eval(t, new double[]{0.016708634, -0.000042037, -0.0000001267});
 	}
 
@@ -239,11 +223,11 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The Sun's equation of center [°].
 	 */
-	private double equationOfCenter(double meanAnomaly, final double t){
+	private static double equationOfCenter(double meanAnomaly, final double t){
 		meanAnomaly = convertDegreesToRadians(meanAnomaly);
 		return eval(t, new double[]{1.914602, -0.004817, -0.000014}) * StrictMath.sin(meanAnomaly)
-			+ eval(t, new double[]{0.019993, -0.000101}) * StrictMath.sin(meanAnomaly * 2.)
-			+ 0.000289 * StrictMath.sin(meanAnomaly * 3.);
+			+ eval(t, new double[]{0.019993, -0.000101}) * StrictMath.sin(2. * meanAnomaly)
+			+ 0.000289 * StrictMath.sin(3. * meanAnomaly);
 	}
 
 	/**
@@ -253,7 +237,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param equationOfCenter	The Sun's equation of center [°].
 	 * @return	Sun's true geometric longitude [°].
 	 */
-	private double trueGeometricLongitude(final double geometricMeanLongitude, final double equationOfCenter){
+	private static double trueGeometricLongitude(final double geometricMeanLongitude, final double equationOfCenter){
 		return correctRangeDegree(geometricMeanLongitude + equationOfCenter);
 	}
 
@@ -264,7 +248,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param equationOfCenter	The Sun's equation of center [°].
 	 * @return	Sun's true geometric longitude [°].
 	 */
-	private double trueAnomaly(final double meanAnomaly, final double equationOfCenter){
+	private static double trueAnomaly(final double meanAnomaly, final double equationOfCenter){
 		return correctRangeDegree(meanAnomaly + equationOfCenter);
 	}
 
@@ -275,7 +259,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param meanAnomaly	The mean anomaly of the Sun [°].
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
-	private double radiusVector(double meanAnomaly){
+	private static double radiusVector(double meanAnomaly){
 		meanAnomaly = convertDegreesToRadians(meanAnomaly);
 		return 1.00014
 			- 0.01671 * StrictMath.cos(meanAnomaly)
@@ -289,7 +273,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param trueAnomaly	The true anomaly of the Sun [°].
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
-	private double radiusVector(final double eccentricity, final double trueAnomaly){
+	private static double radiusVector(final double eccentricity, final double trueAnomaly){
 		return 1.000001018 * (1. - eccentricity * eccentricity) / (1. + eccentricity * StrictMath.cos(convertDegreesToRadians(trueAnomaly)));
 	}
 
@@ -300,7 +284,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private double apparentGeometricLongitude(final double trueGeometricLongitude, final double t){
+	private static double apparentGeometricLongitude(final double trueGeometricLongitude, final double t){
 		//correction for nutation and aberration
 		//[rad]
 		final double omega = convertDegreesToRadians(125.04 - 1934.136 * t);
@@ -313,7 +297,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private double meanEclipticObliquity(final double t){
+	private static double meanEclipticObliquity(final double t){
 		final double u = t / 100.;
 		return toDegrees(23, 26, 21.448)
 			+ toDegrees(0, 0, eval(u, new double[]{0., -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79,
@@ -327,7 +311,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param apparentLongitude	Apparent longitude of the Sun [°].
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private double apparentEclipticObliquity(final double meanEclipticObliquity, final double apparentLongitude){
+	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double apparentLongitude){
 		return meanEclipticObliquity + 0.00256 * StrictMath.cos(convertDegreesToRadians(apparentLongitude));
 	}
 
@@ -338,7 +322,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private double trueEclipticObliquity(final double meanEclipticObliquity, final double t){
+	private static double trueEclipticObliquity(final double meanEclipticObliquity, final double t){
 		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
 		return meanEclipticObliquity + toDegrees(0, 0, deltaPsiEpsilon[1]);
 	}
@@ -349,7 +333,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	An array where the first element is delta psi, and the second delta epsilon ["].
 	 */
-	private double[] highAccuracyNutation(final double t){
+	private static double[] highAccuracyNutation(final double t){
 		//mean elongation of the Moon from the Sun [°]
 		final double d = eval(t, new double[]{297.85036, 445267.111480, -0.0019142, 1. / 189474.});
 		//mean anomaly of the Sun [°]
@@ -362,6 +346,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double omega = convertDegreesToRadians(eval(t, new double[]{125.04452, -1934.136261, 0.0020708, 1. / 450000.}));
 
 		//these lines generated by iau1980.frink and pasted in here ["]
+		@SuppressWarnings("OverlyComplexArithmeticExpression")
 		final double deltaPsi = 0.0001 * ((-171996 - 174.2 * t) * StrictMath.sin(omega)
 			+ (-13187. - 1.6 * t) * StrictMath.sin(-2. * d + 2. * f + 2. * omega)
 			+ (-2274. - 0.2 * t) * StrictMath.sin(2. * f + 2. * omega)
@@ -425,6 +410,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 			- 3. * StrictMath.sin(2. * d - m - mp + 2. * f + 2. * omega)
 			- 3. * StrictMath.sin(3. * mp + 2. * f + 2. * omega)
 			- 3. * StrictMath.sin(2. * d - m + 2. * f + 2. * omega));
+		@SuppressWarnings("OverlyComplexArithmeticExpression")
 		final double deltaEpsilon = 0.0001 * ( (92025 + 8.9 * t) * StrictMath.cos(omega)
 			+ (5736. - 3.1 * t) * StrictMath.cos(-2. * d + 2. * f + 2. * omega)
 			+ (977. - 0.5 * t) * StrictMath.cos(2. * f + 2. * omega)
@@ -474,7 +460,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param apparentLongitude	Apparent longitude of the Sun [°].
 	 * @return	Sun's right ascension [°].
 	 */
-	private double apparentRightAscension(final double apparentEclipticObliquity, double apparentLongitude){
+	private static double apparentRightAscension(final double apparentEclipticObliquity, double apparentLongitude){
 		apparentLongitude = convertDegreesToRadians(apparentLongitude);
 		return correctRangeDegree(convertRadiansToDegrees(StrictMath.atan2(
 			StrictMath.cos(convertDegreesToRadians(apparentEclipticObliquity)) * StrictMath.sin(apparentLongitude),
@@ -488,7 +474,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param apparentLongitude	Apparent longitude of the Sun [°].
 	 * @return	Sun's declination [°].
 	 */
-	private double apparentDeclination(final double apparentEclipticObliquity, final double apparentLongitude){
+	private static double apparentDeclination(final double apparentEclipticObliquity, final double apparentLongitude){
 		return convertRadiansToDegrees(StrictMath.asin(
 			StrictMath.sin(convertDegreesToRadians(apparentEclipticObliquity)) * StrictMath.sin(convertDegreesToRadians(apparentLongitude))
 		));
@@ -500,7 +486,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The longitude of the perihelion of the orbit [°].
 	 */
-	private double longitudeOfEarthPerihelion(final double t){
+	private static double longitudeOfEarthPerihelion(final double t){
 		return eval(t, new double[]{102.93735, 1.71946, 0.00046});
 	}
 
@@ -511,7 +497,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param distance	Sun distance [AU].
 	 * @return	The longitude of the perihelion of the orbit [°].
 	 */
-	private double radiusAngle(final double radius, final double distance){
+	private static double radiusAngle(final double radius, final double distance){
 		return StrictMath.asin(radius / (radius + distance));
 	}
 
@@ -521,7 +507,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	mean Sidereal time at Greenwich [°].
 	 */
-	private double greenwichMeanSiderealTime(final double t){
+	private static double greenwichMeanSiderealTime(final double t){
 		//FIXME
 //		return 18.697374558 + 24.06570982441908 * t;
 		return correctRangeDegree(eval(t, new double[]{280.46061837, 360.98564736629 * 36525., 0.000387933, -1. / 38710000.}));
@@ -535,7 +521,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	apparent Sidereal time at Greenwich [°].
 	 */
-	private double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
+	private static double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
 			final double t){
 		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
 		final double correction = toDegrees(0, 0, deltaPsiEpsilon[0]) * StrictMath.cos(convertDegreesToRadians(apparentEclipticObliquity));
@@ -546,10 +532,9 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * Calculate apparent local Sidereal time at Greenwich.
 	 *
 	 * @param greenwichApparentSiderealTime	Apparent Sidereal time at Greenwich [°].
-	 * @param location	Location of the place.
 	 * @return	The apparent local Sidereal time at Greenwich [°].
 	 */
-	private double apparentLocalSiderealTime(final double greenwichApparentSiderealTime, final Location location){
+	private double apparentLocalSiderealTime(final double greenwichApparentSiderealTime){
 		return greenwichApparentSiderealTime - location.getLongitude();
 	}
 
@@ -560,7 +545,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param rightAscension	Right ascension [°].
 	 * @return	The hour angle [°].
 	 */
-	private double localHourAngle(final double localSiderealTime, final double rightAscension){
+	private static double localHourAngle(final double localSiderealTime, final double rightAscension){
 		return localSiderealTime - rightAscension;
 	}
 
@@ -595,15 +580,14 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 *
 	 * @param hourAngle	Hour angle [°].
 	 * @param declination	Declination [°].
-	 * @param location	Location of the place.
-	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The hour angle [°].
 	 */
-	private double parallatticAngle(double hourAngle, final double declination, final Location location, final double t){
+	private double parallatticAngle(double hourAngle, final double declination){
 		hourAngle = convertDegreesToRadians(hourAngle);
 		final double latitude = convertDegreesToRadians(location.getLatitude());
 		final double decl = convertDegreesToRadians(declination);
-		return StrictMath.atan2(StrictMath.sin(hourAngle), StrictMath.tan(latitude) * StrictMath.cos(decl) - StrictMath.sin(decl) * StrictMath.cos(hourAngle));
+		return StrictMath.atan2(StrictMath.sin(hourAngle),
+			StrictMath.tan(latitude) * StrictMath.cos(decl) - StrictMath.sin(decl) * StrictMath.cos(hourAngle));
 	}
 
 	// Calculates the approximate set time of a body which has the specified right ascension and declination.
@@ -650,7 +634,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		return convertDegreesToHours(location.getLongitude());
 	}
 
-	private double getDayOfYear(final LocalDateTime date){
+	private static double getDayOfYear(final LocalDateTime date){
 		return date.getDayOfYear() + julianTime(date);
 	}
 
@@ -658,11 +642,11 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double sinDeclination = 0.39782 * StrictMath.sin(convertDegreesToRadians(sunTrueLong));
 		final double cosDeclination = StrictMath.cos(StrictMath.asin(sinDeclination));
 
-		final double cosZenith = StrictMath.cos(zenith.getRadians());
+		final double sinZenith = StrictMath.sin(zenith.getRadians());
 		final double sinLatitude = StrictMath.sin(convertDegreesToRadians(location.getLatitude()));
 		final double cosLatitude = StrictMath.cos(convertDegreesToRadians(location.getLongitude()));
 
-		return (cosZenith - sinDeclination * sinLatitude) / (cosDeclination * cosLatitude);
+		return (sinZenith - sinLatitude * sinDeclination) / (cosLatitude * cosDeclination);
 	}
 
 	/**
@@ -670,19 +654,20 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @param sunrise	Whether it's sunrise or sunset.
 	 * @return	The Sun local hour [hrs].
 	 */
-	private double getSunLocalHour(final double cosSunLocalHour, final Boolean sunrise){
+	private static double getSunLocalHour(final double cosSunLocalHour, final Boolean sunrise){
 		final double localHour = convertRadiansToDegrees(StrictMath.acos(cosSunLocalHour));
 		return convertDegreesToHours(sunrise? 360. - localHour: localHour);
 	}
 
 	/**
+	 * Computes the local mean time.
 	 *
-	 * @param sunTrueLongitude
-	 * @param longitudeHour
-	 * @param sunLocalHour
+	 * @param sunTrueLongitude	Suns true longitude [°].
+	 * @param longitudeHour	Longitude hour [hrs].
+	 * @param sunLocalHour	Local hour of the Sun [hrs].
 	 * @return	The local mean time [hrs].
 	 */
-	private double getLocalMeanTime(final double sunTrueLongitude, final double longitudeHour, final double sunLocalHour){
+	private static double getLocalMeanTime(final double sunTrueLongitude, final double longitudeHour, final double sunLocalHour){
 		final double rightAscension = getRightAscension(sunTrueLongitude);
 		return correctRangeHour(sunLocalHour + rightAscension - 0.06571 * longitudeHour - 6.622);
 	}
@@ -691,18 +676,20 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * Computes the Suns right ascension, adjusting for the quadrant of the true longitude of the Sun and turning it
 	 * into degree-hours.
 	 *
-	 * @param sunTrueLong	Suns true longitude [°].
+	 * @param sunTrueLongitude	Suns true longitude [°].
 	 * @return	Suns right ascension in degree-hours.
 	 */
-	private double getRightAscension(final double sunTrueLong){
-		final double tanL = StrictMath.tan(convertDegreesToRadians(sunTrueLong));
+	@SuppressWarnings("NumericCastThatLosesPrecision")
+	private static double getRightAscension(final double sunTrueLongitude){
+		final double tanL = StrictMath.tan(convertDegreesToRadians(sunTrueLongitude));
 		final double rightAscension = correctRangeDegree(convertRadiansToDegrees(StrictMath.atan(0.91764 * tanL)));
 
-		final double longitudeQuadrant = 90. * (int)(sunTrueLong / 90.);
+		final double longitudeQuadrant = 90. * (int)(sunTrueLongitude / 90.);
 		final double rightAscensionQuadrant = 90. * (int)(rightAscension / 90.);
 		return (rightAscension + longitudeQuadrant - rightAscensionQuadrant) / 15.;
 	}
 
+	@SuppressWarnings("NumericCastThatLosesPrecision")
 	private LocalTime getLocalTime(final double localMeanTime){
 		//adjust back to UTC
 		final double utcTime = correctRangeHour(localMeanTime - getBaseLongitudeHour());
