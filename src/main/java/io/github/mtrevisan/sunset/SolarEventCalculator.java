@@ -71,6 +71,22 @@ public class SolarEventCalculator{
 	 * @param date	The date.
 	 * @return	The Julian Day [day].
 	 */
+	public static double julianDay(final LocalDateTime date){
+		final double jdNoon = julianDay(date.toLocalDate());
+		final double time = julianTime(date);
+		return jdNoon + time;
+	}
+
+	private static double julianTime(final LocalDateTime date){
+		return date.toLocalTime().toSecondOfDay() / (24. * 60. * 60.);
+	}
+
+	/**
+	 * Calculate Julian Day at 0 UTC.
+	 *
+	 * @param date	The date.
+	 * @return	The Julian Day [day].
+	 */
 	public static double julianDay(final LocalDate date){
 		return julianDay(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
 	}
@@ -143,7 +159,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double t = julianCentury(jd);
 		final EquatorialCoordinate coord = sunPosition(jd);
 		//[hrs]
-		final double ra = coord.getRightAscension() / 15.;
+		final double ra = convertDegreesToHours(coord.getRightAscension());
 		final double decl = coord.getLongitude();
 
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
@@ -159,16 +175,21 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, apparentLongitude);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
 
-		System.out.println(coord);
-
 		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(t);
 		final double greenwichApparentSiderealTime = greenwichApparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
 		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime, location);
 		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
 
-		//[hrs]
-		final LocalTime localTime = computeSolarEventTime(solarZenith, date, false);
-		return LocalDateTime.of(date, localTime);
+		LocalDateTime sunsetLocalDateTime = LocalDateTime.of(date, LocalTime.MIDNIGHT);
+		LocalDateTime localDateTime;
+		do{
+			localDateTime = sunsetLocalDateTime;
+
+			//[hrs]
+			final LocalTime localTime = computeSolarEventTime(localDateTime, solarZenith, false);
+			sunsetLocalDateTime = LocalDateTime.of(date, localTime);
+		}while(!localDateTime.equals(sunsetLocalDateTime));
+		return sunsetLocalDateTime;
 	}
 
 	/**
@@ -544,7 +565,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	}
 
 
-	private LocalTime computeSolarEventTime(final Zenith solarZenith, final LocalDate date, final boolean sunrise)
+	private LocalTime computeSolarEventTime(final LocalDateTime date, final Zenith solarZenith, final boolean sunrise)
 			throws SolarEventException{
 		final double longitudeHour = getLongitudeHour(date, sunrise);
 
@@ -615,7 +636,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 *
 	 * @return	Longitudinal time [day].
 	 */
-	private double getLongitudeHour(final LocalDate date, final Boolean sunrise){
+	private double getLongitudeHour(final LocalDateTime date, final Boolean sunrise){
 		final double dividend = (sunrise? 6: 18) - getBaseLongitudeHour();
 		return getDayOfYear(date) + dividend / 24.;
 	}
@@ -626,11 +647,11 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @return	The longitude of the location of the solar event divided by 15 (deg/hour).
 	 */
 	private double getBaseLongitudeHour(){
-		return location.getLongitude() / 15.;
+		return convertDegreesToHours(location.getLongitude());
 	}
 
-	private int getDayOfYear(final LocalDate date){
-		return date.getDayOfYear();
+	private double getDayOfYear(final LocalDateTime date){
+		return date.getDayOfYear() + julianTime(date);
 	}
 
 	private double getCosineSunLocalHour(final double sunTrueLong, final Zenith zenith){
@@ -650,11 +671,8 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 * @return	The Sun local hour [hrs].
 	 */
 	private double getSunLocalHour(final double cosSunLocalHour, final Boolean sunrise){
-		double localHour = convertRadiansToDegrees(StrictMath.acos(cosSunLocalHour));
-		if(sunrise)
-			localHour = 360. - localHour;
-
-		return localHour / 15.;
+		final double localHour = convertRadiansToDegrees(StrictMath.acos(cosSunLocalHour));
+		return convertDegreesToHours(sunrise? 360. - localHour: localHour);
 	}
 
 	/**
@@ -666,12 +684,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 */
 	private double getLocalMeanTime(final double sunTrueLongitude, final double longitudeHour, final double sunLocalHour){
 		final double rightAscension = getRightAscension(sunTrueLongitude);
-		double localMeanTime = sunLocalHour + rightAscension - 0.06571 * longitudeHour - 6.622;
-		if(localMeanTime < 0.)
-			localMeanTime += 24.;
-		else if(localMeanTime > 24.)
-			localMeanTime -= 24.;
-		return localMeanTime;
+		return correctRangeHour(sunLocalHour + rightAscension - 0.06571 * longitudeHour - 6.622);
 	}
 
 	/**
@@ -683,12 +696,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 */
 	private double getRightAscension(final double sunTrueLong){
 		final double tanL = StrictMath.tan(convertDegreesToRadians(sunTrueLong));
-		double rightAscension = StrictMath.atan(convertDegreesToRadians(0.91764 * convertRadiansToDegrees(tanL)));
-		rightAscension = convertRadiansToDegrees(rightAscension);
-		if(rightAscension < 0.)
-			rightAscension += 360.;
-		else if(rightAscension > 360.)
-			rightAscension -= 360.;
+		final double rightAscension = correctRangeDegree(convertRadiansToDegrees(StrictMath.atan(0.91764 * tanL)));
 
 		final double longitudeQuadrant = 90. * (int)(sunTrueLong / 90.);
 		final double rightAscensionQuadrant = 90. * (int)(rightAscension / 90.);
@@ -696,17 +704,10 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	}
 
 	private LocalTime getLocalTime(final double localMeanTime){
-		double utcTime = localMeanTime - getBaseLongitudeHour();
-		utcTime = adjustForDST(utcTime);
+		//adjust back to UTC
+		final double utcTime = correctRangeHour(localMeanTime - getBaseLongitudeHour());
 		return LocalTime.of(0, 0)
-			.plus((long)(utcTime * 24. * 60. * 60.), ChronoUnit.SECONDS);
-	}
-
-	private double adjustForDST(final double localMeanTime){
-		double localTime = localMeanTime;
-		if(localTime > 24.)
-			localTime -= 24.;
-		return localTime;
+			.plus((long)(utcTime * 60. * 60.), ChronoUnit.SECONDS);
 	}
 
 
@@ -721,8 +722,8 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	}
 
 	private static double correctRangeHour(double degree){
-		degree %= 360.;
-		return (degree < 0.? degree + 360.: degree);
+		degree %= 24;
+		return (degree < 0.? degree + 24.: degree);
 	}
 
 	private static double convertDegreesToRadians(final double degrees){
@@ -731,6 +732,10 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 
 	private static double convertRadiansToDegrees(final double radians){
 		return radians * (180. / StrictMath.PI);
+	}
+
+	private static double convertDegreesToHours(final double degrees){
+		return degrees / 15.;
 	}
 
 	// use Horner's method to compute and return the polynomial evaluated at x

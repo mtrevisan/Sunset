@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 @SuppressWarnings("ALL")
@@ -52,7 +53,7 @@ class SolarEventCalculatorTest{
 
 		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.ASTRONOMICAL);
 
-		assertTimeEquals("17:20", datetime.toString());
+		assertTimeEquals("17:20", datetime);
 	}
 
 	@Test
@@ -62,7 +63,7 @@ class SolarEventCalculatorTest{
 
 		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.CIVIL);
 
-		assertTimeEquals("16:06", datetime.toString());
+		assertTimeEquals("16:06", datetime);
 	}
 
 	@Test
@@ -72,14 +73,15 @@ class SolarEventCalculatorTest{
 
 		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.OFFICIAL);
 
-		assertTimeEquals("15:32", datetime.toString());
+		assertTimeEquals("15:32", datetime);
 	}
 
 
-	private static void assertTimeEquals(final String expectedTime, final String actualTime){
+	private static void assertTimeEquals(final String expectedTime, final LocalDateTime actualTime){
 		final int expectedMinutes = getMinutes(expectedTime);
-		final int actualMinutes = getMinutes(actualTime);
-		Assertions.assertEquals(expectedMinutes, actualMinutes, 1);
+		final int actualMinutes = getMinutes(actualTime.toLocalTime().toString());
+		Assertions.assertEquals(expectedMinutes, actualMinutes, 1,
+			"Expected " + expectedTime + ", got " + actualTime.format(DateTimeFormatter.ofPattern("HH:MM")));
 	}
 
 	private static int getMinutes(final String time){
