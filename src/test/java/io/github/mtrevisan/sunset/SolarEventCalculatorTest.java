@@ -45,17 +45,17 @@ class SolarEventCalculatorTest{
 		final double jd = JulianDay.of(1957, 10, 4) + (19. + 29. / 60.) / 24.;
 		EquatorialCoordinate coord = SolarEventCalculator.sunPosition(jd);
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.57s, δ: -4° 28' 17.22\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.48s, δ: -4° 28' 20.47\"}", coord.toString());
 	}
 
 	@Test
 	void asd() throws SolarEventException{
 		GNSSLocation location = GNSSLocation.create(
-			SolarEventCalculator.toDegrees(42, 0, 0.),
-			SolarEventCalculator.toDegrees(12, 30, 0.));
+			SolarEventCalculator.toDegrees(45, 0, 0.),
+			SolarEventCalculator.toDegrees(12, 0, 0.));
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
-		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 2, 3), Zenith.ASTRONOMICAL);
+		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 1, 1), Zenith.ASTRONOMICAL);
 
 		assertTimeEquals("16:27:00", datetime);
 	}

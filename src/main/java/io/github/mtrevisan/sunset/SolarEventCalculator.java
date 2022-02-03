@@ -39,6 +39,7 @@ https://github.com/mikereedell/sunrisesunsetlib-java
 https://web.archive.org/web/20161202180207/http://williams.best.vwh.net/sunrise_sunset_algorithm.htm
 https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
 https://en.wikipedia.org/wiki/Position_of_the_Sun
+https://edwilliams.org/sunrise_sunset_algorithm.htm
 
 others
 https://github.com/MenoData/Time4J/blob/master/base/src/main/java/net/time4j/calendar/astro/SolarTime.java
@@ -46,6 +47,31 @@ https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone
 https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
 */
 public class SolarEventCalculator{
+
+	// Calculates the approximate set time of a body which has the specified right ascension and declination.
+	// The resultant value will be close to the specified date.
+	// Return values are undef if the object is circumpolar for that date.
+	//	private double approxRiseSet(date, lat, long, ra, decl, h0 = -0.5667 degrees){
+	//		transit = approxTransit[date, long, ra, decl];
+	//		H0 = calcHourAngle[lat, decl, h0];
+	//
+	//		if(H0 == undef)
+	//			return [undef, undef]
+	//
+	//		Htime = H0 / (360 degrees/day);
+	//		//   println["transit is $transit"]
+	//		//   println["H0 is $H0"]
+	//		//   println["Htime is " + (Htime -> "hours")]
+	//		set = transit + Htime;
+	//		return set;
+	//	}
+
+	//https://frinklang.org/frinksamp/sun.frink
+	//https://www.astrouw.edu.pl/~jskowron/pracownia/praca/sunspot_answerbook_expl/expl-5.html
+	//http://co2.aos.wisc.edu/data/code/idl-lib/util/sunrise.pro
+	//https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
+
+	//---
 
 	private final GNSSLocation location;
 
@@ -106,6 +132,23 @@ public class SolarEventCalculator{
 		final double ra = degToHrs(coord.getRightAscension());
 		final double decl = coord.getLongitude();
 
+/*
+1/1/2022
+jd = 2459580,5
+n = 8036
+longitude lw = 12
+mean solar time J* = 8035,9666666666666666666666666667
+solar mean anomaly M = 357,78009673733333333333333333333
+equation of the center C = -0,07575266651750332420396923728956
+ecliptic longitude lambda = 280,64154407081583000912936409604
+solar transit Jtransit = 2459580,9714704432394846054500724
+sinDecl = -0,39094722575833922205307251034751
+declination of the Sun decl = -23,013451399537735607652540761379
+latitute phi = 45
+cosw0 = 0,40249461588178552731510832196043
+hour angle w0 = 66,265778126410893799009823280512
+sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
+*/
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double eccentricity = earthOrbitEccentricity(t);
@@ -544,46 +587,6 @@ final double apparentDeclination = apparentDeclination(apparentEclipticObliquity
 		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, localHourAngle);
 		return getLocalTime(localMeanTime - equationOfTime);
 	}
-
-	/**
-	 * Calculate the parallactic angle for a given body from a point on the Earth, q.
-	 *
-	 * @param hourAngle	Hour angle [°].
-	 * @param declination	Declination [°].
-	 * @return	The hour angle [°].
-	 */
-	private double parallatticAngle(double hourAngle, final double declination){
-		hourAngle = degToRad(hourAngle);
-		final double latitude = degToRad(location.getLatitude());
-		final double decl = degToRad(declination);
-		return StrictMath.atan2(StrictMath.sin(hourAngle),
-			StrictMath.tan(latitude) * StrictMath.cos(decl) - StrictMath.sin(decl) * StrictMath.cos(hourAngle));
-	}
-
-	// Calculates the approximate set time of a body which has the specified right ascension and declination.
-	// The resultant value will be close to the specified date.
-	// Return values are undef if the object is circumpolar for that date.
-//	private double approxRiseSet(date, lat, long, ra, decl, h0 = -0.5667 degrees){
-//		transit = approxTransit[date, long, ra, decl];
-//		H0 = calcHourAngle[lat, decl, h0];
-//
-//		if(H0 == undef)
-//			return [undef, undef]
-//
-//		Htime = H0 / (360 degrees/day);
-//		//   println["transit is $transit"]
-//		//   println["H0 is $H0"]
-//		//   println["Htime is " + (Htime -> "hours")]
-//		set = transit + Htime;
-//		return set;
-//	}
-
-	//https://frinklang.org/frinksamp/sun.frink
-	//https://www.astrouw.edu.pl/~jskowron/pracownia/praca/sunspot_answerbook_expl/expl-5.html
-	//http://co2.aos.wisc.edu/data/code/idl-lib/util/sunrise.pro
-	//https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
-
-//---
 
 	/**
 	 * Computes the longitude time.
