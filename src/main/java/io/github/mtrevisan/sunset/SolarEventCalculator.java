@@ -92,11 +92,6 @@ public class SolarEventCalculator{
 //---
 	//https://squarewidget.com/solar-coordinates/
 
-	public static void main(String[] args){
-		SolarEventCalculator cal = create(Location.create(45.65, 12.19));
-		cal.sunset();
-	}
-
 	/**
 	 * Calculate Julian Day at 0 UTC.
 	 *
@@ -116,6 +111,12 @@ public class SolarEventCalculator{
 		return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + b - 1524.5;
 	}
 
+	/**
+	 * Calculated the Sun position.
+	 *
+	 * @param jd	The Julian Day [day].
+	 * @return	The Sun position.
+	 */
 	public final EquatorialCoordinate sunPosition(final double jd){
 		final double t = julianCentury(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
@@ -130,7 +131,14 @@ public class SolarEventCalculator{
 		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
 	}
 
-	public void sunset(){
+	//TODO
+	/**
+	 * Calculated the Sunset instant.
+	 *
+	 * @param jd	The Julian Day [day].
+	 * @return	The Sunset instant.
+	 */
+	public final LocalTime sunset(final double jd){
 /*
 // Calculate the time when the upper limb of the sun just crosses the
 // horizon.
@@ -146,7 +154,6 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
       return sunSecantAltitude[set, lat, long, -16 arcmin, temp, pressure]
 }*/
 
-		final double jd = julianDay(1957, 10, 4) + (19. + 29. / 60.) / 24.;
 		final double t = julianCentury(jd);
 		final EquatorialCoordinate coord = sunPosition(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
@@ -168,6 +175,8 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double greenwichApparentSiderealTime = greenwichApparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
 		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime, location);
 		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
+
+		return null;
 	}
 
 	/**

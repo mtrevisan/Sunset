@@ -24,13 +24,8 @@
  */
 package io.github.mtrevisan.sunset;
 
-import org.slf4j.helpers.MessageFormatter;
-
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 
 
