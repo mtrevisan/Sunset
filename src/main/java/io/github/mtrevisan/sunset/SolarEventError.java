@@ -25,10 +25,7 @@
 package io.github.mtrevisan.sunset;
 
 
-public class Main{
-
-	public static void main(final String[] args){
-		//TODO
-	}
-
+public enum SolarEventError{
+	NEVER_RISES,
+	NEVER_SETS
 }

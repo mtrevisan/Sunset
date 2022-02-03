@@ -24,11 +24,40 @@
  */
 package io.github.mtrevisan.sunset;
 
+import java.io.Serial;
 
-public class Main{
 
-	public static void main(final String[] args){
-		//TODO
+/**
+ * Thrown if the Sun never rises or never sets.
+ */
+public class SolarEventException extends Exception{
+
+	@Serial
+	private static final long serialVersionUID = 3660516823104741068L;
+
+
+	/** Type of error. */
+	private final SolarEventError error;
+
+
+	/**
+	 * Constructs a new exception with the specified error.
+	 *
+	 * @param error	The error.
+	 * @return	An instance of this exception.
+	 */
+	public static SolarEventException create(final SolarEventError error){
+		return new SolarEventException(error);
+	}
+
+
+	/**
+	 * Constructs a new exception with the specified error.
+	 *
+	 * @param error	The error.
+	 */
+	private SolarEventException(final SolarEventError error){
+		this.error = error;
 	}
 
 }

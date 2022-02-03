@@ -62,45 +62,28 @@ public class SolarEventCalculator{
 	}
 
 
-	/**
-	 * Computes the sunset time for the given zenith at the given date.
-	 *
-	 * @param solarZenith	Enumeration corresponding to the type of sunset to compute.
-	 * @param date	Date to compute the sunset for.
-	 * @return	The sunset time or {@code null} for no sunset.
-	 */
-	public LocalDateTime computeSunsetCalendar(final Zenith solarZenith, final LocalDate date){
-		//[hrs]
-		final LocalTime localTime = computeSolarEventTime(solarZenith, date, false);
-		return LocalDateTime.of(date, localTime);
-	}
-
-	private LocalTime computeSolarEventTime(final Zenith solarZenith, final LocalDate date, final boolean sunrise){
-		final double longitudeHour = getLongitudeHour(date, sunrise);
-
-		final double meanAnomaly = getMeanAnomaly(longitudeHour);
-		final double sunTrueLong = getSunTrueLongitude(meanAnomaly);
-		final double cosineSunLocalHour = getCosineSunLocalHour(sunTrueLong, solarZenith);
-		if(cosineSunLocalHour < -1. || cosineSunLocalHour > 1.)
-			return null;
-
-		final double sunLocalHour = getSunLocalHour(cosineSunLocalHour, sunrise);
-		final double localMeanTime = getLocalMeanTime(sunTrueLong, longitudeHour, sunLocalHour);
-		return getLocalTime(localMeanTime);
-	}
-
 //---
 	//https://squarewidget.com/solar-coordinates/
 
 	/**
 	 * Calculate Julian Day at 0 UTC.
 	 *
+	 * @param date	The date.
+	 * @return	The Julian Day [day].
+	 */
+	public static double julianDay(final LocalDate date){
+		return julianDay(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+	}
+
+	/**
+	 * Calculate Julian Day at 0 UTC.
+	 *
 	 * @param year	The year.
-	 * @param month	The month (0 is January).
+	 * @param month	The month (1 is January).
 	 * @param day	The day.
 	 * @return	The Julian Day [day].
 	 */
-	public static double julianDay(int year, int month, final int day){
+	static double julianDay(int year, int month, final int day){
 		if(month <= 2){
 			year --;
 			month += 12;
@@ -133,12 +116,14 @@ public class SolarEventCalculator{
 
 	//TODO
 	/**
-	 * Calculated the Sunset instant.
+	 * Computes the sunset time.
 	 *
-	 * @param jd	The Julian Day [day].
-	 * @return	The Sunset instant.
+	 * @param solarZenith	Enumeration corresponding to the type of sunset to compute.
+	 * @param date	Date to compute the sunset for.
+	 * @return	The sunset time or {@code null} for no sunset.
+	 * @throws SolarEventException	Whenever the Sun never rises or sets.
 	 */
-	public final LocalTime sunset(final double jd){
+	public final LocalDateTime sunset(final LocalDate date, final Zenith solarZenith) throws SolarEventException{
 /*
 // Calculate the time when the upper limb of the sun just crosses the
 // horizon.
@@ -154,8 +139,13 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
       return sunSecantAltitude[set, lat, long, -16 arcmin, temp, pressure]
 }*/
 
+		final double jd = julianDay(date);
 		final double t = julianCentury(jd);
 		final EquatorialCoordinate coord = sunPosition(jd);
+		//[hrs]
+		final double ra = coord.getRightAscension() / 15.;
+		final double decl = coord.getLongitude();
+
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = meanAnomaly(t);
 		final double eccentricity = earthOrbitEccentricity(t);
@@ -176,7 +166,9 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime, location);
 		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
 
-		return null;
+		//[hrs]
+		final LocalTime localTime = computeSolarEventTime(solarZenith, date, false);
+		return LocalDateTime.of(date, localTime);
 	}
 
 	/**
@@ -327,14 +319,14 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 */
 	private double trueEclipticObliquity(final double meanEclipticObliquity, final double t){
 		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
-		return meanEclipticObliquity + deltaPsiEpsilon[1];
+		return meanEclipticObliquity + toDegrees(0, 0, deltaPsiEpsilon[1]);
 	}
 
 	/**
 	 * Calculate Nutation in longitude (delta psi) and obliquity (delta epsilon).
 	 *
 	 * @param t	Julian Century in J2000.0 epoch.
-	 * @return	An array where the first element is delta psi, and the second delta epsilon.
+	 * @return	An array where the first element is delta psi, and the second delta epsilon ["].
 	 */
 	private double[] highAccuracyNutation(final double t){
 		//mean elongation of the Moon from the Sun [°]
@@ -525,7 +517,7 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	private double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
 			final double t){
 		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
-		final double correction = deltaPsiEpsilon[0] * Math.cos(convertDegreesToRadians(apparentEclipticObliquity));
+		final double correction = toDegrees(0, 0, deltaPsiEpsilon[0]) * Math.cos(convertDegreesToRadians(apparentEclipticObliquity));
 		return correctRangeDegree(greenwichMeanSiderealTime + correction);
 	}
 
@@ -549,6 +541,32 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	 */
 	private double localHourAngle(final double localSiderealTime, final double rightAscension){
 		return localSiderealTime - rightAscension;
+	}
+
+
+	private LocalTime computeSolarEventTime(final Zenith solarZenith, final LocalDate date, final boolean sunrise)
+			throws SolarEventException{
+		final double longitudeHour = getLongitudeHour(date, sunrise);
+
+		final double jd = julianDay(date);
+		final double t = julianCentury(jd);
+		final double geometricMeanLongitude = geometricMeanLongitude(t);
+		final double meanAnomaly = meanAnomaly(t);
+		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
+		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
+		final double apparentLongitude = apparentLongitude(trueGeometricLongitude, t);
+
+		final double cosLocalHour = getCosineSunLocalHour(trueGeometricLongitude, solarZenith);
+		if(cosLocalHour < -1.)
+			//the sun never sets on this location on the specified date
+			throw SolarEventException.create(SolarEventError.NEVER_SETS);
+		if(cosLocalHour > 1.)
+			//the sun never rises on this location on the specified date
+			throw SolarEventException.create(SolarEventError.NEVER_RISES);
+
+		final double sunLocalHour = getSunLocalHour(cosLocalHour, sunrise);
+		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, sunLocalHour);
+		return getLocalTime(localMeanTime);
 	}
 
 	/**
@@ -615,41 +633,16 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		return date.getDayOfYear();
 	}
 
-	/**
-	 * Computes the mean anomaly of the Sun.
-	 *
-	 * @return	The Suns mean anomaly [°].
-	 */
-	private double getMeanAnomaly(final double longitudeHour){
-		return 0.9856003 * longitudeHour - 3.289;
-	}
-
-	/**
-	 * Computes the true longitude of the Sun at the given location.
-	 *
-	 * @param meanAnomaly	The Suns mean anomaly [°].
-	 * @return	The Suns true longitude [°].
-	 */
-	private double getSunTrueLongitude(double meanAnomaly){
-		meanAnomaly = convertDegreesToRadians(meanAnomaly);
-		final double sinMeanAnomaly = Math.sin(meanAnomaly);
-		final double sinDoubleMeanAnomaly = Math.sin(2. * meanAnomaly);
-		double trueLongitude = meanAnomaly + 1.916 * sinMeanAnomaly + 0.020 * sinDoubleMeanAnomaly + 282.634;
-		if(trueLongitude > 360.)
-			trueLongitude -= 360.;
-		return trueLongitude;
-	}
-
 	private double getCosineSunLocalHour(final double sunTrueLong, final Zenith zenith){
-		final double sinSunDeclination = getSinOfSunDeclination(sunTrueLong);
-		final double cosineSunDeclination = getCosOfSunDeclination(sinSunDeclination);
+		final double sinDeclination = getSinOfSunDeclination(sunTrueLong);
+		final double cosDeclination = getCosOfSunDeclination(sinDeclination);
 
 		final double zenithInRadians = zenith.getRadians();
-		final double cosineZenith = Math.cos(zenithInRadians);
+		final double cosZenith = Math.cos(zenithInRadians);
 		final double sinLatitude = Math.sin(convertDegreesToRadians(location.getLatitude()));
 		final double cosLatitude = Math.cos(convertDegreesToRadians(location.getLongitude()));
 
-		return (cosineZenith - sinSunDeclination * sinLatitude) / (cosineSunDeclination * cosLatitude);
+		return (cosZenith - sinDeclination * sinLatitude) / (cosDeclination * cosLatitude);
 	}
 
 	private double getSinOfSunDeclination(final double sunTrueLong){
@@ -660,19 +653,29 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		return Math.cos(Math.asin(sinSunDeclination));
 	}
 
+	/**
+	 * @param cosSunLocalHour	Cosine of Sun's local hour.
+	 * @param sunrise	Whether it's sunrise or sunset.
+	 * @return	The Sun local hour [hrs].
+	 */
 	private double getSunLocalHour(final double cosSunLocalHour, final Boolean sunrise){
-		final double arcCosineOfCosineHourAngle = Math.acos(cosSunLocalHour);
-		double localHour = convertRadiansToDegrees(arcCosineOfCosineHourAngle);
+		double localHour = convertRadiansToDegrees(Math.acos(cosSunLocalHour));
 		if(sunrise)
 			localHour = 360. - localHour;
 
 		return localHour / 15.;
 	}
 
-	private double getLocalMeanTime(final double sunTrueLong, final double longHour, final double sunLocalHour){
-		final double rightAscension = getRightAscension(sunTrueLong);
-		double localMeanTime = sunLocalHour + rightAscension - 0.06571 * longHour;
-		localMeanTime = localMeanTime- 6.622;
+	/**
+	 *
+	 * @param sunTrueLongitude
+	 * @param longitudeHour
+	 * @param sunLocalHour
+	 * @return	The local mean time [hrs].
+	 */
+	private double getLocalMeanTime(final double sunTrueLongitude, final double longitudeHour, final double sunLocalHour){
+		final double rightAscension = getRightAscension(sunTrueLongitude);
+		double localMeanTime = sunLocalHour + rightAscension - 0.06571 * longitudeHour - 6.622;
 		if(localMeanTime < 0.)
 			localMeanTime += 24.;
 		else if(localMeanTime > 24.)
@@ -722,6 +725,11 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	}
 
 	private static double correctRangeDegree(double degree){
+		degree %= 360.;
+		return (degree < 0.? degree + 360.: degree);
+	}
+
+	private static double correctRangeHour(double degree){
 		degree %= 360.;
 		return (degree < 0.? degree + 360.: degree);
 	}

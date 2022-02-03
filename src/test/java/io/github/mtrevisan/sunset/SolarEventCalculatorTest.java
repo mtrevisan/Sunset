@@ -46,31 +46,31 @@ class SolarEventCalculatorTest{
 	}
 
 	@Test
-	void astronomicalSunset(){
+	void astronomicalSunset() throws SolarEventException{
 		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
-		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.ASTRONOMICAL, LocalDate.of(2022, 12, 25));
+		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.ASTRONOMICAL);
 
 		assertTimeEquals("17:20", datetime.toString());
 	}
 
 	@Test
-	void civilSunset(){
+	void civilSunset() throws SolarEventException{
 		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
-		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.CIVIL, LocalDate.of(2022, 12, 25));
+		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.CIVIL);
 
 		assertTimeEquals("16:06", datetime.toString());
 	}
 
 	@Test
-	void officialSunset(){
+	void officialSunset() throws SolarEventException{
 		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
-		LocalDateTime datetime = calc.computeSunsetCalendar(Zenith.OFFICIAL, LocalDate.of(2022, 12, 25));
+		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.OFFICIAL);
 
 		assertTimeEquals("15:32", datetime.toString());
 	}
