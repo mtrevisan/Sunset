@@ -27,14 +27,14 @@ package io.github.mtrevisan.sunset;
 
 /** Defines the solar declination used in computing the sunrise/sunset. */
 public enum Zenith{
-	/** Astronomical sunrise/set is when the sun is 18 degrees below the horizon. */
-	ASTRONOMICAL(18.),
-	/** Nautical sunrise/set is when the sun is 12 degrees below the horizon. */
-	NAUTICAL(12.),
+	/** Official sunrise/set is when the sun is 50' below the horizon (to account for refraction). */
+	OFFICIAL(0.5),
 	/** Civil sunrise/set (dawn/dusk) is when the sun is 6 degrees below the horizon. */
 	CIVIL(6.),
-	/** Official sunrise/set is when the sun is 50' below the horizon (to account for refraction). */
-	OFFICIAL(0.5);
+	/** Nautical sunrise/set is when the sun is 12 degrees below the horizon. */
+	NAUTICAL(12.),
+	/** Astronomical sunrise/set is when the sun is 18 degrees below the horizon. */
+	ASTRONOMICAL(18.);
 
 
 	/** Solar declination [°]. */
@@ -42,7 +42,7 @@ public enum Zenith{
 
 
 	Zenith(final double degrees){
-		radians = convertDegreesToRadians(degrees);
+		radians = convertDegreesToRadians(90. + degrees);
 	}
 
 	public double getRadians(){
