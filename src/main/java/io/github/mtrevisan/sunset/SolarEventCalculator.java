@@ -76,12 +76,12 @@ public class SolarEventCalculator{
 	public static EquatorialCoordinate sunPosition(final double jd){
 		final double t = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
-		final double meanAnomaly = meanAnomaly(t);
+		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
 		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
-		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, apparentLongitude);
+		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double apparentRightAscension = apparentRightAscension(apparentEclipticObliquity, apparentLongitude);
 		final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentLongitude);
 		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
@@ -102,11 +102,11 @@ public class SolarEventCalculator{
 		final double t = JulianDay.centuryJ2000Of(jd);
 		final EquatorialCoordinate coord = sunPosition(jd);
 		//[hrs]
-		final double ra = convertDegreesToHours(coord.getRightAscension());
+		final double ra = degToHrs(coord.getRightAscension());
 		final double decl = coord.getLongitude();
 
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
-		final double meanAnomaly = meanAnomaly(t);
+		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double eccentricity = earthOrbitEccentricity(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
@@ -115,7 +115,7 @@ public class SolarEventCalculator{
 		final double radiusVector2 = radiusVector(eccentricity, trueAnomaly);
 		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
-		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, apparentLongitude);
+		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
 
 		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(t);
@@ -146,12 +146,12 @@ public class SolarEventCalculator{
 	}
 
 	/**
-	 * Calculate the mean anomaly of the Sun, M.
+	 * Calculate the geometric mean anomaly of the Sun, M.
 	 *
 	 * @param t	Julian Century in J2000.0 epoch.
-	 * @return	The mean anomaly of the Sun [°].
+	 * @return	The geometric mean anomaly of the Sun [°].
 	 */
-	private static double meanAnomaly(final double t){
+	private static double geometricMeanAnomaly(final double t){
 		return correctRangeDegree(eval(t, new double[]{357.52911, 35999.05029, -0.0001537}));
 	}
 
@@ -168,15 +168,15 @@ public class SolarEventCalculator{
 	/**
 	 * Calculate the Sun's equation of center, C.
 	 *
-	 * @param meanAnomaly	The mean anomaly of the Sun [°].
+	 * @param geometricMeanAnomaly	The mean anomaly of the Sun [°].
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	The Sun's equation of center [°].
 	 */
-	private static double equationOfCenter(double meanAnomaly, final double t){
-		meanAnomaly = convertDegreesToRadians(meanAnomaly);
-		return eval(t, new double[]{1.914602, -0.004817, -0.000014}) * StrictMath.sin(meanAnomaly)
-			+ eval(t, new double[]{0.019993, -0.000101}) * StrictMath.sin(2. * meanAnomaly)
-			+ 0.000289 * StrictMath.sin(3. * meanAnomaly);
+	private static double equationOfCenter(double geometricMeanAnomaly, final double t){
+		geometricMeanAnomaly = degToRad(geometricMeanAnomaly);
+		return eval(t, new double[]{1.914602, -0.004817, -0.000014}) * StrictMath.sin(geometricMeanAnomaly)
+			+ eval(t, new double[]{0.019993, -0.000101}) * StrictMath.sin(2. * geometricMeanAnomaly)
+			+ 0.000289 * StrictMath.sin(3. * geometricMeanAnomaly);
 	}
 
 	/**
@@ -209,7 +209,7 @@ public class SolarEventCalculator{
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
 	private static double radiusVector(double meanAnomaly){
-		meanAnomaly = convertDegreesToRadians(meanAnomaly);
+		meanAnomaly = degToRad(meanAnomaly);
 		return 1.00014
 			- 0.01671 * StrictMath.cos(meanAnomaly)
 			- 0.00014 * StrictMath.cos(meanAnomaly * 2.);
@@ -223,7 +223,7 @@ public class SolarEventCalculator{
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
 	private static double radiusVector(final double eccentricity, final double trueAnomaly){
-		return 1.000001018 * (1. - eccentricity * eccentricity) / (1. + eccentricity * StrictMath.cos(convertDegreesToRadians(trueAnomaly)));
+		return 1.000001018 * (1. - eccentricity * eccentricity) / (1. + eccentricity * StrictMath.cos(degToRad(trueAnomaly)));
 	}
 
 	/**
@@ -234,10 +234,8 @@ public class SolarEventCalculator{
 	 * @return	Apparent longitude of the Sun [°].
 	 */
 	private static double apparentGeometricLongitude(final double trueGeometricLongitude, final double t){
-		//correction for nutation and aberration
-		//[rad]
-		final double omega = convertDegreesToRadians(125.04 - 1934.136 * t);
-		return trueGeometricLongitude - 0.00569 - 0.00478 * StrictMath.sin(omega);
+		final double correction = nutationAndAberrationCorrection(t);
+		return trueGeometricLongitude - correction;
 	}
 
 	/**
@@ -248,20 +246,20 @@ public class SolarEventCalculator{
 	 */
 	private static double meanEclipticObliquity(final double t){
 		final double u = t / 100.;
-		return toDegrees(23, 26, 21.448)
-			+ toDegrees(0, 0, eval(u, new double[]{0., -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79,
-			2.45}));
+		final double seconds = eval(u, new double[]{21.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45});
+		return toDegrees(23, 26, seconds);
 	}
 
 	/**
 	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, ɛ'.
 	 *
 	 * @param meanEclipticObliquity	Mean obliquity of the ecliptic [°].
-	 * @param apparentLongitude	Apparent longitude of the Sun [°].
+	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double apparentLongitude){
-		return meanEclipticObliquity + 0.00256 * StrictMath.cos(convertDegreesToRadians(apparentLongitude));
+	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double t){
+		final double correction = nutationAndAberrationCorrection(t);
+		return meanEclipticObliquity + correction;
 	}
 
 	/**
@@ -292,7 +290,7 @@ public class SolarEventCalculator{
 		//Moon's argument of Latitude [°]
 		final double f = eval(t, new double[]{93.27191, 483202.017538, -0.0036825, 1. / 327270.});
 		//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
-		final double omega = convertDegreesToRadians(eval(t, new double[]{125.04452, -1934.136261, 0.0020708, 1. / 450000.}));
+		final double omega = degToRad(eval(t, new double[]{125.04452, -1934.136261, 0.0020708, 1. / 450000.}));
 
 		//these lines generated by iau1980.frink and pasted in here ["]
 		@SuppressWarnings("OverlyComplexArithmeticExpression")
@@ -410,9 +408,9 @@ public class SolarEventCalculator{
 	 * @return	Sun's right ascension [°].
 	 */
 	private static double apparentRightAscension(final double apparentEclipticObliquity, double apparentLongitude){
-		apparentLongitude = convertDegreesToRadians(apparentLongitude);
-		return correctRangeDegree(convertRadiansToDegrees(StrictMath.atan2(
-			StrictMath.cos(convertDegreesToRadians(apparentEclipticObliquity)) * StrictMath.sin(apparentLongitude),
+		apparentLongitude = degToRad(apparentLongitude);
+		return correctRangeDegree(radToDeg(StrictMath.atan2(
+			StrictMath.cos(degToRad(apparentEclipticObliquity)) * StrictMath.sin(apparentLongitude),
 			StrictMath.cos(apparentLongitude))));
 	}
 
@@ -424,8 +422,8 @@ public class SolarEventCalculator{
 	 * @return	Sun's declination [°].
 	 */
 	private static double apparentDeclination(final double apparentEclipticObliquity, final double apparentLongitude){
-		return convertRadiansToDegrees(StrictMath.asin(
-			StrictMath.sin(convertDegreesToRadians(apparentEclipticObliquity)) * StrictMath.sin(convertDegreesToRadians(apparentLongitude))
+		return radToDeg(StrictMath.asin(
+			StrictMath.sin(degToRad(apparentEclipticObliquity)) * StrictMath.sin(degToRad(apparentLongitude))
 		));
 	}
 
@@ -448,6 +446,28 @@ public class SolarEventCalculator{
 	 */
 	private static double radiusAngle(final double radius, final double distance){
 		return StrictMath.asin(radius / (radius + distance));
+	}
+
+	private static double nutationAndAberrationCorrection(final double t){
+		return 0.00569 + 0.00478 * StrictMath.sin(degToRad(125.04 - 1934.136 * t));
+	}
+
+	@SuppressWarnings("OverlyComplexArithmeticExpression")
+	private static double equationOfTime(final double t){
+		final double e0 = meanEclipticObliquity(t);
+		final double epsilon = apparentEclipticObliquity(e0, t);
+		final double l0 = degToRad(geometricMeanLongitude(t));
+		final double e = earthOrbitEccentricity(t);
+		final double m = degToRad(geometricMeanAnomaly(t));
+		double y = StrictMath.tan(degToRad(epsilon) / 2.);
+		y *= y;
+
+		//[hrs]
+		return radToDeg(y * StrictMath.sin(2. * l0)
+			- 2. * e * StrictMath.sin(m)
+			+ 4. * e * y * StrictMath.sin(m) * StrictMath.cos(2. * l0)
+			- 0.5 * y * y * StrictMath.sin(4. * l0)
+			- 1.25 * e * e * StrictMath.sin(2. * m)) * 4. / 60.;
 	}
 
 	/**
@@ -473,7 +493,7 @@ public class SolarEventCalculator{
 	private static double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
 			final double t){
 		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
-		final double correction = toDegrees(0, 0, deltaPsiEpsilon[0]) * StrictMath.cos(convertDegreesToRadians(apparentEclipticObliquity));
+		final double correction = toDegrees(0, 0, deltaPsiEpsilon[0]) * StrictMath.cos(degToRad(apparentEclipticObliquity));
 		return correctRangeDegree(greenwichMeanSiderealTime + correction);
 	}
 
@@ -505,23 +525,23 @@ public class SolarEventCalculator{
 
 		final double jd = JulianDay.of(date);
 		final double t = JulianDay.centuryJ2000Of(jd);
+		final double equationOfTime = equationOfTime(t);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
-		final double meanAnomaly = meanAnomaly(t);
+		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
 		final double apparentGeometricLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
 
-		final double cosLocalHour = getCosineSunLocalHour(trueGeometricLongitude, solarZenith);
-		if(cosLocalHour < -1.)
-			//the sun never sets on this location on the specified date
-			throw SolarEventException.create(SolarEventError.NEVER_SETS);
-		if(cosLocalHour > 1.)
-			//the sun never rises on this location on the specified date
-			throw SolarEventException.create(SolarEventError.NEVER_RISES);
+//		delta = m_longitude + radToDeg(hourAngle);
+//		timeDiff = 4 * delta;
+//		timeUTC = 720 - timeDiff - eqTime; // in minutes
 
-		final double sunLocalHour = getSunLocalHour(cosLocalHour, sunrise);
-		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, sunLocalHour);
-		return getLocalTime(localMeanTime);
+final double meanEclipticObliquity = meanEclipticObliquity(t);
+final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
+final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentGeometricLongitude);
+		final double localHourAngle = localHourAngle(trueGeometricLongitude, solarZenith, sunrise, apparentDeclination);
+		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, localHourAngle);
+		return getLocalTime(localMeanTime - equationOfTime);
 	}
 
 	/**
@@ -532,9 +552,9 @@ public class SolarEventCalculator{
 	 * @return	The hour angle [°].
 	 */
 	private double parallatticAngle(double hourAngle, final double declination){
-		hourAngle = convertDegreesToRadians(hourAngle);
-		final double latitude = convertDegreesToRadians(location.getLatitude());
-		final double decl = convertDegreesToRadians(declination);
+		hourAngle = degToRad(hourAngle);
+		final double latitude = degToRad(location.getLatitude());
+		final double decl = degToRad(declination);
 		return StrictMath.atan2(StrictMath.sin(hourAngle),
 			StrictMath.tan(latitude) * StrictMath.cos(decl) - StrictMath.sin(decl) * StrictMath.cos(hourAngle));
 	}
@@ -580,45 +600,63 @@ public class SolarEventCalculator{
 	 * @return	The longitude of the location of the solar event divided by 15 (deg/hour).
 	 */
 	private double getBaseLongitudeHour(){
-		return convertDegreesToHours(location.getLongitude());
+		return degToHrs(location.getLongitude());
 	}
 
 	private static double getDayOfYear(final LocalDateTime date){
 		return date.getDayOfYear() + JulianDay.timeOf(date);
 	}
 
-	private double getCosineSunLocalHour(final double sunTrueLong, final Zenith zenith){
-		final double sinDeclination = 0.39782 * StrictMath.sin(convertDegreesToRadians(sunTrueLong));
+	/**
+	 * @param trueLong	Sun's true longitude [°].
+	 * @param zenith	Zenith enumeration.
+	 * @param sunrise	Whether it's sunrise or sunset.
+	 * @return	The Sun local hour [hrs].
+	 * @throws SolarEventException	Whenever the Sun never rises or sets.
+	 */
+	private double localHourAngle(final double trueLong, final Zenith zenith, final Boolean sunrise,
+			double apparentDeclination) throws SolarEventException{
+		final double cosLocalHour = cosineLocalHour(trueLong, zenith);
+
+double latRad = degToRad(location.getLatitude());
+double sdRad  = degToRad(apparentDeclination);
+double cosHA = StrictMath.sin(zenith.getRadians())
+	/ (StrictMath.cos(latRad) * StrictMath.cos(sdRad)) - StrictMath.tan(latRad) * StrictMath.tan(sdRad);
+
+		if(cosLocalHour < -1.)
+			//the sun never sets on this location on the specified date
+			throw SolarEventException.create(SolarEventError.NEVER_SETS);
+		if(cosLocalHour > 1.)
+			//the sun never rises on this location on the specified date
+			throw SolarEventException.create(SolarEventError.NEVER_RISES);
+
+		final double localHour = radToDeg(StrictMath.acos(cosLocalHour));
+//		final double localHour = radToDeg(StrictMath.acos(cosHA));
+		return degToHrs(sunrise? 360. - localHour: localHour);
+	}
+
+	private double cosineLocalHour(final double trueLong, final Zenith zenith){
+		final double sinDeclination = 0.39782 * StrictMath.sin(degToRad(trueLong));
 		final double cosDeclination = StrictMath.cos(StrictMath.asin(sinDeclination));
 
 		final double sinZenith = StrictMath.sin(zenith.getRadians());
-		final double sinLatitude = StrictMath.sin(convertDegreesToRadians(location.getLatitude()));
-		final double cosLatitude = StrictMath.cos(convertDegreesToRadians(location.getLongitude()));
+		final double sinLatitude = StrictMath.sin(degToRad(location.getLatitude()));
+		final double cosLatitude = StrictMath.cos(degToRad(location.getLongitude()));
 
 		return (sinZenith - sinLatitude * sinDeclination) / (cosLatitude * cosDeclination);
 	}
 
 	/**
-	 * @param cosSunLocalHour	Cosine of Sun's local hour.
-	 * @param sunrise	Whether it's sunrise or sunset.
-	 * @return	The Sun local hour [hrs].
-	 */
-	private static double getSunLocalHour(final double cosSunLocalHour, final Boolean sunrise){
-		final double localHour = convertRadiansToDegrees(StrictMath.acos(cosSunLocalHour));
-		return convertDegreesToHours(sunrise? 360. - localHour: localHour);
-	}
-
-	/**
 	 * Computes the local mean time.
 	 *
-	 * @param sunTrueLongitude	Suns true longitude [°].
+	 * @param trueGeometricLongitude	Suns true longitude [°].
 	 * @param longitudeHour	Longitude hour [hrs].
-	 * @param sunLocalHour	Local hour of the Sun [hrs].
+	 * @param localHourAngle	Local hour of the Sun [hrs].
 	 * @return	The local mean time [hrs].
 	 */
-	private static double getLocalMeanTime(final double sunTrueLongitude, final double longitudeHour, final double sunLocalHour){
-		final double rightAscension = getRightAscension(sunTrueLongitude);
-		return correctRangeHour(sunLocalHour + rightAscension - 0.06571 * longitudeHour - 6.622);
+	private static double getLocalMeanTime(final double trueGeometricLongitude, final double longitudeHour, final double localHourAngle){
+		final double rightAscension = getRightAscension(trueGeometricLongitude);
+		return correctRangeHour(localHourAngle + rightAscension - 0.06571 * longitudeHour - 6.622);
 	}
 
 	/**
@@ -630,8 +668,8 @@ public class SolarEventCalculator{
 	 */
 	@SuppressWarnings("NumericCastThatLosesPrecision")
 	private static double getRightAscension(final double sunTrueLongitude){
-		final double tanL = StrictMath.tan(convertDegreesToRadians(sunTrueLongitude));
-		final double rightAscension = correctRangeDegree(convertRadiansToDegrees(StrictMath.atan(0.91764 * tanL)));
+		final double tanL = StrictMath.tan(degToRad(sunTrueLongitude));
+		final double rightAscension = correctRangeDegree(radToDeg(StrictMath.atan(0.91764 * tanL)));
 
 		final double longitudeQuadrant = 90. * (int)(sunTrueLongitude / 90.);
 		final double rightAscensionQuadrant = 90. * (int)(rightAscension / 90.);
@@ -662,15 +700,15 @@ public class SolarEventCalculator{
 		return (degree < 0.? degree + 24.: degree);
 	}
 
-	private static double convertDegreesToRadians(final double degrees){
+	private static double degToRad(final double degrees){
 		return degrees * (StrictMath.PI / 180.);
 	}
 
-	private static double convertRadiansToDegrees(final double radians){
+	private static double radToDeg(final double radians){
 		return radians * (180. / StrictMath.PI);
 	}
 
-	private static double convertDegreesToHours(final double degrees){
+	private static double degToHrs(final double degrees){
 		return degrees / 15.;
 	}
 

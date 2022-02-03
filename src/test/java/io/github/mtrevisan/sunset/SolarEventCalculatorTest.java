@@ -51,13 +51,13 @@ class SolarEventCalculatorTest{
 	@Test
 	void asd() throws SolarEventException{
 		GNSSLocation location = GNSSLocation.create(
-			SolarEventCalculator.toDegrees(-3, 4, 0.),
-			SolarEventCalculator.toDegrees(37, 21, 33.));
+			SolarEventCalculator.toDegrees(42, 0, 0.),
+			SolarEventCalculator.toDegrees(12, 30, 0.));
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 
-		LocalDateTime datetime = calc.sunset(LocalDate.of(2017, 12, 22), Zenith.ASTRONOMICAL);
+		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 2, 3), Zenith.ASTRONOMICAL);
 
-		assertTimeEquals("18:47:47", datetime);
+		assertTimeEquals("16:27:00", datetime);
 	}
 
 	@Test
@@ -95,7 +95,7 @@ class SolarEventCalculatorTest{
 		final int expectedSeconds = getSeconds(expectedTime);
 		final int actualSeconds = getSeconds(actualTime.toLocalTime().toString());
 		Assertions.assertEquals(expectedSeconds, actualSeconds, 1,
-			"Expected " + expectedTime + ", got " + actualTime.format(DateTimeFormatter.ofPattern("HH:MM")));
+			"Expected " + expectedTime + ", got " + actualTime.format(DateTimeFormatter.ofPattern("HH:MM:ss")));
 	}
 
 	private static int getSeconds(final String time){
