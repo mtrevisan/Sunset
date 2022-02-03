@@ -22,7 +22,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.sunset.coordinates;
+
+
+import io.github.mtrevisan.sunset.StringHelper;
 
 
 /**
@@ -58,6 +61,11 @@ public final class EquatorialCoordinate{
 
 
 	private EquatorialCoordinate(final double rightAscension, final double declination){
+		if(Double.isNaN(rightAscension) || Double.isInfinite(rightAscension))
+			throw new IllegalArgumentException("Not finite right ascension: " + rightAscension);
+		if(Double.isNaN(declination) || Double.isInfinite(declination))
+			throw new IllegalArgumentException("Not finite declination: " + declination);
+
 		this.rightAscension = rightAscension;
 		this.declination = declination;
 	}

@@ -24,6 +24,8 @@
  */
 package io.github.mtrevisan.sunset;
 
+import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

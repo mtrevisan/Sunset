@@ -24,6 +24,9 @@
  */
 package io.github.mtrevisan.sunset;
 
+import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -85,6 +88,7 @@ public class SolarEventCalculator{
 	}
 
 	//TODO
+	//https://github.com/MenoData/Time4J/blob/master/base/src/main/java/net/time4j/calendar/astro/SunPosition.java
 	/**
 	 * Computes the sunset time.
 	 *
