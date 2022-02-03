@@ -25,53 +25,58 @@
 package io.github.mtrevisan.sunset;
 
 
-public final class Location{
+/**
+ * @see <a href="https://en.wikipedia.org/wiki/Equatorial_coordinate_system">Equatorial Coordinate System</>
+ */
+public final class EquatorialCoordinate{
 
-	private final double latitude;
-	private final double longitude;
+	//[°]
+	private final double rightAscension;
+	//[°]
+	private final double declination;
 
 
 	/**
 	 * Creates a new instance with the given parameters.
 	 *
-	 * @param latitude	The latitude of this location [°]. North latitude is positive, south negative.
-	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
+	 * @param rightAscension	The right ascension [°].
+	 * @param declination	The declination [°].
 	 * @return	An instance.
 	 */
-	public static Location create(final double latitude, final double longitude){
-		return new Location(latitude, longitude);
+	public static EquatorialCoordinate create(final double rightAscension, final double declination){
+		return new EquatorialCoordinate(rightAscension, declination);
 	}
 
 
-	private Location(final double latitude, final double longitude){
-		this.latitude = latitude;
-		this.longitude = longitude;
+	private EquatorialCoordinate(final double rightAscension, final double declination){
+		this.rightAscension = rightAscension;
+		this.declination = declination;
 	}
 
 
 	/**
-	 * The latitude of the location.
+	 * The right ascension.
 	 *
-	 * @return	The latitude.
+	 * @return	The right ascension.
 	 */
-	public double getLatitude(){
-		return latitude;
+	public double getRightAscension(){
+		return rightAscension;
 	}
 
 	/**
-	 * The longitude of the location.
+	 * The declination.
 	 *
-	 * @return	The longitude.
+	 * @return	The declination.
 	 */
 	public double getLongitude(){
-		return longitude;
+		return declination;
 	}
 
 	@Override
 	public String toString(){
-		return "Location{"
-			+ "lat: " + StringHelper.degreeToDegMinSecString(latitude, 2)
-			+ ", lon: "  + StringHelper.degreeToDegMinSecString(longitude, 2)
+		return "EquatorialCoordinate{"
+			+ "α: " + StringHelper.degreeToHMSString(rightAscension, 2)
+			+ ", δ: " + StringHelper.degreeToDegMinSecString(declination, 2)
 			+ '}';
 	}
 

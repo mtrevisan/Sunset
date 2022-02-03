@@ -97,6 +97,39 @@ public class SolarEventCalculator{
 		cal.sunset();
 	}
 
+	/**
+	 * Calculate Julian Day at 0 UTC.
+	 *
+	 * @param year	The year.
+	 * @param month	The month (0 is January).
+	 * @param day	The day.
+	 * @return	The Julian Day [day].
+	 */
+	public static double julianDay(int year, int month, final int day){
+		if(month <= 2){
+			year --;
+			month += 12;
+		}
+
+		final double a = Math.floor(year / 100.);
+		final double b = 2. - a + Math.floor(a / 4.);
+		return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + b - 1524.5;
+	}
+
+	public final EquatorialCoordinate sunPosition(final double jd){
+		final double t = julianCentury(jd);
+		final double geometricMeanLongitude = geometricMeanLongitude(t);
+		final double meanAnomaly = meanAnomaly(t);
+		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
+		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
+		final double apparentLongitude = apparentLongitude(trueGeometricLongitude, t);
+		final double meanEclipticObliquity = meanEclipticObliquity(t);
+		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, apparentLongitude);
+		final double apparentRightAscension = apparentRightAscension(apparentEclipticObliquity, apparentLongitude);
+		final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentLongitude);
+		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
+	}
+
 	public void sunset(){
 /*
 // Calculate the time when the upper limb of the sun just crosses the
@@ -114,8 +147,8 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 }*/
 
 		final double jd = julianDay(1957, 10, 4) + (19. + 29. / 60.) / 24.;
-
 		final double t = julianCentury(jd);
+		final EquatorialCoordinate coord = sunPosition(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = meanAnomaly(t);
 		final double eccentricity = earthOrbitEccentricity(t);
@@ -127,36 +160,14 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 		final double apparentLongitude = apparentLongitude(trueGeometricLongitude, t);
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, apparentLongitude);
-		final double apparentRightAscension = apparentRightAscension(apparentEclipticObliquity, apparentLongitude);
-		final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentLongitude);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
 
-		System.out.println(degreeToHMSString(apparentRightAscension));
-		System.out.println(degreeToDegMinSecString(apparentDeclination));
+		System.out.println(coord);
 
 		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(t);
 		final double greenwichApparentSiderealTime = greenwichApparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
 		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime, location);
-		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, apparentRightAscension);
-	}
-
-	/**
-	 * Calculate Julian Day at 0 UTC.
-	 *
-	 * @param year	The year.
-	 * @param month	The month (0 is January).
-	 * @param day	The day.
-	 * @return	The Julian Day [day].
-	 */
-	private double julianDay(int year, int month, final int day){
-		if(month <= 2){
-			year --;
-			month += 12;
-		}
-
-		final double a = Math.floor(year / 100.);
-		final double b = 2. - a + Math.floor(a / 4.);
-		return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + b - 1524.5;
+		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
 	}
 
 	/**
@@ -704,27 +715,6 @@ sunset[date, lat, long, temp = 283 K, pressure=1010 millibars ] :=
 	private static double correctRangeDegree(double degree){
 		degree %= 360.;
 		return (degree < 0.? degree + 360.: degree);
-	}
-
-	private static String degreeToHMSString(double degree){
-		degree /= 15.;
-		final int hour = (int)degree;
-		degree -= hour;
-		degree *= 60.;
-		final int minute = (int)degree;
-		degree -= minute;
-		degree *= 60.;
-		final double second = degree;
-		return hour + "h " + minute + "m " + second + "s";
-	}
-
-	@SuppressWarnings("NumericCastThatLosesPrecision")
-	private static String degreeToDegMinSecString(final double degree){
-		final int hour = (int)degree;
-		final double deg = Math.abs((degree - hour) * 60.);
-		final int minute = (int)deg;
-		final double second = (deg - minute) * 60.;
-		return hour + "° " + minute + "' " + second + "\"";
 	}
 
 	private static double convertDegreesToRadians(final double degrees){

@@ -35,6 +35,17 @@ import java.time.LocalDateTime;
 class SolarEventCalculatorTest{
 
 	@Test
+	void sunPosition(){
+		Location location = Location.create(45.65, 12.19);
+		SolarEventCalculator calc = SolarEventCalculator.create(location);
+
+		final double jd = SolarEventCalculator.julianDay(1957, 10, 4) + (19. + 29. / 60.) / 24.;
+		EquatorialCoordinate coord = calc.sunPosition(jd);
+
+		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.57s, δ: -4° 28' 17.22\"}", coord.toString());
+	}
+
+	@Test
 	void astronomicalSunset(){
 		Location location = Location.create(45.65, 12.19);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
