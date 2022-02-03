@@ -43,6 +43,7 @@ https://en.wikipedia.org/wiki/Position_of_the_Sun
 others
 https://github.com/MenoData/Time4J/blob/master/base/src/main/java/net/time4j/calendar/astro/SolarTime.java
 https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone/commons/suncalc/SunTimes.java
+https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
 */
 public class SolarEventCalculator{
 
