@@ -99,6 +99,8 @@ public class SolarEventCalculator{
 	 *
 	 * @param jd	The Julian Day [day].
 	 * @return	The Sun position.
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
 	public static EquatorialCoordinate sunPosition(final double jd){
 		final double t = JulianDay.centuryJ2000Of(jd);
@@ -118,12 +120,11 @@ public class SolarEventCalculator{
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky)
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
-		/*
-		Finally by this step we have all the information we need to obtain the apparent position of the Sun on the celestial sphere at time T.
-		*/
+
+		//calculate the apparent position of the Sun on the celestial sphere at time T:
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-		final double apparentRightAscension = apparentRightAscension(apparentEclipticObliquity, apparentLongitude);
-		final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentLongitude);
+		final double apparentRightAscension = rightAscension(apparentEclipticObliquity, apparentLongitude);
+		final double apparentDeclination = declination(apparentEclipticObliquity, apparentLongitude);
 		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
 	}
 
@@ -262,39 +263,42 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * @return	Apparent longitude of the Sun [°].
 	 */
 	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double t){
-		final double correction = nutationAndAberrationCorrection(t);
+		final double correction = 0.00256 * StrictMath.cos(degToRad(omega(t)));
 		return meanEclipticObliquity + correction;
 	}
 
 	private static double nutationAndAberrationCorrection(final double t){
-		final double omega = 125.04 - 1934.136 * t;
-		return 0.00569 + 0.00478 * StrictMath.sin(degToRad(omega));
+		return 0.00569 + 0.00478 * StrictMath.sin(degToRad(omega(t)));
+	}
+
+	private static double omega(final double t){
+		return 125.04 - 1934.136 * t;
 	}
 
 	/**
-	 * Calculate the Sun's apparent right ascension, AR.
+	 * Calculate the Sun's right ascension, AR.
 	 *
-	 * @param apparentEclipticObliquity	Apparent obliquity of the ecliptic [°].
-	 * @param apparentLongitude	Apparent longitude of the Sun [°].
+	 * @param eclipticObliquity	Obliquity of the ecliptic [°].
+	 * @param longitude	Longitude of the Sun [°].
 	 * @return	Sun's right ascension [°].
 	 */
-	private static double apparentRightAscension(final double apparentEclipticObliquity, double apparentLongitude){
-		apparentLongitude = degToRad(apparentLongitude);
+	private static double rightAscension(final double eclipticObliquity, double longitude){
+		longitude = degToRad(longitude);
 		return correctRangeDegree(radToDeg(StrictMath.atan2(
-			StrictMath.cos(degToRad(apparentEclipticObliquity)) * StrictMath.sin(apparentLongitude),
-			StrictMath.cos(apparentLongitude))));
+			StrictMath.cos(degToRad(eclipticObliquity)) * StrictMath.sin(longitude),
+			StrictMath.cos(longitude))));
 	}
 
 	/**
-	 * Calculate the Sun's apparent declination, δ.
+	 * Calculate the Sun's declination, δ.
 	 *
-	 * @param apparentEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [°].
-	 * @param apparentLongitude	Apparent longitude of the Sun [°].
+	 * @param eclipticObliquity	Obliquity of the ecliptic [°].
+	 * @param longitude	Longitude of the Sun [°].
 	 * @return	Sun's declination [°].
 	 */
-	private static double apparentDeclination(final double apparentEclipticObliquity, final double apparentLongitude){
+	private static double declination(final double eclipticObliquity, final double longitude){
 		return radToDeg(StrictMath.asin(
-			StrictMath.sin(degToRad(apparentEclipticObliquity)) * StrictMath.sin(degToRad(apparentLongitude))
+			StrictMath.sin(degToRad(eclipticObliquity)) * StrictMath.sin(degToRad(longitude))
 		));
 	}
 
@@ -587,7 +591,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 
 final double meanEclipticObliquity = meanEclipticObliquity(t);
 final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentGeometricLongitude);
+final double apparentDeclination = declination(apparentEclipticObliquity, apparentGeometricLongitude);
 		final double localHourAngle = localHourAngle(trueGeometricLongitude, solarZenith, sunrise, apparentDeclination);
 		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, localHourAngle);
 		return getLocalTime(localMeanTime - equationOfTime);
