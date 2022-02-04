@@ -105,20 +105,20 @@ public class SolarEventCalculator{
 	public static EquatorialCoordinate sunPosition(final double jd){
 		final double t = JulianDay.centuryJ2000Of(jd);
 
-		//calculate the geometric mean longitude L0 of the Sun referred to the mean equinox of the time T
+		//calculate the geometric mean longitude L0 of the Sun referred to the mean equinox of the time T: L0
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
-		//calculate the mean anomaly M of the Sun at time T
+		//calculate the mean anomaly of the Sun at time T: M
 		final double meanAnomaly = geometricMeanAnomaly(t);
-		//calculate the Sun’s equation of the center C at time T
+		//calculate the Sun’s equation of the center at time T: C
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		//calculate the Sun’s true longitude: Ltrue = L0 + C
 		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
 		//calculate the Sun’s true anomaly: ν = M + C
 		final double trueAnomaly = correctRangeDegree(meanAnomaly + equationOfCenter);
-		//correct for nutation and aberration in order to get the Sun’s apparent longitude referred to the true equinox of time T
+		//correct for nutation and aberration in order to get the Sun’s apparent longitude referred to the true equinox of time T: Lapp
 		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
-		//and planets appear to move across the sky)
+		//and planets appear to move across the sky): ɛ0
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
 
 		//calculate the apparent position of the Sun on the celestial sphere at time T:
