@@ -396,7 +396,7 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		//calculate the apparent Sun longitude: Ltrue = L0 + C
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
 			aberration);
-		if(Math.abs(apparentGeometricLongitude - 204.0085519281) > 0.0000000001)
+		if(Math.abs(apparentGeometricLongitude - 204.0085519281) > 0.0000000002)
 			throw new IllegalArgumentException("apparentGeometricLongitude: " + (apparentGeometricLongitude - 204.0085519281));
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
@@ -553,7 +553,7 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		//[°]
 		deltaPsi = toDegrees(0, 0, deltaPsi / 10_000.) / 63.;
 		//[°]
-		deltaEpsilon = toDegrees(0, 0, deltaEpsilon / 100_000.) / 63.;
+		deltaEpsilon = toDegrees(0, 0, deltaEpsilon / 10_000.) / 63.;
 		return new double[]{deltaPsi, deltaEpsilon};
 	}
 
