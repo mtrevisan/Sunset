@@ -51,12 +51,12 @@ https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
 */
 public class SolarEventCalculator{
 
-	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_LONGITUDE_DATA;
+	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_DATA;
 	private static Map<String, Collection<Double[]>> EARTH_RADIUS_VECTOR_DATA;
 	private static Map<String, Collection<Double[]>> NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA;
 	static{
 		try{
-			EARTH_HELIOCENTRIC_LONGITUDE_DATA = ResourceReader.read("earthHeliocentricLongitude.dat");
+			EARTH_HELIOCENTRIC_DATA = ResourceReader.read("earthHeliocentric.dat");
 			EARTH_RADIUS_VECTOR_DATA = ResourceReader.read("earthRadiusVector.dat");
 			NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA = ResourceReader.read("nutationInLongitudeAndObliquity.dat");
 		}
@@ -134,6 +134,8 @@ public class SolarEventCalculator{
 		//correct for nutation and aberration in order to get the Sun’s apparent longitude referred to the true equinox of time T: Lapp
 		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
 		final double aberration = correctionAberration(radiusVector(t));
+		final double apparentGeometricLatitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
+			aberration);
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
 			aberration);
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
@@ -143,7 +145,7 @@ public class SolarEventCalculator{
 		//calculate the apparent position of the Sun on the celestial sphere at time T:
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double apparentRightAscension = rightAscension(apparentEclipticObliquity, apparentGeometricLongitude);
-		final double apparentDeclination = declination(apparentEclipticObliquity, apparentGeometricLongitude);
+		final double apparentDeclination = declination(apparentGeometricLatitude, apparentGeometricLongitude, apparentEclipticObliquity);
 		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
 	}
 
@@ -218,27 +220,47 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	}
 
 	/**
-	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L0.
+	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L.
 	 *
 	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	The geometric mean longitude of the Sun [°].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
-	private static double geometricMeanLongitude(double t){
+	private static double geometricMeanLongitude(final double t){
 		final double jme = t / 10.;
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_LONGITUDE_DATA.get("L" + i);
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
 			for(final Double[] element : elements)
 				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 			parameters[i] = parameter;
 		}
 		final double longitude = eval(jme, parameters) / 100_000_000.;
 		return correctRangeDegree(radToDeg(longitude) + 180.);
+	}
 
-//		return correctRangeDegree(eval(t, new double[]{toDegrees(280, 27, 59.26), 36000.76983, 0.0003032}));
+	/**
+	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 *
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
+	 * @return	The geometric mean latitude of the Sun [°].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 */
+	private static double geometricMeanLatitude(final double t){
+		final double jme = t / 10.;
+		final double[] parameters = new double[2];
+		for(int i = 0; i < parameters.length; i ++){
+			double parameter = 0.;
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
+			for(final Double[] element : elements)
+				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+			parameters[i] = parameter;
+		}
+		final double latitude = eval(jme, parameters) / 100_000_000.;
+		return correctRangeDegree(-radToDeg(latitude));
 	}
 
 	/**
@@ -319,20 +341,24 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	private static double rightAscension(final double eclipticObliquity, double longitude){
 		longitude = degToRad(longitude);
 		return correctRangeDegree(radToDeg(StrictMath.atan2(
-			StrictMath.cos(degToRad(eclipticObliquity)) * StrictMath.sin(longitude),
+			StrictMath.sin(longitude) * StrictMath.cos(degToRad(eclipticObliquity)),
 			StrictMath.cos(longitude))));
 	}
 
 	/**
 	 * Calculate the Sun's declination, δ.
 	 *
-	 * @param eclipticObliquity	Obliquity of the ecliptic [°].
-	 * @param longitude	Longitude of the Sun [°].
+	 * @param geometricMeanLatitude   Geometric mean latitude of the Sun [°].
+	 * @param geometricMeanLongitude   Longitude of the Sun [°].
+	 * @param trueEclipticObliquity   True obliquity of the ecliptic [°].
 	 * @return	Sun's declination [°].
 	 */
-	private static double declination(final double eclipticObliquity, final double longitude){
+	private static double declination(double geometricMeanLatitude, final double geometricMeanLongitude, double trueEclipticObliquity){
+		geometricMeanLatitude = degToRad(geometricMeanLatitude);
+		trueEclipticObliquity = degToRad(trueEclipticObliquity);
 		return radToDeg(StrictMath.asin(
-			StrictMath.sin(degToRad(eclipticObliquity)) * StrictMath.sin(degToRad(longitude))
+			StrictMath.sin(geometricMeanLatitude) * StrictMath.cos(trueEclipticObliquity)
+			+ StrictMath.cos(geometricMeanLatitude) * StrictMath.sin(trueEclipticObliquity) * StrictMath.sin(degToRad(geometricMeanLongitude))
 		));
 	}
 
@@ -343,9 +369,20 @@ final double jd = JulianDay.of(2003, 10, 17)
 	+ 67. / 86400.;
 final double t = JulianDay.centuryJ2000Of(jd);
 
-apparentGeometricLongitude(geometricMeanLongitude(t), correctionNutationInLongitudeAndObliquity(t)[0], correctionAberration(radiusVector(t)));
-double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity(t), correctionNutationInLongitudeAndObliquity(t)[1]);
-apparentSiderealTime(meanSiderealTime(t), trueEclipticObliquity, correctionNutationInLongitudeAndObliquity(t)[0]);
+		final double geometricMeanLongitude = geometricMeanLongitude(t);
+		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
+		final double radiusVector = radiusVector(t);
+		final double aberration = correctionAberration(radiusVector);
+		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
+			aberration);
+		final double meanEclipticObliquity = meanEclipticObliquity(t);
+		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
+		final double meanSiderealTime = meanSiderealTime(t);
+		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutationInLongitudeAndObliquity[0]);
+		final double rightAscension = rightAscension(trueEclipticObliquity, apparentGeometricLongitude);
+		final double geometricMeanLatitude = geometricMeanLatitude(t);
+		final double declination = declination(geometricMeanLatitude, geometricMeanLongitude, trueEclipticObliquity);
+
 		EquatorialCoordinate coord = sunPosition(jd);
 
 		System.out.println(coord);
@@ -548,6 +585,8 @@ apparentSiderealTime(meanSiderealTime(t), trueEclipticObliquity, correctionNutat
 		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
 		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
 		final double aberration = correctionAberration(radiusVector(t));
+		final double apparentGeometricLatitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
+			aberration);
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
 			aberration);
 
@@ -558,7 +597,7 @@ apparentSiderealTime(meanSiderealTime(t), trueEclipticObliquity, correctionNutat
 
 final double meanEclipticObliquity = meanEclipticObliquity(t);
 final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-final double apparentDeclination = declination(apparentEclipticObliquity, apparentGeometricLongitude);
+final double apparentDeclination = declination(apparentGeometricLatitude, apparentGeometricLongitude, apparentEclipticObliquity);
 		final double localHourAngle = localHourAngle(trueGeometricLongitude, solarZenith, sunrise, apparentDeclination);
 		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, localHourAngle);
 		return getLocalTime(localMeanTime - equationOfTime);
