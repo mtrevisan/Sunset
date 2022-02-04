@@ -52,10 +52,12 @@ https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
 public class SolarEventCalculator{
 
 	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_LONGITUDE_DATA;
+	private static Map<String, Collection<Double[]>> EARTH_RADIUS_VECTOR_DATA;
 	private static Map<String, Collection<Double[]>> NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA;
 	static{
 		try{
 			EARTH_HELIOCENTRIC_LONGITUDE_DATA = ResourceReader.read("earthHeliocentricLongitude.dat");
+			EARTH_RADIUS_VECTOR_DATA = ResourceReader.read("earthRadiusVector.dat");
 			NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA = ResourceReader.read("nutationInLongitudeAndObliquity.dat");
 		}
 		catch(final IOException ignored){}
@@ -130,15 +132,18 @@ public class SolarEventCalculator{
 		//calculate the Sun’s true anomaly: ν = M + C
 		final double trueAnomaly = correctRangeDegree(meanAnomaly + equationOfCenter);
 		//correct for nutation and aberration in order to get the Sun’s apparent longitude referred to the true equinox of time T: Lapp
-		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
+		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
+		final double aberration = correctionAberration(radiusVector(t));
+		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
+			aberration);
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
 
 		//calculate the apparent position of the Sun on the celestial sphere at time T:
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-		final double apparentRightAscension = rightAscension(apparentEclipticObliquity, apparentLongitude);
-		final double apparentDeclination = declination(apparentEclipticObliquity, apparentLongitude);
+		final double apparentRightAscension = rightAscension(apparentEclipticObliquity, apparentGeometricLongitude);
+		final double apparentDeclination = declination(apparentEclipticObliquity, apparentGeometricLongitude);
 		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
 	}
 
@@ -185,9 +190,12 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
 		//ν = M + C
 		final double trueAnomaly = correctRangeDegree(meanAnomaly + equationOfCenter);
-		final double radiusVector = radiusVector(meanAnomaly);
+		final double radiusVector = radiusVector(t);
 		final double radiusVector2 = radiusVector(eccentricity, trueAnomaly);
-		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
+		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
+		final double aberration = correctionAberration(radiusVector(t));
+		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
+			aberration);
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
@@ -218,19 +226,19 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
 	private static double geometricMeanLongitude(double t){
-//		final double jme = t / 10.;
-//		final double[] parameters = new double[6];
-//		for(int i = 0; i < 6; i ++){
-//			double parameter = 0.;
-//			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_LONGITUDE_DATA.get("L" + i);
-//			for(final Double[] element : elements)
-//				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-//			parameters[i] = parameter;
-//		}
-//		final double longitude = eval(jme, parameters) / 100_000_000.;
-//		return correctRangeDegree(radToDeg(longitude) + 180.);
+		final double jme = t / 10.;
+		final double[] parameters = new double[6];
+		for(int i = 0; i < parameters.length; i ++){
+			double parameter = 0.;
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_LONGITUDE_DATA.get("L" + i);
+			for(final Double[] element : elements)
+				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+			parameters[i] = parameter;
+		}
+		final double longitude = eval(jme, parameters) / 100_000_000.;
+		return correctRangeDegree(radToDeg(longitude) + 180.);
 
-		return correctRangeDegree(eval(t, new double[]{toDegrees(280, 27, 59.26), 36000.76983, 0.0003032}));
+//		return correctRangeDegree(eval(t, new double[]{toDegrees(280, 27, 59.26), 36000.76983, 0.0003032}));
 	}
 
 	/**
@@ -270,15 +278,16 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	}
 
 	/**
-	 * Calculate the apparent longitude of the Sun, Lapp = Ω.
+	 * Calculate the apparent longitude of the Sun, Lapp = λ.
 	 *
-	 * @param trueGeometricLongitude	Sun's true geometric longitude [°].
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param geometricMeanLongitude	Sun's true geometric longitude [°].
+	 * @param deltaPsi	Nutation in longitude [°].
+	 * @param deltaAberration	Aberration [°].
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private static double apparentGeometricLongitude(final double trueGeometricLongitude, final double t){
-		final double correction = nutationAndAberrationCorrection(t);
-		return trueGeometricLongitude - correction;
+	private static double apparentGeometricLongitude(final double geometricMeanLongitude, final double deltaPsi,
+			final double deltaAberration){
+		return geometricMeanLongitude + deltaPsi + deltaAberration;
 	}
 
 	/**
@@ -335,9 +344,7 @@ final double jd = JulianDay.of(2003, 10, 17)
 	+ 67. / 86400.;
 final double t = JulianDay.centuryJ2000Of(jd);
 
-double[] corr = nutationInLongitudeAndObliquity(t);
-double e0 = meanEclipticObliquity(t);
-double e = trueEclipticObliquity(e0, corr[1]);
+apparentGeometricLongitude(geometricMeanLongitude(t), correctionNutationInLongitudeAndObliquity(t)[0], correctionAberration(radiusVector(t)));
 		EquatorialCoordinate coord = sunPosition(jd);
 
 		System.out.println(coord);
@@ -357,14 +364,20 @@ double e = trueEclipticObliquity(e0, corr[1]);
 	 * Calculate the distance between the center of the Sun and the center of the Earth, R.
 	 * <p>U.S. Naval Observatory function.</p>
 	 *
-	 * @param meanAnomaly	The mean anomaly of the Sun [°].
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
-	private static double radiusVector(double meanAnomaly){
-		meanAnomaly = degToRad(meanAnomaly);
-		return 1.00014
-			- 0.01671 * StrictMath.cos(meanAnomaly)
-			- 0.00014 * StrictMath.cos(meanAnomaly * 2.);
+	private static double radiusVector(final double t){
+		final double jme = t / 10.;
+		final double[] parameters = new double[5];
+		for(int i = 0; i < parameters.length; i ++){
+			double parameter = 0.;
+			final Collection<Double[]> elements = EARTH_RADIUS_VECTOR_DATA.get("R" + i);
+			for(final Double[] element : elements)
+				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+			parameters[i] = parameter;
+		}
+		return eval(jme, parameters) / 100_000_000.;
 	}
 
 	/**
@@ -390,12 +403,12 @@ double e = trueEclipticObliquity(e0, corr[1]);
 	}
 
 	/**
-	 * Calculate Nutation in longitude (delta psi) and obliquity (delta epsilon).
+	 * Calculate corrections of nutation in longitude (∆ψ) and obliquity (∆ε).
 	 *
 	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	An array where the first element is ∆ψ [°], and the second ∆ε [°].
 	 */
-	private static double[] nutationInLongitudeAndObliquity(final double t){
+	private static double[] correctionNutationInLongitudeAndObliquity(final double t){
 		//mean elongation of the Moon from the Sun [°]
 		final double d = degToRad(correctRangeDegree(eval(t, new double[]{297.85036, 445267.111480, -0.0019142, 1. / 189474.})));
 		//mean anomaly of the Sun [°]
@@ -425,6 +438,16 @@ double e = trueEclipticObliquity(e0, corr[1]);
 		//[°]
 		deltaEpsilon = toDegrees(0, 0, deltaEpsilon / 10_000.) / 63.;
 		return new double[]{deltaPsi, deltaEpsilon};
+	}
+
+	/**
+	 * Calculate corrections of aberration (∆τ).
+	 *
+	 * @param earthRadiusVector	Earth radius vector [AU].
+	 * @return	∆τ [°].
+	 */
+	private static double correctionAberration(final double earthRadiusVector){
+		return -20.4898 / (3600. * earthRadiusVector);
 	}
 
 	/**
@@ -488,7 +511,7 @@ double e = trueEclipticObliquity(e0, corr[1]);
 	 */
 	private static double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
 			final double t){
-		final double[] deltaPsiEpsilon = nutationInLongitudeAndObliquity(t);
+		final double[] deltaPsiEpsilon = correctionNutationInLongitudeAndObliquity(t);
 		final double correction = deltaPsiEpsilon[0] * StrictMath.cos(degToRad(apparentEclipticObliquity));
 		return correctRangeDegree(greenwichMeanSiderealTime + correction);
 	}
@@ -527,9 +550,13 @@ double e = trueEclipticObliquity(e0, corr[1]);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		//Ltrue = L0 + C
 		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
-		final double apparentGeometricLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
+		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
+		final double aberration = correctionAberration(radiusVector(t));
+		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
+			aberration);
 
-//		delta = m_longitude + radToDeg(hourAngle);
+
+		//		delta = m_longitude + radToDeg(hourAngle);
 //		timeDiff = 4 * delta;
 //		timeUTC = 720 - timeDiff - eqTime; // in minutes
 
