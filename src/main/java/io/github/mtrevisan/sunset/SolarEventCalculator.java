@@ -144,7 +144,7 @@ public class SolarEventCalculator{
 
 		//calculate the apparent position of the Sun on the celestial sphere at time T:
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-		final double apparentRightAscension = rightAscension(apparentEclipticObliquity, apparentGeometricLongitude);
+		final double apparentRightAscension = rightAscension(apparentGeometricLatitude, apparentEclipticObliquity, apparentGeometricLongitude);
 		final double apparentDeclination = declination(apparentGeometricLatitude, apparentGeometricLongitude, apparentEclipticObliquity);
 		return EquatorialCoordinate.create(apparentRightAscension, apparentDeclination);
 	}
@@ -334,14 +334,17 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	/**
 	 * Calculate the Sun's right ascension, AR.
 	 *
+	 * @param geometricMeanLatitude   Geometric mean latitude of the Sun [°].
 	 * @param eclipticObliquity	Obliquity of the ecliptic [°].
 	 * @param longitude	Longitude of the Sun [°].
 	 * @return	Sun's right ascension [°].
 	 */
-	private static double rightAscension(final double eclipticObliquity, double longitude){
+	private static double rightAscension(final double geometricMeanLatitude, double eclipticObliquity, double longitude){
 		longitude = degToRad(longitude);
+		eclipticObliquity = degToRad(eclipticObliquity);
 		return correctRangeDegree(radToDeg(StrictMath.atan2(
-			StrictMath.sin(longitude) * StrictMath.cos(degToRad(eclipticObliquity)),
+			StrictMath.sin(longitude) * StrictMath.cos(eclipticObliquity)
+				- StrictMath.tan(degToRad(geometricMeanLatitude)) * StrictMath.sin(eclipticObliquity),
 			StrictMath.cos(longitude))));
 	}
 
@@ -379,8 +382,8 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
 		final double meanSiderealTime = meanSiderealTime(t);
 		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutationInLongitudeAndObliquity[0]);
-		final double rightAscension = rightAscension(trueEclipticObliquity, apparentGeometricLongitude);
 		final double geometricMeanLatitude = geometricMeanLatitude(t);
+		final double rightAscension = rightAscension(geometricMeanLatitude, trueEclipticObliquity, apparentGeometricLongitude);
 		final double declination = declination(geometricMeanLatitude, geometricMeanLongitude, trueEclipticObliquity);
 
 		EquatorialCoordinate coord = sunPosition(jd);
