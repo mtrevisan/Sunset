@@ -26,6 +26,7 @@ package io.github.mtrevisan.sunset;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 
 /**
@@ -51,7 +52,11 @@ public final class JulianDay{
 	}
 
 	public static double timeOf(final LocalDateTime date){
-		return date.toLocalTime().toSecondOfDay() / (24. * 60. * 60.);
+		return timeOf(date.toLocalTime());
+	}
+
+	public static double timeOf(final LocalTime time){
+		return time.toSecondOfDay() / (24. * 60. * 60.);
 	}
 
 	/**
