@@ -373,18 +373,36 @@ final double jd = JulianDay.of(2003, 10, 17)
 final double t = JulianDay.centuryJ2000Of(jd);
 
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
+		if(Math.abs(geometricMeanLongitude - 204.0182616917) > 0.0000000001)
+			throw new IllegalArgumentException("geometricMeanLongitude: " + (geometricMeanLongitude - 204.0182616917));
 		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
+		if(Math.abs(nutationInLongitudeAndObliquity[0] - -0.00399840) > 0.00000001)
+			throw new IllegalArgumentException("nutationInLongitude: " + (nutationInLongitudeAndObliquity[0] - -0.00399840));
+		if(Math.abs(nutationInLongitudeAndObliquity[0] - 0.00166657) > 0.00000001)
+			throw new IllegalArgumentException("nutationInObliquity: " + (nutationInLongitudeAndObliquity[0] - 0.00166657));
 		final double radiusVector = radiusVector(t);
+		if(Math.abs(radiusVector - 0.9965422974) > 0.0000000001)
+			throw new IllegalArgumentException("radiusVector: " + (radiusVector - 0.9965422974));
 		final double aberration = correctionAberration(radiusVector);
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
 			aberration);
+		if(Math.abs(apparentGeometricLongitude - 204.0085519281) > 0.0000000001)
+			throw new IllegalArgumentException("apparentGeometricLongitude: " + (apparentGeometricLongitude - 204.0085519281));
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
+		if(Math.abs(trueEclipticObliquity - 23.440465) > 0.000001)
+			throw new IllegalArgumentException("trueEclipticObliquity: " + (trueEclipticObliquity - 23.440465));
 		final double meanSiderealTime = meanSiderealTime(t);
 		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutationInLongitudeAndObliquity[0]);
 		final double geometricMeanLatitude = geometricMeanLatitude(t);
+		if(Math.abs(geometricMeanLatitude - 0.0001011219) > 0.0000000001)
+			throw new IllegalArgumentException("geometricMeanLatitude: " + (geometricMeanLatitude - 0.0001011219));
 		final double rightAscension = rightAscension(geometricMeanLatitude, trueEclipticObliquity, apparentGeometricLongitude);
+		if(Math.abs(rightAscension - 202.22741) > 0.00001)
+			throw new IllegalArgumentException("rightAscension: " + (rightAscension - 202.22741));
 		final double declination = declination(geometricMeanLatitude, geometricMeanLongitude, trueEclipticObliquity);
+		if(Math.abs(declination - -9.31434) > 0.00001)
+			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
 
 		EquatorialCoordinate coord = sunPosition(jd);
 
