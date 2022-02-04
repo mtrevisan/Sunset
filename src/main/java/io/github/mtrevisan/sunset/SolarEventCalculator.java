@@ -200,8 +200,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
 
-		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(t);
-		final double greenwichApparentSiderealTime = greenwichApparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
+		final double greenwichMeanSiderealTime = meanSiderealTime(t);
+		final double greenwichApparentSiderealTime = apparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
 		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime);
 		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
 
@@ -298,8 +298,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * @return	Apparent longitude of the Sun [°].
 	 */
 	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double t){
-		final double correction = 0.00256 * StrictMath.cos(degToRad(omega(t)));
-		return meanEclipticObliquity + correction;
+		return meanEclipticObliquity + 0.00256 * StrictMath.cos(degToRad(omega(t)));
 	}
 
 	private static double nutationAndAberrationCorrection(final double t){
@@ -345,6 +344,8 @@ final double jd = JulianDay.of(2003, 10, 17)
 final double t = JulianDay.centuryJ2000Of(jd);
 
 apparentGeometricLongitude(geometricMeanLongitude(t), correctionNutationInLongitudeAndObliquity(t)[0], correctionAberration(radiusVector(t)));
+double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity(t), correctionNutationInLongitudeAndObliquity(t)[1]);
+apparentSiderealTime(meanSiderealTime(t), trueEclipticObliquity, correctionNutationInLongitudeAndObliquity(t)[0]);
 		EquatorialCoordinate coord = sunPosition(jd);
 
 		System.out.println(coord);
@@ -495,25 +496,20 @@ apparentGeometricLongitude(geometricMeanLongitude(t), correctionNutationInLongit
 	 * @param t	Julian Century in J2000.0 epoch.
 	 * @return	mean Sidereal time at Greenwich [°].
 	 */
-	private static double greenwichMeanSiderealTime(final double t){
-		//FIXME
-//		return 18.697374558 + 24.06570982441908 * t;
-		return correctRangeDegree(eval(t, new double[]{280.46061837, 360.98564736629 * 36525., 0.000387933, -1. / 38710000.}));
+	private static double meanSiderealTime(final double t){
+		return correctRangeDegree(eval(t, new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
 	}
 
 	/**
 	 * Calculate apparent Sidereal time at Greenwich, θ0.
 	 *
-	 * @param greenwichMeanSiderealTime	Apparent Sidereal time at Greenwich [°].
-	 * @param apparentEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [°].
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param meanSiderealTime	Mean Sidereal time at Greenwich [°].
+	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [°].
+	 * @param deltaPsi	Nutation in longitude [°].
 	 * @return	apparent Sidereal time at Greenwich [°].
 	 */
-	private static double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
-			final double t){
-		final double[] deltaPsiEpsilon = correctionNutationInLongitudeAndObliquity(t);
-		final double correction = deltaPsiEpsilon[0] * StrictMath.cos(degToRad(apparentEclipticObliquity));
-		return correctRangeDegree(greenwichMeanSiderealTime + correction);
+	private static double apparentSiderealTime(final double meanSiderealTime, final double trueEclipticObliquity, final double deltaPsi){
+		return correctRangeDegree(meanSiderealTime + deltaPsi * StrictMath.cos(degToRad(trueEclipticObliquity)));
 	}
 
 	/**

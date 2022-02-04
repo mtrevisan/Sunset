@@ -53,7 +53,7 @@ public final class JulianDay{
 	/** 1.5 Jan 2000 UT - Julian epoch. */
 	private static final double J2000 = 2451545.;
 
-	private static final double CIVIL_SAECULUM = 36525.;
+	public static final double CIVIL_SAECULUM = 36525.;
 
 
 	/**
