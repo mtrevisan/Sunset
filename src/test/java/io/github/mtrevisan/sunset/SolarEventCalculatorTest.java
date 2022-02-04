@@ -45,7 +45,7 @@ class SolarEventCalculatorTest{
 		final double jd = JulianDay.of(1957, 10, 4) + (19. + 29. / 60.) / 24.;
 		EquatorialCoordinate coord = SolarEventCalculator.sunPosition(jd);
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.48s, δ: -4° 28' 20.47\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.56s, δ: -4° 28' 17.62\"}", coord.toString());
 	}
 
 	@Test
