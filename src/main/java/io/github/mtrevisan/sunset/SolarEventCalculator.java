@@ -103,19 +103,24 @@ public class SolarEventCalculator{
 	public static EquatorialCoordinate sunPosition(final double jd){
 		final double t = JulianDay.centuryJ2000Of(jd);
 
+		//calculate the geometric mean longitude L0 of the Sun referred to the mean equinox of the time T
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
+		//calculate the mean anomaly M of the Sun at time T
 		final double meanAnomaly = geometricMeanAnomaly(t);
+		//calculate the Sun’s equation of the center C at time T
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
-		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
+		//calculate the Sun’s true longitude: Ltrue = L0 + C
+		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
+		//calculate the Sun’s true anomaly: ν = M + C
+		final double trueAnomaly = correctRangeDegree(meanAnomaly + equationOfCenter);
+		//correct for nutation and aberration in order to get the Sun’s apparent longitude referred to the true equinox of time T
+		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
+		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
+		//and planets appear to move across the sky)
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
 		/*
-		Calculate the Sun’s true longitude and true anomaly.
-		Calculate the Sun’s radius vector R (the heliocentric distance from the Sun to the Earth center-to-center).
-		Correct for nutation and aberration in order to get the Sun’s apparent longitude referred to the true equinox of time T.
-		Calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun and planets appear to move across the sky).
 		Finally by this step we have all the information we need to obtain the apparent position of the Sun on the celestial sphere at time T.
 		*/
-		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double apparentRightAscension = apparentRightAscension(apparentEclipticObliquity, apparentLongitude);
 		final double apparentDeclination = apparentDeclination(apparentEclipticObliquity, apparentLongitude);
@@ -161,8 +166,10 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double eccentricity = earthOrbitEccentricity(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
-		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
-		final double trueAnomaly = trueAnomaly(meanAnomaly, equationOfCenter);
+		//Ltrue = L0 + C
+		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
+		//ν = M + C
+		final double trueAnomaly = correctRangeDegree(meanAnomaly + equationOfCenter);
 		final double radiusVector = radiusVector(meanAnomaly);
 		final double radiusVector2 = radiusVector(eccentricity, trueAnomaly);
 		final double apparentLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
@@ -259,6 +266,11 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		return meanEclipticObliquity + correction;
 	}
 
+	private static double nutationAndAberrationCorrection(final double t){
+		final double omega = 125.04 - 1934.136 * t;
+		return 0.00569 + 0.00478 * StrictMath.sin(degToRad(omega));
+	}
+
 	/**
 	 * Calculate the Sun's apparent right ascension, AR.
 	 *
@@ -302,28 +314,6 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 */
 	private static double earthOrbitEccentricity(final double t){
 		return eval(t, new double[]{0.016708634, -0.000042037, -0.0000001267});
-	}
-
-	/**
-	 * Calculate the Sun's true geometric longitude, Ltrue = L0 + C.
-	 *
-	 * @param geometricMeanLongitude	The geometric mean longitude of the Sun, referred to the mean equinox of the date [°].
-	 * @param equationOfCenter	The Sun's equation of center [°].
-	 * @return	Sun's true geometric longitude [°].
-	 */
-	private static double trueGeometricLongitude(final double geometricMeanLongitude, final double equationOfCenter){
-		return correctRangeDegree(geometricMeanLongitude + equationOfCenter);
-	}
-
-	/**
-	 * Calculate the Sun's true anomaly longitude, ν = M + C.
-	 *
-	 * @param meanAnomaly	The mean anomaly of the Sun [°].
-	 * @param equationOfCenter	The Sun's equation of center [°].
-	 * @return	Sun's true geometric longitude [°].
-	 */
-	private static double trueAnomaly(final double meanAnomaly, final double equationOfCenter){
-		return correctRangeDegree(meanAnomaly + equationOfCenter);
 	}
 
 	/**
@@ -510,10 +500,6 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		return StrictMath.asin(radius / (radius + distance));
 	}
 
-	private static double nutationAndAberrationCorrection(final double t){
-		return 0.00569 + 0.00478 * StrictMath.sin(degToRad(125.04 - 1934.136 * t));
-	}
-
 	@SuppressWarnings("OverlyComplexArithmeticExpression")
 	private static double equationOfTime(final double t){
 		final double e0 = meanEclipticObliquity(t);
@@ -591,7 +577,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
-		final double trueGeometricLongitude = trueGeometricLongitude(geometricMeanLongitude, equationOfCenter);
+		//Ltrue = L0 + C
+		final double trueGeometricLongitude = correctRangeDegree(geometricMeanLongitude + equationOfCenter);
 		final double apparentGeometricLongitude = apparentGeometricLongitude(trueGeometricLongitude, t);
 
 //		delta = m_longitude + radToDeg(hourAngle);
