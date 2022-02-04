@@ -63,6 +63,10 @@ public class SolarEventCalculator{
 		catch(final IOException ignored){}
 	}
 
+	private static final double EARTH_FLATTENING = 1. / 298.25642;
+	//[m]
+	private static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
+
 
 	// Calculates the approximate set time of a body which has the specified right ascension and declination.
 	// The resultant value will be close to the specified date.
@@ -202,9 +206,9 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
 		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
 
-		final double greenwichMeanSiderealTime = meanSiderealTime(t);
-		final double greenwichApparentSiderealTime = apparentSiderealTime(greenwichMeanSiderealTime, apparentEclipticObliquity, t);
-		final double apparentLocalSiderealTime = apparentLocalSiderealTime(greenwichApparentSiderealTime);
+		final double meanSiderealTime = meanSiderealTime(t);
+		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, apparentEclipticObliquity, t);
+		final double apparentLocalSiderealTime = localMeanSiderealTime(apparentSiderealTime, location);
 		final double localHourAngle = localHourAngle(apparentLocalSiderealTime, coord.getRightAscension());
 
 		LocalDateTime sunsetLocalDateTime = LocalDateTime.of(date, LocalTime.MIDNIGHT);
@@ -266,7 +270,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	/**
 	 * Calculate the geometric mean anomaly of the Sun, M.
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	The geometric mean anomaly of the Sun [°].
 	 */
 	private static double geometricMeanAnomaly(final double t){
@@ -277,7 +281,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * Calculate the Sun's equation of center, C.
 	 *
 	 * @param geometricMeanAnomaly	The mean anomaly of the Sun [°].
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	The Sun's equation of center [°].
 	 */
 	private static double equationOfCenter(double geometricMeanAnomaly, final double t){
@@ -316,7 +320,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, ɛ'.
 	 *
 	 * @param meanEclipticObliquity	Mean obliquity of the ecliptic [°].
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	Apparent longitude of the Sun [°].
 	 */
 	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double t){
@@ -367,6 +371,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 
 	public static void main(String[] args){
 //		final double jd = JulianDay.of(1997, 8, 7) + JulianDay.timeOf(LocalTime.of(11, 0));
+final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
+final double observerElevation = 1830.14;
 final double jd = JulianDay.of(2003, 10, 17)
 	+ JulianDay.timeOf(LocalTime.of(19, 30, 30))
 	+ 67. / 86400.;
@@ -376,6 +382,7 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		if(Math.abs(geometricMeanLongitude - 204.0182616917) > 0.0000000001)
 			throw new IllegalArgumentException("geometricMeanLongitude: " + (geometricMeanLongitude - 204.0182616917));
+		//calculate the nutation in longitude and obliquity
 		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
 		if(Math.abs(nutationInLongitudeAndObliquity[0] - -0.00399840) > 0.00000001)
 			throw new IllegalArgumentException("nutationInLongitude: " + (nutationInLongitudeAndObliquity[0] - -0.00399840));
@@ -384,8 +391,9 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		final double radiusVector = radiusVector(t);
 		if(Math.abs(radiusVector - 0.9965422974) > 0.0000000001)
 			throw new IllegalArgumentException("radiusVector: " + (radiusVector - 0.9965422974));
+		//calculate the aberration correction
 		final double aberration = correctionAberration(radiusVector);
-		//calculate the Sun’s true longitude: Ltrue = L0 + C
+		//calculate the apparent Sun longitude: Ltrue = L0 + C
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
 			aberration);
 		if(Math.abs(apparentGeometricLongitude - 204.0085519281) > 0.0000000001)
@@ -393,32 +401,73 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
-		//calculate the apparent position of the Sun on the celestial sphere at time T:
+		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
 		if(Math.abs(trueEclipticObliquity - 23.440465) > 0.000001)
 			throw new IllegalArgumentException("trueEclipticObliquity: " + (trueEclipticObliquity - 23.440465));
-		final double meanSiderealTime = meanSiderealTime(t);
-		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutationInLongitudeAndObliquity[0]);
 		final double geometricMeanLatitude = geometricMeanLatitude(t);
 		if(Math.abs(geometricMeanLatitude - 0.0001011219) > 0.0000000001)
 			throw new IllegalArgumentException("geometricMeanLatitude: " + (geometricMeanLatitude - 0.0001011219));
+		//calculate the geocentric Sun Right Ascension
 		final double rightAscension = rightAscension(geometricMeanLatitude, trueEclipticObliquity, apparentGeometricLongitude);
 		if(Math.abs(rightAscension - 202.22741) > 0.00001)
 			throw new IllegalArgumentException("rightAscension: " + (rightAscension - 202.22741));
+		//calculate the geocentric Sun declination
 		final double declination = declination(geometricMeanLatitude, geometricMeanLongitude, trueEclipticObliquity);
-//		if(Math.abs(declination - -9.31434) > 0.00001)
-//			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
-		EquatorialCoordinate coord = EquatorialCoordinate.create(rightAscension, declination);
+		if(Math.abs(declination - -9.31434) > 0.00001)
+			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
+		final double meanSiderealTime = meanSiderealTime(t);
+		//calculate the apparent sidereal time at Greenwich at any given time
+		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutationInLongitudeAndObliquity[0]);
+		final double localMeanSiderealTime = localMeanSiderealTime(apparentSiderealTime, location);
+		//calculate the observer local hour angle: H
+		final double localHourAngle = localHourAngle(localMeanSiderealTime, rightAscension);
+		if(Math.abs(localHourAngle - 11.105900) > 0.000001)
+			throw new IllegalArgumentException("localHourAngle: " + (localHourAngle - 11.105900));
+		if(Math.abs(localHourAngle - 11.10629) > 0.00001)
+			throw new IllegalArgumentException("localHourAngle: " + (localHourAngle - 11.10629));
+		//calculate the equatorial horizontal parallax of the Sun, ξ [rad]
+		final double equatorialHorizontalParallax = degToRad(8.794 / (3600. * radiusVector));
+		final double latitude = degToRad(location.getLatitude());
+		final double u = StrictMath.atan((1. - EARTH_FLATTENING) * StrictMath.tan(latitude));
+//		final double u = StrictMath.atan(0.99664719 * StrictMath.tan(latitude));
+		final double chi = StrictMath.cos(u) + observerElevation * StrictMath.cos(latitude);
+		final double y = 0.99664719 * StrictMath.sin(u) + (observerElevation / EARTH_EQUATORIAL_RADIUS) * StrictMath.sin(latitude);
+		//calculate the parallax in the sun right ascension: Δα
+		final double deltaRightAscension = StrictMath.atan2(
+			-chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(degToRad(localHourAngle)),
+			StrictMath.cos(declination) - chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(degToRad(localHourAngle))
+		);
+		//calculate the topocentric Sun Right Ascension: α'
+		final double rightAscensionTopocentric = rightAscension + radToDeg(deltaRightAscension);
+		if(Math.abs(rightAscensionTopocentric - 202.22704) > 0.00001)
+			throw new IllegalArgumentException("rightAscensionTopocentric: " + (rightAscensionTopocentric - 202.22704));
+		final double declinationTopocentric = StrictMath.atan2(
+			((StrictMath.sin(degToRad(declination)) - y * StrictMath.sin(equatorialHorizontalParallax)) * StrictMath.cos(deltaRightAscension)),
+			StrictMath.cos(degToRad(declination)) - chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(degToRad(localHourAngle))
+		);
+		if(Math.abs(declinationTopocentric - -9.316179) > 0.000001)
+			throw new IllegalArgumentException("declinationTopocentric: " + (declinationTopocentric - -9.316179));
+		//calculate the topocentric local hour angle: H’
+		final double localHourAngleTopocentric = localHourAngle - deltaRightAscension;
+		if(Math.abs(localHourAngleTopocentric - 11.10629) > 0.00001)
+			throw new IllegalArgumentException("localHourAngleTopocentric: " + (localHourAngleTopocentric - 11.10629));
+		//TODO
+		//calculate the topocentric zenith angle: θ
+		final double zenithTopocentric = 0;
+
+
 
 //		EquatorialCoordinate coord2 = sunPosition(jd);
 
+		EquatorialCoordinate coord = EquatorialCoordinate.create(rightAscension, declination);
 		System.out.println(coord);
 	}
 
 	/**
 	 * Calculate the eccentricity of Earth's orbit, e.
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	The eccentricity of Earth's orbit.
 	 */
 	private static double earthOrbitEccentricity(final double t){
@@ -518,7 +567,7 @@ final double t = JulianDay.centuryJ2000Of(jd);
 	/**
 	 * Calculate the longitude of the perihelion of the orbit, π.
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	The longitude of the perihelion of the orbit [°].
 	 */
 	private static double longitudeOfEarthPerihelion(final double t){
@@ -555,9 +604,9 @@ final double t = JulianDay.centuryJ2000Of(jd);
 	}
 
 	/**
-	 * Calculate mean Sidereal time at Greenwich, θ0.
+	 * Calculate Greenwich Mean Sidereal Time, GMST.
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	mean Sidereal time at Greenwich [°].
 	 */
 	private static double meanSiderealTime(final double t){
@@ -565,31 +614,32 @@ final double t = JulianDay.centuryJ2000Of(jd);
 	}
 
 	/**
-	 * Calculate apparent Sidereal time at Greenwich, θ0.
+	 * Calculate Greenwich Apparent Sidereal Time, GAST.
 	 *
-	 * @param meanSiderealTime	Mean Sidereal time at Greenwich [°].
+	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [°].
 	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [°].
 	 * @param deltaPsi	Nutation in longitude [°].
 	 * @return	apparent Sidereal time at Greenwich [°].
 	 */
 	private static double apparentSiderealTime(final double meanSiderealTime, final double trueEclipticObliquity, final double deltaPsi){
-		return correctRangeDegree(meanSiderealTime + deltaPsi * StrictMath.cos(degToRad(trueEclipticObliquity)));
+		final double equationOfTheEquinoxes = deltaPsi * StrictMath.cos(degToRad(trueEclipticObliquity));
+		return correctRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
 	}
 
 	/**
-	 * Calculate apparent local Sidereal time at Greenwich.
+	 * Calculate Local Mean Sidereal Time, LMST.
 	 *
-	 * @param greenwichApparentSiderealTime	Apparent Sidereal time at Greenwich [°].
+	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [°].
 	 * @return	The apparent local Sidereal time at Greenwich [°].
 	 */
-	private double apparentLocalSiderealTime(final double greenwichApparentSiderealTime){
-		return greenwichApparentSiderealTime - location.getLongitude();
+	private static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
+		return meanSiderealTime + location.getLongitude();
 	}
 
 	/**
-	 * Calculate the hour angle of a body given its right ascension, H.
+	 * Calculate the hour angle of a body, H.
 	 *
-	 * @param localSiderealTime	Local Sidereal time at Greenwich [°].
+	 * @param localSiderealTime	Local Sidereal Time [°].
 	 * @param rightAscension	Right ascension [°].
 	 * @return	The hour angle [°].
 	 */
