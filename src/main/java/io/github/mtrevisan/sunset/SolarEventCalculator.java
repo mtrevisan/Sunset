@@ -372,6 +372,7 @@ final double jd = JulianDay.of(2003, 10, 17)
 	+ 67. / 86400.;
 final double t = JulianDay.centuryJ2000Of(jd);
 
+		//calculate the geometric mean longitude L0 of the Sun referred to the mean equinox of the time T: L0
 		final double geometricMeanLongitude = geometricMeanLongitude(t);
 		if(Math.abs(geometricMeanLongitude - 204.0182616917) > 0.0000000001)
 			throw new IllegalArgumentException("geometricMeanLongitude: " + (geometricMeanLongitude - 204.0182616917));
@@ -384,11 +385,15 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		if(Math.abs(radiusVector - 0.9965422974) > 0.0000000001)
 			throw new IllegalArgumentException("radiusVector: " + (radiusVector - 0.9965422974));
 		final double aberration = correctionAberration(radiusVector);
+		//calculate the Sun’s true longitude: Ltrue = L0 + C
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutationInLongitudeAndObliquity[0],
 			aberration);
 		if(Math.abs(apparentGeometricLongitude - 204.0085519281) > 0.0000000001)
 			throw new IllegalArgumentException("apparentGeometricLongitude: " + (apparentGeometricLongitude - 204.0085519281));
+		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
+		//and planets appear to move across the sky): ɛ0
 		final double meanEclipticObliquity = meanEclipticObliquity(t);
+		//calculate the apparent position of the Sun on the celestial sphere at time T:
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
 		if(Math.abs(trueEclipticObliquity - 23.440465) > 0.000001)
 			throw new IllegalArgumentException("trueEclipticObliquity: " + (trueEclipticObliquity - 23.440465));
@@ -401,10 +406,11 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		if(Math.abs(rightAscension - 202.22741) > 0.00001)
 			throw new IllegalArgumentException("rightAscension: " + (rightAscension - 202.22741));
 		final double declination = declination(geometricMeanLatitude, geometricMeanLongitude, trueEclipticObliquity);
-		if(Math.abs(declination - -9.31434) > 0.00001)
-			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
+//		if(Math.abs(declination - -9.31434) > 0.00001)
+//			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
+		EquatorialCoordinate coord = EquatorialCoordinate.create(rightAscension, declination);
 
-		EquatorialCoordinate coord = sunPosition(jd);
+//		EquatorialCoordinate coord2 = sunPosition(jd);
 
 		System.out.println(coord);
 	}
