@@ -27,10 +27,13 @@ package io.github.mtrevisan.sunset;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.Map;
 
 
 /*
@@ -47,6 +50,17 @@ https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone
 https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
 */
 public class SolarEventCalculator{
+
+	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_LONGITUDE_DATA;
+	private static Map<String, Collection<Double[]>> NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA;
+	static{
+		try{
+			EARTH_HELIOCENTRIC_LONGITUDE_DATA = ResourceReader.read("earthHeliocentricLongitude.dat");
+			NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA = ResourceReader.read("nutationInLongitudeAndObliquity.dat");
+		}
+		catch(final IOException ignored){}
+	}
+
 
 	// Calculates the approximate set time of a body which has the specified right ascension and declination.
 	// The resultant value will be close to the specified date.
@@ -198,12 +212,24 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	/**
 	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L0.
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	The geometric mean longitude of the Sun [°].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
-	private static double geometricMeanLongitude(final double t){
+	private static double geometricMeanLongitude(double t){
+//		final double jme = t / 10.;
+//		final double[] parameters = new double[6];
+//		for(int i = 0; i < 6; i ++){
+//			double parameter = 0.;
+//			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_LONGITUDE_DATA.get("L" + i);
+//			for(final Double[] element : elements)
+//				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+//			parameters[i] = parameter;
+//		}
+//		final double longitude = eval(jme, parameters) / 100_000_000.;
+//		return correctRangeDegree(radToDeg(longitude) + 180.);
+
 		return correctRangeDegree(eval(t, new double[]{toDegrees(280, 27, 59.26), 36000.76983, 0.0003032}));
 	}
 
@@ -234,7 +260,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	/**
 	 * Calculate the mean obliquity of the ecliptic, ɛ0.
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	Apparent longitude of the Sun [°].
 	 */
 	private static double meanEclipticObliquity(final double t){
@@ -303,8 +329,15 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	}
 
 	public static void main(String[] args){
-		final double jd = JulianDay.of(1997, 8, 7) + JulianDay.timeOf(LocalTime.of(11, 0));
+//		final double jd = JulianDay.of(1997, 8, 7) + JulianDay.timeOf(LocalTime.of(11, 0));
+final double jd = JulianDay.of(2003, 10, 17)
+	+ JulianDay.timeOf(LocalTime.of(19, 30, 30))
+	+ 67. / 86400.;
+final double t = JulianDay.centuryJ2000Of(jd);
 
+double[] corr = nutationInLongitudeAndObliquity(t);
+double e0 = meanEclipticObliquity(t);
+double e = trueEclipticObliquity(e0, corr[1]);
 		EquatorialCoordinate coord = sunPosition(jd);
 
 		System.out.println(coord);
@@ -349,137 +382,48 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * True obliquity of the ecliptic corrected for nutation, ɛ.
 	 *
 	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [°].
-	 * @param t	Julian Century in J2000.0 epoch.
+	 * @param deltaEpsilon	Nutation in obliquity [°].
 	 * @return	Apparent longitude of the Sun [°].
 	 */
-	private static double trueEclipticObliquity(final double meanEclipticObliquity, final double t){
-		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
-		return meanEclipticObliquity + toDegrees(0, 0, deltaPsiEpsilon[1]);
+	private static double trueEclipticObliquity(final double meanEclipticObliquity, final double deltaEpsilon){
+		return meanEclipticObliquity + deltaEpsilon;
 	}
 
 	/**
 	 * Calculate Nutation in longitude (delta psi) and obliquity (delta epsilon).
 	 *
-	 * @param t	Julian Century in J2000.0 epoch.
-	 * @return	An array where the first element is delta psi, and the second delta epsilon ["].
+	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
+	 * @return	An array where the first element is ∆ψ [°], and the second ∆ε [°].
 	 */
-	private static double[] highAccuracyNutation(final double t){
+	private static double[] nutationInLongitudeAndObliquity(final double t){
 		//mean elongation of the Moon from the Sun [°]
-		final double d = eval(t, new double[]{297.85036, 445267.111480, -0.0019142, 1. / 189474.});
+		final double d = degToRad(correctRangeDegree(eval(t, new double[]{297.85036, 445267.111480, -0.0019142, 1. / 189474.})));
 		//mean anomaly of the Sun [°]
-		final double m = eval(t, new double[]{357.52772, 35999.050340, -0.0001603, - 1. / 300000.});
+		final double m = degToRad(correctRangeDegree(eval(t, new double[]{357.52772, 35999.050340, -0.0001603, - 1. / 300000.})));
 		//mean anomaly of the Moon [°]
-		final double mp = eval(t, new double[]{134.96298, 477198.867398, 0.0086972, 1. / 56250.});
+		final double mp = degToRad(correctRangeDegree(eval(t, new double[]{134.96298, 477198.867398, 0.0086972, 1. / 56250.})));
 		//Moon's argument of Latitude [°]
-		final double f = eval(t, new double[]{93.27191, 483202.017538, -0.0036825, 1. / 327270.});
+		final double f = degToRad(correctRangeDegree(eval(t, new double[]{93.27191, 483202.017538, -0.0036825, 1. / 327270.})));
 		//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
-		final double omega = degToRad(eval(t, new double[]{125.04452, -1934.136261, 0.0020708, 1. / 450000.}));
+		final double omega = degToRad(correctRangeDegree(eval(t, new double[]{125.04452, -1934.136261, 0.0020708, 1. / 450000.})));
 
-		//these lines generated by iau1980.frink and pasted in here ["]
-		@SuppressWarnings("OverlyComplexArithmeticExpression")
-		final double deltaPsi = 0.0001 * ((-171996 - 174.2 * t) * StrictMath.sin(omega)
-			+ (-13187. - 1.6 * t) * StrictMath.sin(-2. * d + 2. * f + 2. * omega)
-			+ (-2274. - 0.2 * t) * StrictMath.sin(2. * f + 2. * omega)
-			+ (2062. + 0.2 * t) * StrictMath.sin(2. * omega)
-			+ (1426. + -3.4 * t) * StrictMath.sin(m)
-			+ (712. + 0.1 * t) * StrictMath.sin(mp)
-			+ (-517. + 1.2 * t) * StrictMath.sin(-2. * d + m + 2. * f + 2. * omega)
-			+ (-386. - 0.4*  t) * StrictMath.sin(2. * f + omega)
-			- 301. * StrictMath.sin(mp + 2. * f + 2. * omega)
-			+ (217. - 0.5 * t) * StrictMath.sin(-2. * d - m + 2. * f + 2. * omega)
-			- 158. * StrictMath.sin(-2. * d + mp)
-			+ (129. + 0.1 * t) * StrictMath.sin(-2. * d + 2. * f + omega)
-			+ 123. * StrictMath.sin(-mp + 2. * f + 2. * omega)
-			+ 63. * StrictMath.sin(2. * d)
-			+ (63. + 0.1 * t) * StrictMath.sin(mp + omega)
-			- 59. * StrictMath.sin(2. * d - mp + 2. * f + 2. * omega)
-			+ (-58. - 0.1 * t) * StrictMath.sin(-mp + omega)
-			- 51. * StrictMath.sin(mp + 2. * f + omega)
-			+ 48. * StrictMath.sin(-2. * d + 2. * mp)
-			+ 46. * StrictMath.sin(-2. * mp + 2. * f + omega)
-			- 38. * StrictMath.sin(2. * d + 2. * f + 2. * omega)
-			- 31. * StrictMath.sin(2. * mp + 2. * f + 2. * omega)
-			+ 29. * StrictMath.sin(2. * mp)
-			+ 29. * StrictMath.sin(-2. * d + mp + 2. * f + 2. * omega)
-			+ 26. * StrictMath.sin(2. * f)
-			- 22. * StrictMath.sin(-2. * d + 2. * f)
-			+ 21. * StrictMath.sin(-mp + 2. * f + omega)
-			+ (17. - 0.1 * t) * StrictMath.sin(2. * m)
-			+ 16. * StrictMath.sin(2. * d - mp + omega)
-			+ (-16. + 0.1 * t) * StrictMath.sin(-2. * d + 2. * m + 2. * f + 2. * omega)
-			- 15. * StrictMath.sin(m + omega)
-			- 13. * StrictMath.sin(-2. * d + mp + omega)
-			- 12. * StrictMath.sin(-m + omega)
-			+ 11. * StrictMath.sin(2. * mp - 2. * f)
-			- 10. * StrictMath.sin(2. * d - mp + 2. * f + omega)
-			-8. * StrictMath.sin(2. * d + mp + 2. * f + 2. * omega)
-			+ 7. * StrictMath.sin(m + 2. * f + 2. * omega)
-			- 7. * StrictMath.sin(-2. * d + m + mp)
-			- 7. * StrictMath.sin(-m + 2. * f + 2. * omega)
-			- 8. * StrictMath.sin(2. * d + 2. * f + omega)
-			+ 6. * StrictMath.sin(2. * d + mp)
-			+ 6. * StrictMath.sin(-2. * d + 2. * mp + 2. * f + 2. * omega)
-			+ 6. * StrictMath.sin(-2. * d + mp + 2. * f + omega)
-			- 6. * StrictMath.sin(2. * d - 2. * mp + omega)
-			- 6. * StrictMath.sin(2. * d + omega)
-			+ 5. * StrictMath.sin(-m + mp)
-			- 5. * StrictMath.sin(-2. * d - m + 2. * f + omega)
-			- 5. * StrictMath.sin(-2. * d + omega)
-			- 5. * StrictMath.sin(2. * mp + 2. * f + omega)
-			+ 4. * StrictMath.sin(-2. * d + 2. * mp + omega)
-			+ 4. * StrictMath.sin(-2. * d + m + 2. * f + omega)
-			+ 4. * StrictMath.sin(mp - 2. * f)
-			- 4. * StrictMath.sin(-d + mp)
-			- 4. * StrictMath.sin(-2. * d + m)
-			- 4. * StrictMath.sin(d)
-			+ 3. * StrictMath.sin(mp + 2. * f)
-			- 3. * StrictMath.sin(-2. * mp + 2. * f + 2. * omega)
-			- 3. * StrictMath.sin(-d - m + mp)
-			- 3. * StrictMath.sin(m + mp)
-			- 3. * StrictMath.sin(-m + mp + 2. * f + 2. * omega)
-			- 3. * StrictMath.sin(2. * d - m - mp + 2. * f + 2. * omega)
-			- 3. * StrictMath.sin(3. * mp + 2. * f + 2. * omega)
-			- 3. * StrictMath.sin(2. * d - m + 2. * f + 2. * omega));
-		@SuppressWarnings("OverlyComplexArithmeticExpression")
-		final double deltaEpsilon = 0.0001 * ( (92025 + 8.9 * t) * StrictMath.cos(omega)
-			+ (5736. - 3.1 * t) * StrictMath.cos(-2. * d + 2. * f + 2. * omega)
-			+ (977. - 0.5 * t) * StrictMath.cos(2. * f + 2. * omega)
-			+ (-895. + 0.5 * t) * StrictMath.cos(2. * omega)
-			+ (54. - 0.1 * t) * StrictMath.cos(m)
-			- 7. * StrictMath.cos(mp)
-			+ (224. - 0.6 * t) * StrictMath.cos(-2. * d + m + 2. * f + 2. * omega)
-			+ 200. * StrictMath.cos(2. * f + omega)
-			+ (129. - 0.1 * t) * StrictMath.cos(mp + 2. * f + 2. * omega)
-			+ (-95. + 0.3 * t) * StrictMath.cos(-2. * d - m + 2. * f + 2. * omega)
-			- 70. * StrictMath.cos(-2. * d + 2. * f + omega)
-			- 53. * StrictMath.cos(-mp + 2. * f + 2. * omega)
-			- 33. * StrictMath.cos(mp + omega)
-			+ 26. * StrictMath.cos(2. * d - mp + 2. * f + 2. * omega)
-			+ 32. * StrictMath.cos(-mp + omega)
-			+ 27. * StrictMath.cos(mp + 2. * f + omega)
-			- 24. * StrictMath.cos(-2. * mp + 2. * f + omega)
-			+ 16. * StrictMath.cos(2. * d + 2. * f + 2. * omega)
-			+ 13. * StrictMath.cos(2. * mp + 2. * f + 2. * omega)
-			- 12. * StrictMath.cos(-2. * d + mp + 2. * f + 2. * omega)
-			- 10. * StrictMath.cos(-mp + 2. * f + omega)
-			- 8. * StrictMath.cos(2. * d - mp + omega)
-			+ 7. * StrictMath.cos(-2. * d + 2. * m + 2. * f + 2. * omega)
-			+ 9. * StrictMath.cos(m + omega)
-			+ 7. * StrictMath.cos(-2. * d + mp + omega)
-			+ 6. * StrictMath.cos(-m + omega)
-			+ 5. * StrictMath.cos(2. * d - mp + 2. * f + omega)
-			+ 3. * StrictMath.cos(2. * d + mp + 2. * f + 2. * omega)
-			- 3. * StrictMath.cos(m + 2. * f + 2. * omega)
-			+ 3. * StrictMath.cos(-m + 2. * f + 2. * omega)
-			+ 3. * StrictMath.cos(2. * d + 2. * f + omega)
-			- 3. * StrictMath.cos(-2. * d + 2. * mp + 2. * f + 2. * omega)
-			- 3. * StrictMath.cos(-2. * d + mp + 2. * f + omega)
-			+ 3. * StrictMath.cos(2. * d -2. * mp + omega)
-			+ 3. * StrictMath.cos(2. * d + omega)
-			+ 3. * StrictMath.cos(-2. * d - m + 2. * f + omega)
-			+ 3. * StrictMath.cos(-2. * d + omega)
-			+ 3. * StrictMath.cos(2. * mp + 2. * f + omega));
-
+		final Collection<Double[]> elements = NUTATION_IN_LONGITUDE_AND_OBLIQUITY_DATA.get("coeffs");
+		final double[] x = {d, m, mp, f, omega};
+		double deltaPsi = 0.;
+		double deltaEpsilon = 0.;
+		for(int i = 0; i < elements.size(); i ++)
+			for(final Double[] element : elements){
+				double parameter = 0.;
+				for(int j = 0; j < x.length; j ++)
+					parameter += x[j] * element[j];
+				deltaPsi += (element[x.length] + element[x.length + 1] * t) * StrictMath.sin(parameter);
+				deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * t) * StrictMath.cos(parameter);
+			}
+		//FIXME /63 ?!?!?!
+		//[°]
+		deltaPsi = toDegrees(0, 0, deltaPsi / 10_000.) / 63.;
+		//[°]
+		deltaEpsilon = toDegrees(0, 0, deltaEpsilon / 10_000.) / 63.;
 		return new double[]{deltaPsi, deltaEpsilon};
 	}
 
@@ -544,8 +488,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 */
 	private static double greenwichApparentSiderealTime(final double greenwichMeanSiderealTime, final double apparentEclipticObliquity,
 			final double t){
-		final double[] deltaPsiEpsilon = highAccuracyNutation(t);
-		final double correction = toDegrees(0, 0, deltaPsiEpsilon[0]) * StrictMath.cos(degToRad(apparentEclipticObliquity));
+		final double[] deltaPsiEpsilon = nutationInLongitudeAndObliquity(t);
+		final double correction = deltaPsiEpsilon[0] * StrictMath.cos(degToRad(apparentEclipticObliquity));
 		return correctRangeDegree(greenwichMeanSiderealTime + correction);
 	}
 
