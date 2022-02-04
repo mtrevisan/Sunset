@@ -39,6 +39,23 @@ import java.time.LocalTime;
  */
 public final class JulianDay{
 
+	/** Instant of beginning of the Gregor XIII reform (4 Oct 1582) [day]. */
+	private static final double GREGOR_XIII_REFORM_JD = 2299159.5;
+	private static final int GREGOR_XIII_REFORM_YEAR = 1582;
+	private static final int GREGOR_XIII_REFORM_MONTH = 10;
+	private static final int GREGOR_XIII_REFORM_DAY = 4;
+	private static final int GREGOR_XIII_REFORM_DOY = 277;
+	/** Durate of the Gregor XIII reform [days]. */
+	private static final int GREGOR_XIII_REFORM_DURATE = 10;
+
+	private static final double MJD_ERA = 2400000.5;
+
+	/** 1.5 Jan 2000 UT - Julian epoch. */
+	private static final double J2000 = 2451545.;
+
+	private static final double CIVIL_SAECULUM = 36525.;
+
+
 	/**
 	 * Calculate Julian Day at 0 UTC.
 	 *
@@ -77,15 +94,25 @@ public final class JulianDay{
 	 * @param day	The day.
 	 * @return	The Julian Day [day].
 	 */
-	public static double of(int year, int month, final int day){
-		if(month <= 2){
-			year --;
-			month += 12;
+	public static double of(final int year, final int month, final int day){
+		int yy = year;
+		int mm = month;
+		if(month < 3){
+			yy --;
+			mm += 12;
 		}
-
-		final double a = StrictMath.floor(year / 100.);
-		final double b = 2. - a + StrictMath.floor(a / 4.);
-		return StrictMath.floor(365.25 * (year + 4716)) + StrictMath.floor(30.6001 * (month + 1)) + day + b - 1524.5;
+		int b = 0;
+		//if date is in Gregorian calendar
+		if(year > GREGOR_XIII_REFORM_YEAR
+				|| year == GREGOR_XIII_REFORM_YEAR && month > GREGOR_XIII_REFORM_MONTH
+				|| year == GREGOR_XIII_REFORM_YEAR && month == GREGOR_XIII_REFORM_MONTH
+				&& day > GREGOR_XIII_REFORM_DAY + GREGOR_XIII_REFORM_DURATE){
+			//number of full centuries
+			final int aa = (int)(yy * 0.01);
+			//days within the whole centuries (in the Julian Calendar) adding back days removed in the Gregorian Calendar
+			b = 2 - aa + (int)(aa * 0.25);
+		}
+		return b + (int)(365.25 * (yy + 4716)) + (int)(30.6001 * (mm + 1)) - 1524.5 + day;
 	}
 
 	/**
@@ -95,7 +122,7 @@ public final class JulianDay{
 	 * @return	The Julian Century.
 	 */
 	public static double centuryJ2000Of(final double jd){
-		return (jd - 2451545.) / 36525.;
+		return (jd - J2000) / CIVIL_SAECULUM;
 	}
 
 	/**
@@ -105,7 +132,25 @@ public final class JulianDay{
 	 * @return	The Modified Julian Day starting at midnight.
 	 */
 	public static double mjdOf(final double jd){
-		return jd - 2400000.5;
+		return jd - MJD_ERA;
+	}
+
+
+	public static int dayOfYear(final LocalDateTime dateTime){
+		return dayOfYear(dateTime.toLocalDate());
+	}
+
+	public static int dayOfYear(final LocalDate date){
+		int doy = date.getDayOfMonth() + (int)(30.6 * date.getMonthValue() - 30.1);
+		if(date.getMonthValue() > 2)
+			doy -= 2 - (isLeapYear(date.getYear())? 1: 0);
+		if(date.getYear() == GREGOR_XIII_REFORM_YEAR && date.getMonthValue() >= GREGOR_XIII_REFORM_MONTH)
+			doy -= GREGOR_XIII_REFORM_DURATE;
+		return doy;
+	}
+
+	public static boolean isLeapYear(final int year){
+		return ((year & 0x03) == 0 && (year < GREGOR_XIII_REFORM_YEAR || (year % 100) != 0 || (year % 400) == 0));
 	}
 
 }

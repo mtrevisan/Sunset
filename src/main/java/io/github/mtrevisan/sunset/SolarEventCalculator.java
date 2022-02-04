@@ -604,7 +604,7 @@ final double apparentDeclination = declination(apparentEclipticObliquity, appare
 	 */
 	private double getLongitudeHour(final LocalDateTime date, final Boolean sunrise){
 		final double dividend = (sunrise? 6: 18) - getBaseLongitudeHour();
-		return getDayOfYear(date) + dividend / 24.;
+		return date.getDayOfYear() + JulianDay.timeOf(date) + dividend / 24.;
 	}
 
 	/**
@@ -614,10 +614,6 @@ final double apparentDeclination = declination(apparentEclipticObliquity, appare
 	 */
 	private double getBaseLongitudeHour(){
 		return degToHrs(location.getLongitude());
-	}
-
-	private static double getDayOfYear(final LocalDateTime date){
-		return date.getDayOfYear() + JulianDay.timeOf(date);
 	}
 
 	/**
