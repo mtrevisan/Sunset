@@ -521,18 +521,21 @@ final double t = JulianDay.centuryJ2000Of(jd);
 	 *
 	 * @param t	Julian Ephemeris Century in J2000.0 epoch.
 	 * @return	An array where the first element is ∆ψ [°], and the second ∆ε [°].
+	 *
+	 * http://physics.uwyo.edu/~wiro/planet/nutate.c
+	 * https://iopscience.iop.org/article/10.1086/375641/pdf
 	 */
 	private static double[] correctionNutationInLongitudeAndObliquity(final double t){
 		//mean elongation of the Moon from the Sun [°]
-		final double d = degToRad(correctRangeDegree(eval(t, new double[]{297.85036, 445267.111480, -0.0019142, 1. / 189474.})));
+		final double d = degToRad(correctRangeDegree(eval(t, new double[]{297.8503631, 445267.1114800, -0.0019142, 1. / 189474.})));
 		//mean anomaly of the Sun [°]
-		final double m = degToRad(correctRangeDegree(eval(t, new double[]{357.52772, 35999.050340, -0.0001603, - 1. / 300000.})));
+		final double m = degToRad(correctRangeDegree(eval(t, new double[]{357.5277233, 35999.0503400, -0.0001603, - 1. / 300000.})));
 		//mean anomaly of the Moon [°]
-		final double mp = degToRad(correctRangeDegree(eval(t, new double[]{134.96298, 477198.867398, 0.0086972, 1. / 56250.})));
+		final double mp = degToRad(correctRangeDegree(eval(t, new double[]{134.9629814, 477198.8673981, 0.0086972, 1. / 56250.})));
 		//Moon's argument of Latitude [°]
-		final double f = degToRad(correctRangeDegree(eval(t, new double[]{93.27191, 483202.017538, -0.0036825, 1. / 327270.})));
+		final double f = degToRad(correctRangeDegree(eval(t, new double[]{93.2719103, 483202.0175381, -0.00368250, 1. / 327270.})));
 		//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
-		final double omega = degToRad(correctRangeDegree(eval(t, new double[]{125.04452, -1934.136261, 0.0020708, 1. / 450000.})));
+		final double omega = degToRad(correctRangeDegree(eval(t, new double[]{125.0445222, -1934.1362608, 0.002070833, 1. / 450000.})));
 
 		final Collection<Double[]> elements = NUTATION_DATA.get("coeffs");
 		final double[] x = {d, m, mp, f, omega};
@@ -550,7 +553,7 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		//[°]
 		deltaPsi = toDegrees(0, 0, deltaPsi / 10_000.) / 63.;
 		//[°]
-		deltaEpsilon = toDegrees(0, 0, deltaEpsilon / 10_000.) / 63.;
+		deltaEpsilon = toDegrees(0, 0, deltaEpsilon / 100_000.) / 63.;
 		return new double[]{deltaPsi, deltaEpsilon};
 	}
 
