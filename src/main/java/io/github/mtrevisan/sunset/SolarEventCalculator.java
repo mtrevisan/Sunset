@@ -378,8 +378,8 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		final double[] nutationInLongitudeAndObliquity = correctionNutationInLongitudeAndObliquity(t);
 		if(Math.abs(nutationInLongitudeAndObliquity[0] - -0.00399840) > 0.00000001)
 			throw new IllegalArgumentException("nutationInLongitude: " + (nutationInLongitudeAndObliquity[0] - -0.00399840));
-//		if(Math.abs(nutationInLongitudeAndObliquity[0] - 0.00166657) > 0.00000001)
-//			throw new IllegalArgumentException("nutationInObliquity: " + (nutationInLongitudeAndObliquity[0] - 0.00166657));
+		if(Math.abs(nutationInLongitudeAndObliquity[1] - 0.00166657) > 0.00000001)
+			throw new IllegalArgumentException("nutationInObliquity: " + (nutationInLongitudeAndObliquity[1] - 0.00166657));
 		final double radiusVector = radiusVector(t);
 		if(Math.abs(radiusVector - 0.9965422974) > 0.0000000001)
 			throw new IllegalArgumentException("radiusVector: " + (radiusVector - 0.9965422974));
@@ -401,8 +401,8 @@ final double t = JulianDay.centuryJ2000Of(jd);
 		if(Math.abs(rightAscension - 202.22741) > 0.00001)
 			throw new IllegalArgumentException("rightAscension: " + (rightAscension - 202.22741));
 		final double declination = declination(geometricMeanLatitude, geometricMeanLongitude, trueEclipticObliquity);
-//		if(Math.abs(declination - -9.31434) > 0.00001)
-//			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
+		if(Math.abs(declination - -9.31434) > 0.00001)
+			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
 
 		EquatorialCoordinate coord = sunPosition(jd);
 
