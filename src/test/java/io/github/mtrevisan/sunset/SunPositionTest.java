@@ -51,7 +51,7 @@ class SunPositionTest{
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 18h 42m 23.00s, δ: -23° 4' 45.00\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 18h 43m 33.13s, δ: -23° 3' 31.96\"}", coord.toString());
 	}
 
 

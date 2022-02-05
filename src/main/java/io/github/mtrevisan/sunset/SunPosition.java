@@ -70,12 +70,12 @@ public final class SunPosition{
 	//[m]
 	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 
-	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.8503631, 445267.1114800, - 0.0019142, 1. / 189474.};
-	private static final double[] SUN_MEAN_ANOMALY_PARAMETERS = {357.5277233, 35999.0503400, - 0.0001603, - 1. / 300000.};
+	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.8503631, 445267.1114800, -0.0019142, 1. / 189474.};
+	private static final double[] SUN_MEAN_ANOMALY_PARAMETERS = {357.5277233, 35999.0503400, -0.0001603, -1. / 300000.};
 	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.9629814, 477198.8673981, 0.0086972, 1. / 56250.};
-	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.2719103, 483202.0175381, - 0.00368250, 1. / 327270.};
-	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.0445222, - 1934.1362608, 0.002070833, 1. / 450000.};
-	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {21.448, - 4680.93, - 1.55, 1999.25, - 51.38, - 249.67, - 39.05, 7.12,
+	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.2719103, 483202.0175381, -0.00368250, 1. / 327270.};
+	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.0445222, -1934.1362608, 0.002070833, 1. / 450000.};
+	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {21.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
 		27.87, 5.79, 2.45};
 
 
