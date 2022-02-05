@@ -576,14 +576,15 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 			aberration);
 
 
-		//		delta = m_longitude + StrictMath.toDegrees(hourAngle);
-		//		timeDiff = 4 * delta;
-		//		timeUTC = 720 - timeDiff - eqTime; // in minutes
+//		delta = m_longitude + StrictMath.toDegrees(hourAngle);
+//		timeDiff = 4 * delta;
+//		timeUTC = 720 - timeDiff - eqTime; // in minutes
 
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(t);
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-		final double apparentDeclination = SunPosition.declination(apparentGeometricLatitude, apparentGeometricLongitude,
+		EquatorialCoordinate coord = SunPosition.toEquatorialCoordinate(apparentGeometricLatitude, apparentGeometricLongitude,
 			apparentEclipticObliquity);
+		final double apparentDeclination = coord.getDeclination();
 		final double localHourAngle = localHourAngle(trueGeometricLongitude, solarZenith, sunrise, apparentDeclination);
 		final double localMeanTime = getLocalMeanTime(trueGeometricLongitude, longitudeHour, localHourAngle);
 		return getLocalTime(localMeanTime - equationOfTime);

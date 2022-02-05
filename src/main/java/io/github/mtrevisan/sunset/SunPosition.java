@@ -106,11 +106,7 @@ public final class SunPosition{
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 		final double geometricMeanLatitude = geometricMeanLatitude(tt);
-		//calculate the geocentric Sun Right Ascension
-		final double rightAscension = rightAscension(geometricMeanLatitude, trueEclipticObliquity, apparentGeometricLongitude);
-		//calculate the geocentric Sun declination
-		final double declination = declination(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
-		return EquatorialCoordinate.create(rightAscension, declination);
+		return toEquatorialCoordinate(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
 	}
 
 	/**
@@ -274,38 +270,32 @@ public final class SunPosition{
 	}
 
 	/**
-	 * Calculate the Sun's right ascension, AR.
+	 * Calculate the Right Ascension and declination (equatorial coordinates) of an object given ecliptical coordinates.
 	 *
-	 * @param geometricMeanLatitude   Geometric mean latitude of the Sun [°].
-	 * @param eclipticObliquity	Obliquity of the ecliptic [°].
-	 * @param longitude	Longitude of the Sun [°].
-	 * @return	Sun's right ascension [°].
+	 * @param eclipticLatitude   Geometric ecliptic latitude [°].
+	 * @param eclipticLongitude   Geometric ecliptic longitude [°].
+	 * @param eclipticObliquity   Obliquity of the ecliptic [°].
+	 * @return	Object's equatorial coordinate.
 	 */
-	static double rightAscension(final double geometricMeanLatitude, double eclipticObliquity, double longitude){
-		longitude = StrictMath.toRadians(longitude);
+	static EquatorialCoordinate toEquatorialCoordinate(double eclipticLatitude, double eclipticLongitude, double eclipticObliquity){
+		eclipticLatitude = StrictMath.toRadians(eclipticLatitude);
+		eclipticLongitude = StrictMath.toRadians(eclipticLongitude);
 		eclipticObliquity = StrictMath.toRadians(eclipticObliquity);
-		return MathHelper.correctRangeDegree(StrictMath.toDegrees(StrictMath.atan2(
-			StrictMath.sin(longitude) * StrictMath.cos(eclipticObliquity)
-				- StrictMath.tan(StrictMath.toRadians(geometricMeanLatitude)) * StrictMath.sin(eclipticObliquity),
-			StrictMath.cos(longitude))));
-	}
 
-	/**
-	 * Calculate the Sun's declination, δ.
-	 *
-	 * @param geometricMeanLatitude   Geometric mean latitude of the Sun [°].
-	 * @param apparentGeometricLongitude   Apparent longitude of the Sun [°].
-	 * @param trueEclipticObliquity   True obliquity of the ecliptic [°].
-	 * @return	Sun's declination [°].
-	 */
-	static double declination(double geometricMeanLatitude, final double apparentGeometricLongitude, double trueEclipticObliquity){
-		geometricMeanLatitude = StrictMath.toRadians(geometricMeanLatitude);
-		trueEclipticObliquity = StrictMath.toRadians(trueEclipticObliquity);
-		return StrictMath.toDegrees(StrictMath.asin(
-			StrictMath.sin(geometricMeanLatitude) * StrictMath.cos(trueEclipticObliquity)
-				+ StrictMath.cos(geometricMeanLatitude) * StrictMath.sin(trueEclipticObliquity)
-				* StrictMath.sin(StrictMath.toRadians(apparentGeometricLongitude))
+		final double sinLat = StrictMath.sin(eclipticLatitude);
+		final double cosLat = StrictMath.cos(eclipticLatitude);
+		final double sinLon = StrictMath.sin(eclipticLongitude);
+		final double cosLon = StrictMath.cos(eclipticLongitude);
+		final double cosObl = StrictMath.cos(eclipticObliquity);
+		final double sinObl = StrictMath.sin(eclipticObliquity);
+		final double rightAscension = MathHelper.correctRangeDegree(StrictMath.toDegrees(
+			StrictMath.atan2(sinLon * cosObl - sinLat * sinObl / cosLat, cosLon)
 		));
+		final double declination = StrictMath.toDegrees(
+			StrictMath.asin(sinLat * cosObl + cosLat * sinObl * sinLon)
+		);
+
+		return EquatorialCoordinate.create(rightAscension, declination);
 	}
 
 }

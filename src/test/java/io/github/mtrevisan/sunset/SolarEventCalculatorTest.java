@@ -56,9 +56,9 @@ class SolarEventCalculatorTest{
 
 		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
 		final double[] nutationInLongitudeAndObliquity = SunPosition.nutationCorrection(tt);
-		final double radiusVector = calc.radiusVector(tt);
-		final double meanEclipticObliquity = calc.meanEclipticObliquity(tt);
-		final double trueEclipticObliquity = calc.trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
+		final double radiusVector = SunPosition.radiusVector(tt);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutationInLongitudeAndObliquity[1]);
 
 		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
 		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity,
