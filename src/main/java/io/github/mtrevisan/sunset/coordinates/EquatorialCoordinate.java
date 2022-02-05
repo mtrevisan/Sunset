@@ -85,7 +85,7 @@ public final class EquatorialCoordinate{
 	 *
 	 * @return	The declination [°].
 	 */
-	public double getLongitude(){
+	public double getDeclination(){
 		return declination;
 	}
 
