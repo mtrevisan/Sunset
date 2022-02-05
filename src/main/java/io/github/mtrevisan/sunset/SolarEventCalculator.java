@@ -457,6 +457,11 @@ final double tt = JulianDay.centuryJ2000Of(jd);
 		final double localHourAngleTopocentric = localHourAngle - deltaRightAscension;
 		if(Math.abs(localHourAngleTopocentric - 11.10629) > 0.00002)
 			throw new IllegalArgumentException("localHourAngleTopocentric: " + (localHourAngleTopocentric - 11.10629));
+		//calculate the topocentric elevation angle without atmospheric refraction correction, e0
+		final double e0 = StrictMath.toDegrees(StrictMath.asin(
+			StrictMath.sin(latitude) * StrictMath.sin(StrictMath.toRadians(declinationTopocentric))
+			+ StrictMath.cos(latitude) * StrictMath.cos(StrictMath.toRadians(declinationTopocentric)) * StrictMath.cos(StrictMath.toRadians(localHourAngleTopocentric))
+		));
 		//TODO
 		//calculate the topocentric zenith angle: θ
 		final double zenithTopocentric = 0;
@@ -464,8 +469,7 @@ final double tt = JulianDay.centuryJ2000Of(jd);
 
 
 //		EquatorialCoordinate coord2 = sunPosition(jd);
-
-		System.out.println(coord);
+//		System.out.println(coord2);
 	}
 
 	/**
