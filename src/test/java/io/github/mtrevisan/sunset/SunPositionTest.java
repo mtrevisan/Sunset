@@ -51,7 +51,7 @@ class SunPositionTest{
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.28s, δ: -4° 28' 15.41\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 18h 42m 23.00s, δ: -23° 4' 45.00\"}", coord.toString());
 	}
 
 
@@ -85,7 +85,8 @@ class SunPositionTest{
 		final double geometricMeanLatitude = SunPosition.geometricMeanLatitude(tt);
 		if(Math.abs(geometricMeanLatitude - 0.0001011219) > 0.0000000001)
 			throw new IllegalArgumentException("geometricMeanLatitude: " + (geometricMeanLatitude - 0.0001011219));
-		EquatorialCoordinate coord = SunPosition.toEquatorialCoordinate(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
+		EquatorialCoordinate coord = EquatorialCoordinate.createFromEcliptical(geometricMeanLatitude, apparentGeometricLongitude,
+			trueEclipticObliquity);
 		if(Math.abs(coord.getRightAscension() - 202.22741) > 0.00001)
 			throw new IllegalArgumentException("rightAscension: " + (coord.getRightAscension() - 202.22741));
 		if(Math.abs(coord.getDeclination() - -9.31434) > 0.00001)

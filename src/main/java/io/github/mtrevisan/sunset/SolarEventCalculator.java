@@ -582,7 +582,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(t);
 		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
-		EquatorialCoordinate coord = SunPosition.toEquatorialCoordinate(apparentGeometricLatitude, apparentGeometricLongitude,
+		EquatorialCoordinate coord = EquatorialCoordinate.createFromEcliptical(apparentGeometricLatitude, apparentGeometricLongitude,
 			apparentEclipticObliquity);
 		final double apparentDeclination = coord.getDeclination();
 		final double localHourAngle = localHourAngle(trueGeometricLongitude, solarZenith, sunrise, apparentDeclination);

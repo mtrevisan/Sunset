@@ -25,6 +25,7 @@
 package io.github.mtrevisan.sunset.coordinates;
 
 
+import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.StringHelper;
 
 
@@ -57,6 +58,36 @@ public final class EquatorialCoordinate{
 	 */
 	public static EquatorialCoordinate create(final double rightAscension, final double declination){
 		return new EquatorialCoordinate(rightAscension, declination);
+	}
+
+	/**
+	 * Creates a new instance from ecliptical coordinates.
+	 *
+	 * @param eclipticLatitude   Geometric ecliptic latitude [°].
+	 * @param eclipticLongitude   Geometric ecliptic longitude [°].
+	 * @param eclipticObliquity   Obliquity of the ecliptic [°].
+	 * @return	An instance.
+	 */
+	public static EquatorialCoordinate createFromEcliptical(double eclipticLatitude, double eclipticLongitude, double eclipticObliquity){
+		eclipticLatitude = StrictMath.toRadians(eclipticLatitude);
+		eclipticLongitude = StrictMath.toRadians(eclipticLongitude);
+		eclipticObliquity = StrictMath.toRadians(eclipticObliquity);
+
+		final double sinLat = StrictMath.sin(eclipticLatitude);
+		final double cosLat = StrictMath.cos(eclipticLatitude);
+		final double sinLon = StrictMath.sin(eclipticLongitude);
+		final double cosLon = StrictMath.cos(eclipticLongitude);
+		final double cosObl = StrictMath.cos(eclipticObliquity);
+		final double sinObl = StrictMath.sin(eclipticObliquity);
+
+		final double rightAscension = MathHelper.correctRangeDegree(StrictMath.toDegrees(
+			StrictMath.atan2(sinLon * cosObl - sinLat * sinObl / cosLat, cosLon)
+		));
+		final double declination = StrictMath.toDegrees(
+			StrictMath.asin(sinLat * cosObl + cosLat * sinObl * sinLon)
+		);
+
+		return create(rightAscension, declination);
 	}
 
 

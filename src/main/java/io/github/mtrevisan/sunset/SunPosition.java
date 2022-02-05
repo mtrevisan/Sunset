@@ -106,7 +106,7 @@ public final class SunPosition{
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 		final double geometricMeanLatitude = geometricMeanLatitude(tt);
-		return toEquatorialCoordinate(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
+		return EquatorialCoordinate.createFromEcliptical(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
 	}
 
 	/**
@@ -267,35 +267,6 @@ public final class SunPosition{
 		}
 		final double latitude = MathHelper.eval(jme, parameters) / 100_000_000.;
 		return MathHelper.correctRangeDegree(-StrictMath.toDegrees(latitude));
-	}
-
-	/**
-	 * Calculate the Right Ascension and declination (equatorial coordinates) of an object given ecliptical coordinates.
-	 *
-	 * @param eclipticLatitude   Geometric ecliptic latitude [°].
-	 * @param eclipticLongitude   Geometric ecliptic longitude [°].
-	 * @param eclipticObliquity   Obliquity of the ecliptic [°].
-	 * @return	Object's equatorial coordinate.
-	 */
-	static EquatorialCoordinate toEquatorialCoordinate(double eclipticLatitude, double eclipticLongitude, double eclipticObliquity){
-		eclipticLatitude = StrictMath.toRadians(eclipticLatitude);
-		eclipticLongitude = StrictMath.toRadians(eclipticLongitude);
-		eclipticObliquity = StrictMath.toRadians(eclipticObliquity);
-
-		final double sinLat = StrictMath.sin(eclipticLatitude);
-		final double cosLat = StrictMath.cos(eclipticLatitude);
-		final double sinLon = StrictMath.sin(eclipticLongitude);
-		final double cosLon = StrictMath.cos(eclipticLongitude);
-		final double cosObl = StrictMath.cos(eclipticObliquity);
-		final double sinObl = StrictMath.sin(eclipticObliquity);
-		final double rightAscension = MathHelper.correctRangeDegree(StrictMath.toDegrees(
-			StrictMath.atan2(sinLon * cosObl - sinLat * sinObl / cosLat, cosLon)
-		));
-		final double declination = StrictMath.toDegrees(
-			StrictMath.asin(sinLat * cosObl + cosLat * sinObl * sinLon)
-		);
-
-		return EquatorialCoordinate.create(rightAscension, declination);
 	}
 
 }
