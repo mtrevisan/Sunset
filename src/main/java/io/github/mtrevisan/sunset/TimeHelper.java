@@ -24,6 +24,8 @@
  */
 package io.github.mtrevisan.sunset;
 
+import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+
 
 public final class TimeHelper{
 
@@ -125,6 +127,83 @@ public final class TimeHelper{
 			deltaT = MathHelper.eval(u, new double[]{-205.72, 56.28, 32});
 		}
 		return deltaT - yat2 * (LUNAR_ACCELERATION + 26.);
+	}
+
+
+	/**
+	 * Calculate Greenwich Mean Sidereal Time, ΘGMST.
+	 *
+	 * @param ut	Julian Day of Universal Time from J2000.0.
+	 * @return	mean Sidereal time at Greenwich [°].
+	 */
+	static double meanSiderealTime(final double ut){
+		final double[] dateAndTime = JulianDay.extractDateAndTime(ut);
+		final double ut0 = JulianDay.centuryJ2000Of(dateAndTime[0]);
+		//[s]
+		final double t = dateAndTime[1] * JulianDay.SECONDS_IN_DAY;
+
+		//Greenwich Sidereal Time at midnight [day]
+		final double h0 = MathHelper.eval(ut0, new double[]{24110.54841, 8640184.812866, 0.093104, -6.2e-6}) / JulianDay.SECONDS_IN_DAY;
+		final double earthSiderealRotationRate = earthSiderealRotationRate(ut0);
+		/*
+		This is the difference between UT1 (time using the mean rotating Earth as a clock) and UTC (time that runs at the same rate as
+		an atomic clock, but with leap seconds occasionally inserted to keep UT1 and UTC in sync).
+		Since dUT1 = |UT1 − UTC| < 0.9 s, it is ignored.
+		See <a href="https://en.wikipedia.org/wiki/DUT1">DUT1</a>.
+		*/
+		//[s]
+		final double dUT1 = 0.;
+		//[day]
+		final double h = MathHelper.frac(h0 + earthSiderealRotationRate * (t - dUT1));
+		return h * JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR;
+		//alternative:
+		//return correctRangeDegree(eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
+	}
+
+	/**
+	 * Calculate the Earth's sidereal rotation rate.
+	 *
+	 * @param ut	Julian Century of Universal Time from J2000.0.
+	 * @return	Earth's sidereal rotation rate [sidereal day/UT s].
+	 */
+	private static double earthSiderealRotationRate(final double ut){
+		//[rad/s]
+		final double rate = 7.2921158553e-5 + 4.3e-15 * ut;
+		return rate / (2. * StrictMath.PI);
+	}
+
+	/**
+	 * Calculate Greenwich Apparent Sidereal Time, ΘGAST.
+	 *
+	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [°].
+	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [°].
+	 * @param deltaPsi	Nutation in longitude [°].
+	 * @return	apparent Sidereal time at Greenwich [°].
+	 */
+	static double apparentSiderealTime(final double meanSiderealTime, final double trueEclipticObliquity, final double deltaPsi){
+		final double equationOfTheEquinoxes = deltaPsi * StrictMath.cos(StrictMath.toRadians(trueEclipticObliquity));
+		return MathHelper.correctRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
+	}
+
+	/**
+	 * Calculate Local Mean Sidereal Time, ΘLMST.
+	 *
+	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [°].
+	 * @return	The apparent local Sidereal time at Greenwich [°].
+	 */
+	static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
+		return meanSiderealTime + location.getLongitude();
+	}
+
+	/**
+	 * Calculate the hour angle of a body, H.
+	 *
+	 * @param localSiderealTime	Local Sidereal Time [°].
+	 * @param rightAscension	Right ascension [°].
+	 * @return	The hour angle [°].
+	 */
+	static double localHourAngle(final double localSiderealTime, final double rightAscension){
+		return localSiderealTime - rightAscension;
 	}
 
 }
