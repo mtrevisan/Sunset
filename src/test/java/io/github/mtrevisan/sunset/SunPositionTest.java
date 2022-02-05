@@ -42,7 +42,7 @@ class SunPositionTest{
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.28s, δ: -4° 28' 15.41\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 12h 42m 18.26s, δ: -4° 31' 37.18\"}", coord.toString());
 	}
 
 	@Test
@@ -51,7 +51,7 @@ class SunPositionTest{
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 18h 43m 33.13s, δ: -23° 3' 31.96\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 18h 42m 18.7s, δ: -23° 3' 3.69\"}", coord.toString());
 	}
 
 
@@ -67,32 +67,32 @@ class SunPositionTest{
 		if(Math.abs(geometricMeanLongitude - 204.0182616917) > 0.0000000001)
 			throw new IllegalArgumentException("geometricMeanLongitude: " + (geometricMeanLongitude - 204.0182616917));
 		final double[] nutation = SunPosition.nutationCorrection(tt);
-		if(Math.abs(nutation[0] - -0.00399840) > 0.00000001)
-			throw new IllegalArgumentException("nutationInLongitude: " + (nutation[0] - -0.00399840));
-		if(Math.abs(nutation[1] - 0.00166657) > 0.00000001)
-			throw new IllegalArgumentException("nutationInObliquity: " + (nutation[1] - 0.00166657));
+		if(Math.abs(nutation[0] - -0.25189948) > 0.00000001)
+			throw new IllegalArgumentException("nutationInLongitude: " + (nutation[0] - -0.25189948));
+		if(Math.abs(nutation[1] - 0.10499379) > 0.00000001)
+			throw new IllegalArgumentException("nutationInObliquity: " + (nutation[1] - 0.10499379));
 		final double radiusVector = SunPosition.radiusVector(tt);
 		if(Math.abs(radiusVector - 0.9965422974) > 0.0000000001)
 			throw new IllegalArgumentException("radiusVector: " + (radiusVector - 0.9965422974));
 		final double aberration = SunPosition.aberrationCorrection(radiusVector);
 		final double apparentGeometricLongitude = SunPosition.apparentGeometricLongitude(geometricMeanLongitude, nutation[0], aberration);
-		if(Math.abs(apparentGeometricLongitude - 204.0085519281) > 0.0000000002)
-			throw new IllegalArgumentException("apparentGeometricLongitude: " + (apparentGeometricLongitude - 204.0085519281));
+		if(Math.abs(apparentGeometricLongitude - 203.7606508546) > 0.0000000002)
+			throw new IllegalArgumentException("apparentGeometricLongitude: " + (apparentGeometricLongitude - 203.7606508546));
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-		if(Math.abs(trueEclipticObliquity - 23.440465) > 0.000001)
-			throw new IllegalArgumentException("trueEclipticObliquity: " + (trueEclipticObliquity - 23.440465));
+		if(Math.abs(trueEclipticObliquity - 23.543792) > 0.000001)
+			throw new IllegalArgumentException("trueEclipticObliquity: " + (trueEclipticObliquity - 23.543792));
 		final double geometricMeanLatitude = SunPosition.geometricMeanLatitude(tt);
 		if(Math.abs(geometricMeanLatitude - 0.0001011219) > 0.0000000001)
 			throw new IllegalArgumentException("geometricMeanLatitude: " + (geometricMeanLatitude - 0.0001011219));
 		EquatorialCoordinate coord = EquatorialCoordinate.createFromEcliptical(geometricMeanLatitude, apparentGeometricLongitude,
 			trueEclipticObliquity);
-		if(Math.abs(coord.getRightAscension() - 202.22741) > 0.00001)
-			throw new IllegalArgumentException("rightAscension: " + (coord.getRightAscension() - 202.22741));
-		if(Math.abs(coord.getDeclination() - -9.31434) > 0.00001)
-			throw new IllegalArgumentException("declination: " + (coord.getDeclination() - -9.31434));
+		if(Math.abs(coord.getRightAscension() - 201.97832) > 0.00001)
+			throw new IllegalArgumentException("rightAscension: " + (coord.getRightAscension() - 201.97832));
+		if(Math.abs(coord.getDeclination() - -9.26166) > 0.00001)
+			throw new IllegalArgumentException("declination: " + (coord.getDeclination() - -9.26166));
 
-		Assertions.assertEquals("EquatorialCoordinate{α: 13h 28m 54.58s, δ: -9° 18' 51.62\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 13h 27m 54.8s, δ: -9° 15' 41.98\"}", coord.toString());
 	}
 
 

@@ -55,12 +55,10 @@ https://squarewidget.com/solar-coordinates/
 public final class SunPosition{
 
 	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_DATA;
-	private static Map<String, Collection<Double[]>> EARTH_RADIUS_VECTOR_DATA;
 	private static Map<String, Collection<Double[]>> NUTATION_DATA;
 	static{
 		try{
 			EARTH_HELIOCENTRIC_DATA = ResourceReader.read("earthHeliocentric.dat");
-			EARTH_RADIUS_VECTOR_DATA = ResourceReader.read("earthRadiusVector.dat");
 			NUTATION_DATA = ResourceReader.read("nutation.dat");
 		}
 		catch(final IOException ignored){}
@@ -91,8 +89,17 @@ public final class SunPosition{
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
 	public static EquatorialCoordinate sunPosition(final double tt){
+		double geometricMeanLatitude = geometricMeanLatitude(tt);
 		//calculate the geometric mean longitude L0 of the Sun referred to the mean equinox of the time T: L0
-		final double geometricMeanLongitude = geometricMeanLongitude(tt);
+		double geometricMeanLongitude = geometricMeanLongitude(tt);
+
+		//conversion to the FK5 System:
+		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
+		final double deltaLatitude = (0.03916 / JulianDay.SECONDS_IN_HOUR) * (StrictMath.cos(lambdaPrime) - StrictMath.sin(lambdaPrime));
+		final double deltaLongitude = -0.09033 / JulianDay.SECONDS_IN_HOUR;
+		geometricMeanLatitude += deltaLatitude;
+		geometricMeanLongitude += deltaLongitude;
+
 		//calculate the nutation in longitude and obliquity
 		final double[] nutation = nutationCorrection(tt);
 		final double radiusVector = radiusVector(tt);
@@ -100,13 +107,36 @@ public final class SunPosition{
 		final double aberration = aberrationCorrection(radiusVector);
 		//calculate the apparent Sun longitude: Ltrue = L0 + C
 		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutation[0], aberration);
+
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
 		final double meanEclipticObliquity = meanEclipticObliquity(tt);
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-		final double geometricMeanLatitude = geometricMeanLatitude(tt);
+
 		return EquatorialCoordinate.createFromEcliptical(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
+	}
+
+	/**
+	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geometric mean latitude of the Sun [°].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 */
+	static double geometricMeanLatitude(final double tt){
+		final double jme = tt / 10.;
+		final double[] parameters = new double[2];
+		for(int i = 0; i < parameters.length; i ++){
+			double parameter = 0.;
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
+			for(final Double[] element : elements)
+				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+			parameters[i] = parameter;
+		}
+		final double latitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
+		return MathHelper.correctRangeDegree(-latitude);
 	}
 
 	/**
@@ -127,8 +157,8 @@ public final class SunPosition{
 				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 			parameters[i] = parameter;
 		}
-		final double longitude = MathHelper.eval(jme, parameters) / 100_000_000.;
-		return MathHelper.correctRangeDegree(StrictMath.toDegrees(longitude) + 180.);
+		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
+		return MathHelper.correctRangeDegree(longitude + 180.);
 	}
 
 	/**
@@ -174,11 +204,10 @@ public final class SunPosition{
 				deltaPsi += (element[x.length] + element[x.length + 1] * tt) * StrictMath.sin(parameter);
 				deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * tt) * StrictMath.cos(parameter);
 			}
-		//FIXME /63 ?!?!?!
 		//[°]
-		deltaPsi = MathHelper.toDegrees(0, 0, deltaPsi / 10_000.) / 63.;
+		deltaPsi = deltaPsi / (JulianDay.SECONDS_IN_HOUR * 10_000.);
 		//[°]
-		deltaEpsilon = MathHelper.toDegrees(0, 0, deltaEpsilon / 10_000.) / 63.;
+		deltaEpsilon = deltaEpsilon / (JulianDay.SECONDS_IN_HOUR * 10_000.);
 		return new double[]{deltaPsi, deltaEpsilon};
 	}
 
@@ -194,7 +223,7 @@ public final class SunPosition{
 		final double[] parameters = new double[5];
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
-			final Collection<Double[]> elements = EARTH_RADIUS_VECTOR_DATA.get("R" + i);
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
 			for(final Double[] element : elements)
 				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 			parameters[i] = parameter;
@@ -245,28 +274,6 @@ public final class SunPosition{
 	 */
 	static double trueEclipticObliquity(final double meanEclipticObliquity, final double deltaEpsilon){
 		return meanEclipticObliquity + deltaEpsilon;
-	}
-
-	/**
-	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
-	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geometric mean latitude of the Sun [°].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
-	 */
-	static double geometricMeanLatitude(final double tt){
-		final double jme = tt / 10.;
-		final double[] parameters = new double[2];
-		for(int i = 0; i < parameters.length; i ++){
-			double parameter = 0.;
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
-			for(final Double[] element : elements)
-				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-			parameters[i] = parameter;
-		}
-		final double latitude = MathHelper.eval(jme, parameters) / 100_000_000.;
-		return MathHelper.correctRangeDegree(-StrictMath.toDegrees(latitude));
 	}
 
 }
