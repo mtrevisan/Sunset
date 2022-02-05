@@ -48,12 +48,16 @@ public final class JulianDay{
 	/** Durate of the Gregor XIII reform [days]. */
 	private static final int GREGOR_XIII_REFORM_DURATE = 10;
 
-	private static final double MJD_ERA = 2400000.5;
-
+	public static final double MJD = 2400000.5;
 	/** 1.5 Jan 2000 UT - Julian epoch. */
 	private static final double J2000 = 2451545.;
 
 	public static final double CIVIL_SAECULUM = 36525.;
+	//[°/h]
+	public static final double DEGREES_PER_HOUR = 15.;
+	public static final double HOURS_IN_DAY = 24.;
+	public static final double SECONDS_IN_HOUR = 3600.;
+	public static final double SECONDS_IN_DAY = SECONDS_IN_HOUR * HOURS_IN_DAY;
 
 
 	/**
@@ -73,7 +77,7 @@ public final class JulianDay{
 	}
 
 	public static double timeOf(final LocalTime time){
-		return time.toSecondOfDay() / (24. * 60. * 60.);
+		return time.toSecondOfDay() / SECONDS_IN_DAY;
 	}
 
 	/**
@@ -132,7 +136,7 @@ public final class JulianDay{
 	 * @return	The Modified Julian Day starting at midnight.
 	 */
 	public static double mjdOf(final double jd){
-		return jd - MJD_ERA;
+		return jd - MJD;
 	}
 
 
@@ -151,6 +155,14 @@ public final class JulianDay{
 
 	public static boolean isLeapYear(final int year){
 		return ((year & 0x03) == 0 && (year < GREGOR_XIII_REFORM_YEAR || (year % 100) != 0 || (year % 400) == 0));
+	}
+
+	public static double[] extractDateAndTime(final double jd){
+		//calculate time of day [day]
+		final double time = ((jd - 0.5) % 1);
+		//calculate UT at 0h [day]
+		final double date = (long)jd - 0.5;
+		return new double[]{date, time};
 	}
 
 }
