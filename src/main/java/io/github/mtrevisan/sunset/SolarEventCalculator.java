@@ -48,6 +48,8 @@ others
 https://github.com/MenoData/Time4J/blob/master/base/src/main/java/net/time4j/calendar/astro/SolarTime.java
 https://github.com/shred/commons-suncalc/blob/master/src/main/java/org/shredzone/commons/suncalc/SunTimes.java
 https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
+
+https://www.iers.org/SharedDocs/Publikationen/EN/IERS/Publications/tn/TechnNote13/tn13.pdf?__blob=publicationFile&v=1
 */
 public class SolarEventCalculator{
 
@@ -417,6 +419,9 @@ final double tt = JulianDay.centuryJ2000Of(jd);
 		final double declination = declination(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
 		if(Math.abs(declination - -9.31434) > 0.00001)
 			throw new IllegalArgumentException("declination: " + (declination - -9.31434));
+		EquatorialCoordinate coord = EquatorialCoordinate.create(rightAscension, declination);
+		System.out.println(coord);
+
 		final double meanSiderealTime = meanSiderealTime(ut);
 		//calculate the apparent sidereal time at Greenwich at any given time
 		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutationInLongitudeAndObliquity[0]);
@@ -425,31 +430,33 @@ final double tt = JulianDay.centuryJ2000Of(jd);
 		final double localHourAngle = localHourAngle(localMeanSiderealTime, rightAscension);
 		if(Math.abs(localHourAngle - 11.105902) > 0.000001)
 			throw new IllegalArgumentException("localHourAngle: " + (localHourAngle - 11.105902));
-		final double equatorialHorizontalParallax = StrictMath.toRadians(equatorialHorizontalParallax(radiusVector));
+		final double equatorialHorizontalParallax = equatorialHorizontalParallax(radiusVector);
 		final double latitude = StrictMath.toRadians(location.getLatitude());
 		final double u = StrictMath.atan((1. - EARTH_FLATTENING) * StrictMath.tan(latitude));
-//		final double u = StrictMath.atan(0.99664719 * StrictMath.tan(latitude));
-		final double chi = StrictMath.cos(u) + observerElevation * StrictMath.cos(latitude);
+		final double chi = StrictMath.cos(u) + (observerElevation / EARTH_EQUATORIAL_RADIUS) * StrictMath.cos(latitude);
 		final double y = 0.99664719 * StrictMath.sin(u) + (observerElevation / EARTH_EQUATORIAL_RADIUS) * StrictMath.sin(latitude);
 		//calculate the parallax in the sun right ascension: Δα
-		final double deltaRightAscension = StrictMath.atan2(
-			-chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(StrictMath.toRadians(localHourAngle)),
-			StrictMath.cos(declination) - chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(StrictMath.toRadians(localHourAngle))
-		);
+		final double horizontalParallax = StrictMath.toRadians(equatorialHorizontalParallax);
+		final double lha = StrictMath.toRadians(localHourAngle);
+		final double decl = StrictMath.toRadians(declination);
+		final double deltaRightAscension = StrictMath.toDegrees(StrictMath.atan2(
+			-chi * StrictMath.sin(horizontalParallax) * StrictMath.sin(lha),
+			StrictMath.cos(decl) - chi * StrictMath.sin(horizontalParallax) * StrictMath.cos(lha)
+		));
 		//calculate the topocentric Sun Right Ascension: α'
-		final double rightAscensionTopocentric = rightAscension + StrictMath.toDegrees(deltaRightAscension);
-//		if(Math.abs(rightAscensionTopocentric - 202.22704) > 0.00001)
-//			throw new IllegalArgumentException("rightAscensionTopocentric: " + (rightAscensionTopocentric - 202.22704));
-		final double declinationTopocentric = StrictMath.atan2(
-			((StrictMath.sin(StrictMath.toRadians(declination)) - y * StrictMath.sin(equatorialHorizontalParallax)) * StrictMath.cos(deltaRightAscension)),
-			StrictMath.cos(StrictMath.toRadians(declination)) - chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(StrictMath.toRadians(localHourAngle))
-		);
-//		if(Math.abs(declinationTopocentric - -9.316179) > 0.000001)
-//			throw new IllegalArgumentException("declinationTopocentric: " + (declinationTopocentric - -9.316179));
+		final double rightAscensionTopocentric = rightAscension + deltaRightAscension;
+		if(Math.abs(rightAscensionTopocentric - 202.22704) > 0.00001)
+			throw new IllegalArgumentException("rightAscensionTopocentric: " + (rightAscensionTopocentric - 202.22704));
+		final double declinationTopocentric = StrictMath.toDegrees(StrictMath.atan2(
+			((StrictMath.sin(decl) - y * StrictMath.sin(horizontalParallax)) * StrictMath.cos(StrictMath.toRadians(deltaRightAscension))),
+			StrictMath.cos(decl) - chi * StrictMath.sin(horizontalParallax) * StrictMath.cos(lha)
+		));
+		if(Math.abs(declinationTopocentric - -9.316179) > 0.000001)
+			throw new IllegalArgumentException("declinationTopocentric: " + (declinationTopocentric - -9.316179));
 		//calculate the topocentric local hour angle: H’
 		final double localHourAngleTopocentric = localHourAngle - deltaRightAscension;
-//		if(Math.abs(localHourAngleTopocentric - 11.10629) > 0.00001)
-//			throw new IllegalArgumentException("localHourAngleTopocentric: " + (localHourAngleTopocentric - 11.10629));
+		if(Math.abs(localHourAngleTopocentric - 11.10629) > 0.00002)
+			throw new IllegalArgumentException("localHourAngleTopocentric: " + (localHourAngleTopocentric - 11.10629));
 		//TODO
 		//calculate the topocentric zenith angle: θ
 		final double zenithTopocentric = 0;
@@ -458,7 +465,6 @@ final double tt = JulianDay.centuryJ2000Of(jd);
 
 //		EquatorialCoordinate coord2 = sunPosition(jd);
 
-		EquatorialCoordinate coord = EquatorialCoordinate.create(rightAscension, declination);
 		System.out.println(coord);
 	}
 
