@@ -39,13 +39,13 @@ public final class AtmosphereHelper{
 	 *
 	 * @param pressure	The pressure [hPa].
 	 * @param temperature	The temperature [°C].
-	 * @param e0	The topocentric elevation angle without atmospheric refraction correction [°].
+	 * @param trueElevation	The topocentric elevation angle without atmospheric refraction correction [°].
 	 * @return	The correction [°].
 	 */
-	static double atmosphericRefractionCorrection(final double pressure, final double temperature, final double e0){
+	static double atmosphericRefractionCorrection(final double pressure, final double temperature, final double trueElevation){
 		return (pressure / 1010.)
 			* ((ABSOLUTE_ZERO + 10.) / (ABSOLUTE_ZERO + temperature))
-			* (1.02 / (60. * StrictMath.tan(StrictMath.toRadians(e0 + 10.3 / (e0 + 5.11)))));
+			* (1.02 / (60. * StrictMath.tan(StrictMath.toRadians(trueElevation + 10.3 / (trueElevation + 5.11)))));
 	}
 
 }

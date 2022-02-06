@@ -27,28 +27,13 @@ package io.github.mtrevisan.sunset;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.Map;
 
 
 public class SolarEventCalculator{
-
-	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_DATA;
-	private static Map<String, Collection<Double[]>> EARTH_RADIUS_VECTOR_DATA;
-	private static Map<String, Collection<Double[]>> NUTATION_DATA;
-	static{
-		try{
-			EARTH_HELIOCENTRIC_DATA = ResourceReader.read("earthHeliocentric.dat");
-			EARTH_RADIUS_VECTOR_DATA = ResourceReader.read("earthRadiusVector.dat");
-			NUTATION_DATA = ResourceReader.read("nutation.dat");
-		}
-		catch(final IOException ignored){}
-	}
 
 	static final double EARTH_FLATTENING = 1. / 298.25642;
 	//[m]
@@ -58,23 +43,23 @@ public class SolarEventCalculator{
 	static final double ABSOLUTE_ZERO = 273.15;
 
 
-	// Calculates the approximate set time of a body which has the specified right ascension and declination.
-	// The resultant value will be close to the specified date.
-	// Return values are undef if the object is circumpolar for that date.
-	//	private double approxRiseSet(date, lat, long, ra, decl, h0 = -0.5667 degrees){
-	//		transit = approxTransit[date, long, ra, decl];
-	//		H0 = calcHourAngle[lat, decl, h0];
-	//
-	//		if(H0 == undef)
-	//			return [undef, undef]
-	//
-	//		Htime = H0 / (360 degrees/day);
-	//		//   println["transit is $transit"]
-	//		//   println["H0 is $H0"]
-	//		//   println["Htime is " + (Htime -> "hours")]
-	//		set = transit + Htime;
-	//		return set;
-	//	}
+// Calculates the approximate set time of a body which has the specified right ascension and declination.
+// The resultant value will be close to the specified date.
+// Return values are undef if the object is circumpolar for that date.
+//	private double approxRiseSet(date, lat, long, ra, decl, h0 = -0.5667 degrees){
+//		transit = approxTransit[date, long, ra, decl];
+//		H0 = calcHourAngle[lat, decl, h0];
+//
+//		if(H0 == undef)
+//			return [undef, undef]
+//
+//		Htime = H0 / (360 degrees/day);
+//		//   println["transit is $transit"]
+//		//   println["H0 is $H0"]
+//		//   println["Htime is " + (Htime -> "hours")]
+//		set = transit + Htime;
+//		return set;
+//	}
 
 	//https://frinklang.org/frinksamp/sun.frink
 	//https://www.astrouw.edu.pl/~jskowron/pracownia/praca/sunspot_answerbook_expl/expl-5.html
@@ -91,9 +76,9 @@ public class SolarEventCalculator{
 	//[°C]
 	private double temperature;
 	//[°]
-	private double surfaceSlope;
+	private Double surfaceSlope;
 	//[°]
-	private double surfaceAzimuthRotation;
+	private Double surfaceAzimuthRotation;
 
 
 	/**
@@ -140,34 +125,23 @@ public class SolarEventCalculator{
 		return this;
 	}
 
-	public double getSurfaceSlope(){
+	public Double getSurfaceSlope(){
 		return surfaceSlope;
+	}
+
+	public Double getSurfaceAzimuthRotation(){
+		return surfaceAzimuthRotation;
 	}
 
 	/**
 	 * Slope of the surface measured from the horizontal plane.
 	 *
 	 * @param surfaceSlope	The surface slope [°].
-	 * @return	This instance.
-	 */
-	public SolarEventCalculator withSurfaceSlope(final double surfaceSlope){
-		this.surfaceSlope = surfaceSlope;
-
-		return this;
-	}
-
-	public double getSurfaceAzimuthRotation(){
-		return surfaceAzimuthRotation;
-	}
-
-	/**
-	 * Surface azimuth rotation angle, measured from south to the projection of the surface normal on the horizontal plane, positive if
-	 * oriented west from south.
-	 *
 	 * @param surfaceAzimuthRotation	The surface azimuth rotation angle [°].
 	 * @return	This instance.
 	 */
-	public SolarEventCalculator withSurfaceAzimuthRotation(final double surfaceAzimuthRotation){
+	public SolarEventCalculator withSurfaceSlopeAndAzimuthRotation(final double surfaceSlope, final double surfaceAzimuthRotation){
+		this.surfaceSlope = surfaceSlope;
 		this.surfaceAzimuthRotation = surfaceAzimuthRotation;
 
 		return this;
@@ -217,9 +191,9 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double eccentricity = earthOrbitEccentricity(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		//Ltrue = L0 + C
-		final double trueGeometricLongitude = MathHelper.correctRangeDegree(geometricMeanLongitude + equationOfCenter);
+		final double trueGeometricLongitude = MathHelper.limitRangeDegree(geometricMeanLongitude + equationOfCenter);
 		//ν = M + C
-		final double trueAnomaly = MathHelper.correctRangeDegree(meanAnomaly + equationOfCenter);
+		final double trueAnomaly = MathHelper.limitRangeDegree(meanAnomaly + equationOfCenter);
 		final double radiusVector = SunPosition.radiusVector(t);
 		final double radiusVector2 = radiusVector(eccentricity, trueAnomaly);
 		final double[] nutation = SunPosition.nutationCorrection(t);
@@ -253,7 +227,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 * @return	The geometric mean anomaly of the Sun [°].
 	 */
 	private static double geometricMeanAnomaly(final double tt){
-		return MathHelper.correctRangeDegree(MathHelper.eval(tt, new double[]{357.52911, 35999.05029, -0.0001537}));
+		return MathHelper.limitRangeDegree(MathHelper.eval(tt, new double[]{357.52911, 35999.05029, -0.0001537}));
 	}
 
 	/**
@@ -290,7 +264,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	}
 
 	//https://www.nrel.gov/docs/fy08osti/34302.pdf
-	public static void main(String[] args){
+	public static void main(String[] args) throws SolarEventException{
 		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
 		//[m]
 		final double observerElevation = 1830.14;
@@ -299,14 +273,147 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		//[°C]
 		final double temperature = 11.;
 		//slope of the surface measured from the horizontal plane [°]
-		final double surfaceSlope = 30.;
+		final Double surfaceSlope = 30.;
 		//surface azimuth rotation angle, measured from south to the projection of the surface normal on the horizontal plane, positive if
 		//oriented west from south [°]
-		final double surfaceAzimuthRotation = -10.;
+		final Double surfaceAzimuthRotation = -10.;
 
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
-		TimeHelper.deltaT(2003);
+		final double dt = 67.;
+		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, dt);
+		final double tt = JulianDay.centuryJ2000Of(jd);
+
+		EquatorialCoordinate coordBefore = SunPosition.sunPosition(JulianDay.centuryJ2000Of(jd - 1.));
+		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
+		EquatorialCoordinate coordAfter = SunPosition.sunPosition(JulianDay.centuryJ2000Of(jd + 1.));
+		final double[] nutation = SunPosition.nutationCorrection(tt);
+		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
+		//and planets appear to move across the sky): ɛ0
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		//calculate the true obliquity of the ecliptic
+		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
+
+		//calculate the mean sidereal time at Greenwich at any given time: ΘGMST
+		final double meanSiderealTime = meanSiderealTime(ut);
+		//calculate the apparent sidereal time at Greenwich at any given time: ΘGAST
+		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
+
+		//calculate the approximate sun transit time: m0 [day]
+		double m0 = (coord.getRightAscension() - location.getLongitude() - apparentSiderealTime) / 360.;
+		//calculate the local hour angle corresponding to the sun elevation equals -0.8333°: H0
+		final double latitude = StrictMath.toRadians(location.getLatitude());
+		final double declination = StrictMath.toRadians(coord.getDeclination());
+		final double cosH0 = (StrictMath.sin(StrictMath.toRadians(-0.8333)) - StrictMath.sin(latitude) * StrictMath.sin(declination))
+			/ (StrictMath.cos(latitude) * StrictMath.cos(declination));
+		if(cosH0 < -1.)
+			//the sun never sets on this location on the specified date
+			throw SolarEventException.create(SolarEventError.NEVER_SETS);
+		if(cosH0 > 1.)
+			//the sun never rises on this location on the specified date
+			throw SolarEventException.create(SolarEventError.NEVER_RISES);
+		final double h0 = limitRangeDegree180(StrictMath.acos(cosH0));
+		//calculate the approximate sunrise time: m1
+		final double m1 = limitRangeDay(m0 - h0 / 360.);
+		//calculate the approximate sunset time: m2
+		final double m2 = limitRangeDay(m0 + h0 / 360.);
+		m0 = limitRangeDay(m0);
+
+		//calculate the sidereal time at Greenwich for the sun transit, sunrise, and sunset
+		final double v0 = apparentSiderealTime + 360.985647 * m0;
+		final double v1 = apparentSiderealTime + 360.985647 * m1;
+		final double v2 = apparentSiderealTime + 360.985647 * m2;
+		final double n0 = m0 + dt / 86400.;
+		final double n1 = m1 + dt / 86400.;
+		final double n2 = m2 + dt / 86400.;
+		//calculate the Right Ascension and declination
+		double a = coord.getRightAscension() - coordBefore.getRightAscension();
+		double a_prime = coord.getDeclination() - coordBefore.getDeclination();
+		double b = coordAfter.getRightAscension() - coord.getRightAscension();
+		double b_prime = coordAfter.getDeclination() - coord.getDeclination();
+		double c = b - a;
+		double c_prime = b_prime - a_prime;
+		if(StrictMath.abs(a) > 2.)
+			a = limitRangeDay2(a);
+		if(StrictMath.abs(a_prime) > 2.)
+			a_prime = limitRangeDay2(a_prime);
+		if(StrictMath.abs(b) > 2.)
+			b = limitRangeDay2(b);
+		if(StrictMath.abs(b_prime) > 2.)
+			b_prime = limitRangeDay2(b_prime);
+		final double alpha0 = coord.getRightAscension() + n0 * (a + b + c * n0) / 2.;
+		final double alpha1 = coord.getRightAscension() + n1 * (a + b + c * n1) / 2.;
+		final double alpha2 = coord.getRightAscension() + n1 * (a + b + c * n2) / 2.;
+		final double delta0 = StrictMath.toRadians(coord.getDeclination() + n0 * (a_prime + b_prime + c_prime * n0) / 2.);
+		final double delta1 = StrictMath.toRadians(coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n1) / 2.);
+		final double delta2 = StrictMath.toRadians(coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n2) / 2.);
+		//calculate the local hour angle (measured as positive westward from the meridian): H’
+		double h_prime0 = v0 + location.getLongitude() - alpha0;
+		double h_prime1 = v1 + location.getLongitude() - alpha1;
+		double h_prime2 = v2 + location.getLongitude() - alpha2;
+		h_prime0 %= 360;
+		h_prime1 %= 360;
+		h_prime2 %= 360;
+		if(h_prime0 <= -180.)
+			h_prime0 += 360.;
+		else if(h_prime0 >= -180.)
+			h_prime0 -= 360.;
+		if(h_prime1 <= -180.)
+			h_prime1 += 360.;
+		else if(h_prime1 >= -180.)
+			h_prime1 -= 360.;
+		if(h_prime2 <= -180.)
+			h_prime2 += 360.;
+		else if(h_prime2 >= -180.)
+			h_prime2 -= 360.;
+		//calculate the sun altitude
+		final double hh0 = StrictMath.asin(latitude) * StrictMath.sin(delta0)
+			+ StrictMath.cos(latitude) * StrictMath.cos(delta0) * StrictMath.cos(StrictMath.toRadians(h_prime0));
+		final double hh1 = StrictMath.asin(latitude) * StrictMath.sin(delta1)
+			+ StrictMath.cos(latitude) * StrictMath.cos(delta1) * StrictMath.cos(StrictMath.toRadians(h_prime1));
+		final double hh2 = StrictMath.asin(latitude) * StrictMath.sin(delta2)
+			+ StrictMath.cos(latitude) * StrictMath.cos(delta2) * StrictMath.cos(StrictMath.toRadians(h_prime2));
+		//calculate the sun transit: T [UT]
+		final double transit = (m0 - h_prime0 / 360.) * 24.;
+		//calculate the sunrise: T [UT]
+		final double sunrise = (m1 + (hh1 - h_prime0) / (360. * StrictMath.cos(delta1) * StrictMath.cos(latitude) * StrictMath.sin(h_prime1)))
+			* 24.;
+		//calculate the sunset: T [UT]
+		final double sunset = (m2 + (hh2 - h_prime1) / (360. * StrictMath.cos(delta2) * StrictMath.cos(latitude) * StrictMath.sin(h_prime2)))
+			* 24.;
+	}
+
+	private static double limitRangeDegree180(double degree){
+		degree %= 180;
+		return (degree < 0.? degree + 180: degree);
+	}
+
+	private static double limitRangeDay(double value){
+		value %= 1;
+		return (value < 0.? value + 1.: value);
+	}
+
+	private static double limitRangeDay2(double value){
+		value %= 2;
+		return (value < 0.? value + 2.: value);
+	}
+
+	public static void main2(String[] args){
+		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
+		//[m]
+		final double observerElevation = 1830.14;
+		//[hPa]
+		final double pressure = 820.;
+		//[°C]
+		final double temperature = 11.;
+		//slope of the surface measured from the horizontal plane [°]
+		final Double surfaceSlope = 30.;
+		//surface azimuth rotation angle, measured from south to the projection of the surface normal on the horizontal plane, positive if
+		//oriented west from south [°]
+		final Double surfaceAzimuthRotation = -10.;
+
+		final double ut = JulianDay.of(2003, 10, 17)
+			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
 		final double tt = JulianDay.centuryJ2000Of(jd);
 
@@ -329,6 +436,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double localHourAngle = localHourAngle(localMeanSiderealTime, coord.getRightAscension());
 		if(Math.abs(localHourAngle - 11.105902) > 0.000001)
 			throw new IllegalArgumentException("localHourAngle: " + (localHourAngle - 11.105902));
+
 		final double equatorialHorizontalParallax = equatorialHorizontalParallax(radiusVector);
 		final double latitude = StrictMath.toRadians(location.getLatitude());
 		final double u = StrictMath.atan((1. - EARTH_FLATTENING) * StrictMath.tan(latitude));
@@ -370,29 +478,31 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		if(Math.abs(zenithTopocentric - 50.11162) > 0.00001)
 			throw new IllegalArgumentException("zenithTopocentric: " + (zenithTopocentric - 50.11162));
 		//calculate the topocentric astronomers azimuth angle (measured westward from south): Γ
-		final double azimuthTopocentric = MathHelper.correctRangeDegree(StrictMath.toDegrees(StrictMath.atan2(
+		final double azimuthTopocentric = MathHelper.limitRangeDegree(StrictMath.toDegrees(StrictMath.atan2(
 			StrictMath.sin(lhaTopocentric),
 			StrictMath.cos(lhaTopocentric) * StrictMath.sin(latitude)
 				- StrictMath.tan(StrictMath.toRadians(declinationTopocentric)) * StrictMath.cos(latitude)
 		)));
 		//calculate the topocentric azimuth angle (measured westward from north): M
-		final double azimuthTopocentricNavigators = MathHelper.correctRangeDegree(azimuthTopocentric + 180.);
+		final double azimuthTopocentricNavigators = MathHelper.limitRangeDegree(azimuthTopocentric + 180.);
 		if(Math.abs(azimuthTopocentricNavigators - 194.34024) > 0.00001)
 			throw new IllegalArgumentException("azimuthTopocentricNavigators: " + (azimuthTopocentricNavigators - 194.34024));
 		//calculate the incidence angle for a surface oriented in any direction, I
 		final double zenith = StrictMath.toRadians(zenithTopocentric);
-		final double slope = StrictMath.toRadians(surfaceSlope);
-		final double incidence = StrictMath.toDegrees(StrictMath.acos(
-			StrictMath.cos(zenith) * StrictMath.cos(slope)
-				+ StrictMath.sin(zenith) * StrictMath.sin(slope)
-				* StrictMath.cos(StrictMath.toRadians(azimuthTopocentric - surfaceAzimuthRotation))
-		));
-		if(Math.abs(incidence - 25.18700) > 0.00001)
-			throw new IllegalArgumentException("incidence: " + (incidence - 25.18700));
+		if(surfaceSlope != null && surfaceAzimuthRotation != null){
+			final double slope = StrictMath.toRadians(surfaceSlope);
+			final double incidence = StrictMath.toDegrees(StrictMath.acos(
+				StrictMath.cos(zenith) * StrictMath.cos(slope)
+					+ StrictMath.sin(zenith) * StrictMath.sin(slope)
+					* StrictMath.cos(StrictMath.toRadians(azimuthTopocentric - surfaceAzimuthRotation))
+			));
+			if(Math.abs(incidence - 25.18700) > 0.00001)
+				throw new IllegalArgumentException("incidence: " + (incidence - 25.18700));
+		}
 
 
-		//		EquatorialCoordinate coord2 = sunPosition(jd);
-		//		System.out.println(coord2);
+//		EquatorialCoordinate coord2 = sunPosition(jd);
+//		System.out.println(coord2);
 	}
 
 	/**
@@ -461,6 +571,12 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		return StrictMath.asin(radius / (radius + distance));
 	}
 
+	/**
+	 * Calculate the Equation of Time.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The Equation of Time [h].
+	 */
 	@SuppressWarnings("OverlyComplexArithmeticExpression")
 	private static double equationOfTime(final double tt){
 		final double e0 = SunPosition.meanEclipticObliquity(tt);
@@ -471,7 +587,6 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		double y = StrictMath.tan(StrictMath.toRadians(epsilon) / 2.);
 		y *= y;
 
-		//[h]
 		return StrictMath.toDegrees(y * StrictMath.sin(2. * l0)
 			- 2. * e * StrictMath.sin(m)
 			+ 4. * e * y * StrictMath.sin(m) * StrictMath.cos(2. * l0)
@@ -531,7 +646,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 */
 	static double apparentSiderealTime(final double meanSiderealTime, final double trueEclipticObliquity, final double deltaPsi){
 		final double equationOfTheEquinoxes = deltaPsi * StrictMath.cos(StrictMath.toRadians(trueEclipticObliquity));
-		return MathHelper.correctRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
+		return MathHelper.limitRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
 	}
 
 	/**
@@ -567,7 +682,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		//Ltrue = L0 + C
-		final double trueGeometricLongitude = MathHelper.correctRangeDegree(geometricMeanLongitude + equationOfCenter);
+		final double trueGeometricLongitude = MathHelper.limitRangeDegree(geometricMeanLongitude + equationOfCenter);
 		final double[] nutation = SunPosition.nutationCorrection(t);
 		final double aberration = SunPosition.aberrationCorrection(SunPosition.radiusVector(t));
 		final double apparentGeometricLatitude = SunPosition.apparentGeometricLongitude(geometricMeanLongitude, nutation[0],
@@ -658,7 +773,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	 */
 	private static double getLocalMeanTime(final double trueGeometricLongitude, final double longitudeHour, final double localHourAngle){
 		final double rightAscension = getRightAscension(trueGeometricLongitude);
-		return MathHelper.correctRangeHour(localHourAngle + rightAscension - 0.06571 * longitudeHour - 6.622);
+		return MathHelper.limitRangeHour(localHourAngle + rightAscension - 0.06571 * longitudeHour - 6.622);
 	}
 
 	/**
@@ -671,7 +786,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	@SuppressWarnings("NumericCastThatLosesPrecision")
 	private static double getRightAscension(final double sunTrueLongitude){
 		final double tanL = StrictMath.tan(StrictMath.toRadians(sunTrueLongitude));
-		final double rightAscension = MathHelper.correctRangeDegree(StrictMath.toDegrees(StrictMath.atan(0.91764 * tanL)));
+		final double rightAscension = MathHelper.limitRangeDegree(StrictMath.toDegrees(StrictMath.atan(0.91764 * tanL)));
 
 		final double longitudeQuadrant = 90. * (int)(sunTrueLongitude / 90.);
 		final double rightAscensionQuadrant = 90. * (int)(rightAscension / 90.);
@@ -681,7 +796,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	@SuppressWarnings("NumericCastThatLosesPrecision")
 	private LocalTime getLocalTime(final double localMeanTime){
 		//adjust back to UTC
-		final double utcTime = MathHelper.correctRangeHour(localMeanTime - getBaseLongitudeHour());
+		final double utcTime = MathHelper.limitRangeHour(localMeanTime - getBaseLongitudeHour());
 		return LocalTime.of(0, 0)
 			.plus((long)(utcTime * 60. * 60.), ChronoUnit.SECONDS);
 	}

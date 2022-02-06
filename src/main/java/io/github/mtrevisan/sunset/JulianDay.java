@@ -39,14 +39,9 @@ import java.time.LocalTime;
  */
 public final class JulianDay{
 
-	/** Instant of beginning of the Gregor XIII reform (4 Oct 1582) [day]. */
-	private static final double GREGOR_XIII_REFORM_JD = 2299159.5;
+	/** Last day of the Julian calendar, that is October 4, 1582, after which 10 day were added [day]. */
+	private static final double JULIAN_CALENDAR_END = 2299160.;
 	private static final int GREGOR_XIII_REFORM_YEAR = 1582;
-	private static final int GREGOR_XIII_REFORM_MONTH = 10;
-	private static final int GREGOR_XIII_REFORM_DAY = 4;
-	private static final int GREGOR_XIII_REFORM_DOY = 277;
-	/** Durate of the Gregor XIII reform [days]. */
-	private static final int GREGOR_XIII_REFORM_DURATE = 10;
 
 	public static final double MJD = 2400000.5;
 	/** 1.5 Jan 2000 UT - Julian epoch. */
@@ -105,18 +100,17 @@ public final class JulianDay{
 			yy --;
 			mm += 12;
 		}
-		int b = 0;
-		//if date is in Gregorian calendar
-		if(year > GREGOR_XIII_REFORM_YEAR
-				|| year == GREGOR_XIII_REFORM_YEAR && month > GREGOR_XIII_REFORM_MONTH
-				|| year == GREGOR_XIII_REFORM_YEAR && month == GREGOR_XIII_REFORM_MONTH
-				&& day > GREGOR_XIII_REFORM_DAY + GREGOR_XIII_REFORM_DURATE){
+
+		double jd =  (int)(365.25 * (yy + 4716)) + (int)(30.6001 * (mm + 1)) + day - 1524.5;
+
+		if(jd > JULIAN_CALENDAR_END){
 			//number of full centuries
-			final int aa = (int)(yy * 0.01);
+			final int aa = (int)(yy / 100.);
 			//days within the whole centuries (in the Julian Calendar) adding back days removed in the Gregorian Calendar
-			b = 2 - aa + (int)(aa * 0.25);
+			jd += 2 - aa + (int)(aa / 4);
 		}
-		return b + (int)(365.25 * (yy + 4716)) + (int)(30.6001 * (mm + 1)) - 1524.5 + day;
+
+		return jd;
 	}
 
 	/**
@@ -139,19 +133,6 @@ public final class JulianDay{
 		return jd - MJD;
 	}
 
-
-	public static int dayOfYear(final LocalDateTime dateTime){
-		return dayOfYear(dateTime.toLocalDate());
-	}
-
-	public static int dayOfYear(final LocalDate date){
-		int doy = date.getDayOfMonth() + (int)(30.6 * date.getMonthValue() - 30.1);
-		if(date.getMonthValue() > 2)
-			doy -= 2 - (isLeapYear(date.getYear())? 1: 0);
-		if(date.getYear() == GREGOR_XIII_REFORM_YEAR && date.getMonthValue() >= GREGOR_XIII_REFORM_MONTH)
-			doy -= GREGOR_XIII_REFORM_DURATE;
-		return doy;
-	}
 
 	public static boolean isLeapYear(final int year){
 		return ((year & 0x03) == 0 && (year < GREGOR_XIII_REFORM_YEAR || (year % 100) != 0 || (year % 400) == 0));

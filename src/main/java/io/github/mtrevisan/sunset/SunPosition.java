@@ -73,7 +73,7 @@ public final class SunPosition{
 	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.9629814, 477198.8673981, 0.0086972, 1. / 56250.};
 	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.2719103, 483202.0175381, -0.00368250, 1. / 327270.};
 	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.0445222, -1934.1362608, 0.002070833, 1. / 450000.};
-	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {21.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
+	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
 		27.87, 5.79, 2.45};
 
 
@@ -136,7 +136,7 @@ public final class SunPosition{
 			parameters[i] = parameter;
 		}
 		final double latitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
-		return MathHelper.correctRangeDegree(-latitude);
+		return MathHelper.limitRangeDegree(-latitude);
 	}
 
 	/**
@@ -158,7 +158,7 @@ public final class SunPosition{
 			parameters[i] = parameter;
 		}
 		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
-		return MathHelper.correctRangeDegree(longitude + 180.);
+		return MathHelper.limitRangeDegree(longitude + 180.);
 	}
 
 	/**
@@ -171,26 +171,11 @@ public final class SunPosition{
 	 * https://iopscience.iop.org/article/10.1086/375641/pdf
 	 */
 	static double[] nutationCorrection(final double tt){
-		//mean elongation of the Moon from the Sun [°]
-		final double d = StrictMath.toRadians(MathHelper.correctRangeDegree(
-			MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS))
-		);
-		//mean anomaly of the Sun [°]
-		final double m = StrictMath.toRadians(MathHelper.correctRangeDegree(
-			MathHelper.eval(tt, SUN_MEAN_ANOMALY_PARAMETERS))
-		);
-		//mean anomaly of the Moon [°]
-		final double mp = StrictMath.toRadians(MathHelper.correctRangeDegree(
-			MathHelper.eval(tt, MOON_MEAN_ANOMALY_PARAMETERS))
-		);
-		//Moon's argument of Latitude [°]
-		final double f = StrictMath.toRadians(MathHelper.correctRangeDegree(
-			MathHelper.eval(tt, MOON_ARGUMENT_OF_LATITUDE))
-		);
-		//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
-		final double omega = StrictMath.toRadians(MathHelper.correctRangeDegree(
-			MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE))
-		);
+		final double d = meanElongationMoonSun(tt);
+		final double m = meanAnomalySun(tt);
+		final double mp = meanAnomalyMoon(tt);
+		final double f = argumentLatitudeMoon(tt);
+		final double omega = ascendingLongitudeMoon(tt);
 
 		final Collection<Double[]> elements = NUTATION_DATA.get("coeffs");
 		final double[] x = {d, m, mp, f, omega};
@@ -198,17 +183,57 @@ public final class SunPosition{
 		double deltaEpsilon = 0.;
 		for(int i = 0; i < elements.size(); i ++)
 			for(final Double[] element : elements){
-				double parameter = 0.;
-				for(int j = 0; j < x.length; j ++)
-					parameter += x[j] * element[j];
+				final double parameter = xyTermSummation(x, element);
 				deltaPsi += (element[x.length] + element[x.length + 1] * tt) * StrictMath.sin(parameter);
 				deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * tt) * StrictMath.cos(parameter);
 			}
 		//[°]
-		deltaPsi = deltaPsi / (JulianDay.SECONDS_IN_HOUR * 10_000.);
+		deltaPsi /= JulianDay.SECONDS_IN_HOUR * 10_000.;
 		//[°]
-		deltaEpsilon = deltaEpsilon / (JulianDay.SECONDS_IN_HOUR * 10_000.);
+		deltaEpsilon /= JulianDay.SECONDS_IN_HOUR * 10_000.;
 		return new double[]{deltaPsi, deltaEpsilon};
+	}
+
+	//mean elongation of the Moon from the Sun [rad]
+	private static double meanElongationMoonSun(final double tt){
+		return StrictMath.toRadians(MathHelper.limitRangeDegree(
+			MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS)
+		));
+	}
+
+	//mean anomaly of the Sun [rad]
+	private static double meanAnomalySun(final double tt){
+		return StrictMath.toRadians(MathHelper.limitRangeDegree(
+			MathHelper.eval(tt, SUN_MEAN_ANOMALY_PARAMETERS)
+		));
+	}
+
+	//mean anomaly of the Moon [rad]
+	private static double meanAnomalyMoon(final double tt){
+		return StrictMath.toRadians(MathHelper.limitRangeDegree(
+			MathHelper.eval(tt, MOON_MEAN_ANOMALY_PARAMETERS)
+		));
+	}
+
+	//Moon's argument of Latitude [rad]
+	private static double argumentLatitudeMoon(final double tt){
+		return StrictMath.toRadians(MathHelper.limitRangeDegree(
+			MathHelper.eval(tt, MOON_ARGUMENT_OF_LATITUDE)
+		));
+	}
+
+	//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
+	private static double ascendingLongitudeMoon(final double tt){
+		return StrictMath.toRadians(MathHelper.limitRangeDegree(
+			MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE)
+		));
+	}
+
+	private static double xyTermSummation(final double[] x, final Double[] terms){
+		double result = 0.;
+		for(int j = 0; j < x.length; j ++)
+			result += x[j] * terms[j];
+		return result;
 	}
 
 	/**
@@ -261,8 +286,7 @@ public final class SunPosition{
 	 */
 	static double meanEclipticObliquity(final double tt){
 		final double u = tt / 100.;
-		final double seconds = MathHelper.eval(u, MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS);
-		return MathHelper.toDegrees(23, 26, seconds);
+		return MathHelper.eval(u, MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS) / JulianDay.SECONDS_IN_HOUR;
 	}
 
 	/**

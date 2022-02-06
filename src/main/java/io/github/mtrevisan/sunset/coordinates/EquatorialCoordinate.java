@@ -80,7 +80,7 @@ public final class EquatorialCoordinate{
 		final double cosObl = StrictMath.cos(eclipticObliquity);
 		final double sinObl = StrictMath.sin(eclipticObliquity);
 
-		final double rightAscension = MathHelper.correctRangeDegree(StrictMath.toDegrees(
+		final double rightAscension = MathHelper.limitRangeDegree(StrictMath.toDegrees(
 			StrictMath.atan2(sinLon * cosObl - sinLat * sinObl / cosLat, cosLon)
 		));
 		final double declination = StrictMath.toDegrees(

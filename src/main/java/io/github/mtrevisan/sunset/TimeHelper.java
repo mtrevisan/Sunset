@@ -182,7 +182,7 @@ public final class TimeHelper{
 	 */
 	static double apparentSiderealTime(final double meanSiderealTime, final double trueEclipticObliquity, final double deltaPsi){
 		final double equationOfTheEquinoxes = deltaPsi * StrictMath.cos(StrictMath.toRadians(trueEclipticObliquity));
-		return MathHelper.correctRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
+		return MathHelper.limitRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
 	}
 
 	/**

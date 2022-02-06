@@ -38,12 +38,12 @@ public final class MathHelper{
 		return degree + (minute + second / 60.) / 60.;
 	}
 
-	public static double correctRangeDegree(double degree){
+	public static double limitRangeDegree(double degree){
 		degree %= 360.;
 		return (degree < 0.? degree + 360.: degree);
 	}
 
-	public static double correctRangeHour(double degree){
+	public static double limitRangeHour(double degree){
 		degree %= 24;
 		return (degree < 0.? degree + 24.: degree);
 	}

@@ -59,7 +59,6 @@ class SunPositionTest{
 	void sunPosition_stepByStep() throws SolarEventException{
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
-		TimeHelper.deltaT(2003);
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
 		final double tt = JulianDay.centuryJ2000Of(jd);
 
