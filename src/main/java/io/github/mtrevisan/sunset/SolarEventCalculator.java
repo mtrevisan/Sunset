@@ -356,15 +356,15 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		h_prime2 %= 360;
 		if(h_prime0 <= -180.)
 			h_prime0 += 360.;
-		else if(h_prime0 >= -180.)
+		else if(h_prime0 >= 180.)
 			h_prime0 -= 360.;
 		if(h_prime1 <= -180.)
 			h_prime1 += 360.;
-		else if(h_prime1 >= -180.)
+		else if(h_prime1 >= 180.)
 			h_prime1 -= 360.;
 		if(h_prime2 <= -180.)
 			h_prime2 += 360.;
-		else if(h_prime2 >= -180.)
+		else if(h_prime2 >= 180.)
 			h_prime2 -= 360.;
 		//calculate the sun altitude
 		final double hh0 = StrictMath.asin(latitude) * StrictMath.sin(delta0)
@@ -381,6 +381,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		//calculate the sunset: T [UT]
 		final double sunset = (m2 + (hh2 - h_prime1) / (360. * StrictMath.cos(delta2) * StrictMath.cos(latitude) * StrictMath.sin(h_prime2)))
 			* 24.;
+		double aa = transit + sunrise + sunset;
 	}
 
 	private static double limitRangeDegree180(double degree){
