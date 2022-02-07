@@ -157,7 +157,7 @@ public final class TimeHelper{
 		final double h = MathHelper.frac(h0 + earthSiderealRotationRate * (t - dUT1));
 		return h * JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR;
 		//alternative:
-		//return correctRangeDegree(eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
+		//return limitRangeDegree(eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
 	}
 
 	/**

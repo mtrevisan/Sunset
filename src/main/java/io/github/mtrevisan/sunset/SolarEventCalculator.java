@@ -264,6 +264,9 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 	}
 
 	//https://www.nrel.gov/docs/fy08osti/34302.pdf
+	//https://midcdmz.nrel.gov/solpos/spa.html
+	//http://phpsciencelabs.us/wiki_programs/Sidereal_Time_Calculator.php
+	//https://lweb.cfa.harvard.edu/~jzhao/times.html
 	public static void main(String[] args) throws SolarEventException{
 		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
 		//[m]
@@ -280,6 +283,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
+		//[s]
 		final double dt = 67.;
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, dt);
 		final double tt = JulianDay.centuryJ2000Of(jd);
@@ -298,6 +302,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double meanSiderealTime = meanSiderealTime(ut);
 		//calculate the apparent sidereal time at Greenwich at any given time: ΘGAST
 		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
+		if(Math.abs(apparentSiderealTime - 63.799395) > 0.000001)
+			throw new IllegalArgumentException("apparentSiderealTime: " + (apparentSiderealTime - 63.799395));
 
 		//calculate the approximate sun transit time: m0 [day]
 		double m0 = (coord.getRightAscension() - location.getLongitude() - apparentSiderealTime) / 360.;
@@ -369,6 +375,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		//calculate the sun altitude
 		final double hh0 = StrictMath.asin(latitude) * StrictMath.sin(delta0)
 			+ StrictMath.cos(latitude) * StrictMath.cos(delta0) * StrictMath.cos(StrictMath.toRadians(h_prime0));
+		if(Math.abs(StrictMath.toDegrees(hh0) - 40.954407) > 0.000001)
+			throw new IllegalArgumentException("hh0: " + (StrictMath.toDegrees(hh0) - 40.954407));
 		final double hh1 = StrictMath.asin(latitude) * StrictMath.sin(delta1)
 			+ StrictMath.cos(latitude) * StrictMath.cos(delta1) * StrictMath.cos(StrictMath.toRadians(h_prime1));
 		final double hh2 = StrictMath.asin(latitude) * StrictMath.sin(delta2)
@@ -382,6 +390,40 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double sunset = (m2 + (hh2 - h_prime1) / (360. * StrictMath.cos(delta2) * StrictMath.cos(latitude) * StrictMath.sin(h_prime2)))
 			* 24.;
 		double aa = transit + sunrise + sunset;
+
+/*
+Topocentric zenith angle	116.01759
+Top. azimuth angle (eastward from N)	279.725959
+Top. azimuth angle (westward from S)	99.725959
+Surface incidence angle	116.01759
+Local sunrise time	6.212067
+Local sun transit time	11.768045
+Local sunset time	17.338667
+Earth heliocentric longitude	24.307715
+Earth heliocentric latitude	-0.000106
+Earth radius vector	0.996462
+Geocentric longitude	204.307715
+Geocentric latitude	0.000106
+Mean elongation (moon-sun)	17189.41681
+Mean anomaly (sun)	1723.180685
+Mean anomaly (moon)	18237.88633
+Argument latitude (moon)	18423.92957
+Ascending longitude (moon)	51.671506
+Aberration correction	-0.005712
+Apparent sun longitude	204.29801
+Observer hour angle	116.120588
+Sun equatorial horizontal parallax	0.002451
+Sun right ascension parallax	-0.001718
+Topocentric sun declination	-9.422223
+Topocentric sun right ascension	202.498489
+Topocentric local hour angle	116.122306
+Top. elevation angle (uncorrected)	-26.01759
+Atmospheric refraction correction	0
+Top. elevation angle (corrected)	-26.01759
+Equation of time	14.700254
+Sunrise hour angle	-83.496338
+Sunset hour angle	83.524274
+*/
 	}
 
 	private static double limitRangeDegree180(double degree){
@@ -476,8 +518,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double elevationTopocentric = e0 + deltaE;
 		//calculate the topocentric zenith angle: θ
 		final double zenithTopocentric = 90. - elevationTopocentric;
-		if(Math.abs(zenithTopocentric - 50.11162) > 0.00001)
-			throw new IllegalArgumentException("zenithTopocentric: " + (zenithTopocentric - 50.11162));
+		if(Math.abs(zenithTopocentric - 116.01759) > 0.00001)
+			throw new IllegalArgumentException("zenithTopocentric: " + (zenithTopocentric - 116.01759));
 		//calculate the topocentric astronomers azimuth angle (measured westward from south): Γ
 		final double azimuthTopocentric = MathHelper.limitRangeDegree(StrictMath.toDegrees(StrictMath.atan2(
 			StrictMath.sin(lhaTopocentric),
@@ -486,8 +528,8 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		)));
 		//calculate the topocentric azimuth angle (measured westward from north): M
 		final double azimuthTopocentricNavigators = MathHelper.limitRangeDegree(azimuthTopocentric + 180.);
-		if(Math.abs(azimuthTopocentricNavigators - 194.34024) > 0.00001)
-			throw new IllegalArgumentException("azimuthTopocentricNavigators: " + (azimuthTopocentricNavigators - 194.34024));
+		if(Math.abs(azimuthTopocentricNavigators - 279.725959) > 0.000001)
+			throw new IllegalArgumentException("azimuthTopocentricNavigators: " + (azimuthTopocentricNavigators - 279.725959));
 		//calculate the incidence angle for a surface oriented in any direction, I
 		final double zenith = StrictMath.toRadians(zenithTopocentric);
 		if(surfaceSlope != null && surfaceAzimuthRotation != null){
@@ -622,7 +664,7 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double h = MathHelper.frac(h0 + earthSiderealRotationRate * (t - dUT1));
 		return h * JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR;
 		//alternative:
-		//return correctRangeDegree(eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
+		//return MathHelper.limitRangeDegree(MathHelper.eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
 	}
 
 	/**
