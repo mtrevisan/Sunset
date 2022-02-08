@@ -26,6 +26,8 @@ package io.github.mtrevisan.sunset;
 
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 
+import java.time.LocalTime;
+
 
 public final class TimeHelper{
 
@@ -144,6 +146,7 @@ public final class TimeHelper{
 
 		//Greenwich Sidereal Time at midnight [day]
 		final double h0 = MathHelper.eval(ut0, new double[]{24110.54841, 8640184.812866, 0.093104, -6.2e-6}) / JulianDay.SECONDS_IN_DAY;
+
 		final double earthSiderealRotationRate = earthSiderealRotationRate(ut0);
 		/*
 		This is the difference between UT1 (time using the mean rotating Earth as a clock) and UTC (time that runs at the same rate as
@@ -154,10 +157,10 @@ public final class TimeHelper{
 		//[s]
 		final double dUT1 = 0.;
 		//[day]
-		final double h = MathHelper.frac(h0 + earthSiderealRotationRate * (t - dUT1));
+		final double h = MathHelper.frac(MathHelper.limitRangeDay(h0 + earthSiderealRotationRate * (t - dUT1)));
 		return h * JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR;
 		//alternative:
-		//return limitRangeDegree(eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
+		//return MathHelper.limitRangeDegree(MathHelper.eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
 	}
 
 	/**

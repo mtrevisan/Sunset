@@ -302,8 +302,6 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		final double meanSiderealTime = meanSiderealTime(ut);
 		//calculate the apparent sidereal time at Greenwich at any given time: ΘGAST
 		final double apparentSiderealTime = apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
-		if(Math.abs(apparentSiderealTime - 63.799395) > 0.000001)
-			throw new IllegalArgumentException("apparentSiderealTime: " + (apparentSiderealTime - 63.799395));
 
 		//calculate the approximate sun transit time: m0 [day]
 		double m0 = (coord.getRightAscension() - location.getLongitude() - apparentSiderealTime) / 360.;
@@ -318,12 +316,12 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		if(cosH0 > 1.)
 			//the sun never rises on this location on the specified date
 			throw SolarEventException.create(SolarEventError.NEVER_RISES);
-		final double h0 = limitRangeDegree180(StrictMath.acos(cosH0));
+		final double h0 = limitRangeDegree180(StrictMath.toDegrees(StrictMath.acos(cosH0)));
 		//calculate the approximate sunrise time: m1
-		final double m1 = limitRangeDay(m0 - h0 / 360.);
+		final double m1 = MathHelper.limitRangeDay(m0 - h0 / 360.);
 		//calculate the approximate sunset time: m2
-		final double m2 = limitRangeDay(m0 + h0 / 360.);
-		m0 = limitRangeDay(m0);
+		final double m2 = MathHelper.limitRangeDay(m0 + h0 / 360.);
+		m0 = MathHelper.limitRangeDay(m0);
 
 		//calculate the sidereal time at Greenwich for the sun transit, sunrise, and sunset
 		final double v0 = apparentSiderealTime + 360.985647 * m0;
@@ -339,39 +337,24 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		double b_prime = coordAfter.getDeclination() - coord.getDeclination();
 		double c = b - a;
 		double c_prime = b_prime - a_prime;
-		if(StrictMath.abs(a) > 2.)
-			a = limitRangeDay2(a);
-		if(StrictMath.abs(a_prime) > 2.)
-			a_prime = limitRangeDay2(a_prime);
-		if(StrictMath.abs(b) > 2.)
-			b = limitRangeDay2(b);
-		if(StrictMath.abs(b_prime) > 2.)
-			b_prime = limitRangeDay2(b_prime);
+//		if(StrictMath.abs(a) > 2.)
+//			a = limitRangeDay2(a);
+//		if(StrictMath.abs(a_prime) > 2.)
+//			a_prime = limitRangeDay2(a_prime);
+//		if(StrictMath.abs(b) > 2.)
+//			b = limitRangeDay2(b);
+//		if(StrictMath.abs(b_prime) > 2.)
+//			b_prime = limitRangeDay2(b_prime);
 		final double alpha0 = coord.getRightAscension() + n0 * (a + b + c * n0) / 2.;
 		final double alpha1 = coord.getRightAscension() + n1 * (a + b + c * n1) / 2.;
 		final double alpha2 = coord.getRightAscension() + n1 * (a + b + c * n2) / 2.;
-		final double delta0 = StrictMath.toRadians(coord.getDeclination() + n0 * (a_prime + b_prime + c_prime * n0) / 2.);
-		final double delta1 = StrictMath.toRadians(coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n1) / 2.);
-		final double delta2 = StrictMath.toRadians(coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n2) / 2.);
+		final double delta0 = coord.getDeclination() + n0 * (a_prime + b_prime + c_prime * n0) / 2.;
+		final double delta1 = coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n1) / 2.;
+		final double delta2 = coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n2) / 2.;
 		//calculate the local hour angle (measured as positive westward from the meridian): H’
-		double h_prime0 = v0 + location.getLongitude() - alpha0;
-		double h_prime1 = v1 + location.getLongitude() - alpha1;
-		double h_prime2 = v2 + location.getLongitude() - alpha2;
-		h_prime0 %= 360;
-		h_prime1 %= 360;
-		h_prime2 %= 360;
-		if(h_prime0 <= -180.)
-			h_prime0 += 360.;
-		else if(h_prime0 >= 180.)
-			h_prime0 -= 360.;
-		if(h_prime1 <= -180.)
-			h_prime1 += 360.;
-		else if(h_prime1 >= 180.)
-			h_prime1 -= 360.;
-		if(h_prime2 <= -180.)
-			h_prime2 += 360.;
-		else if(h_prime2 >= 180.)
-			h_prime2 -= 360.;
+		double h_prime0 = limitRangeDegree180(MathHelper.frac(v0 + location.getLongitude() / 360. - alpha0) * 360.);
+		double h_prime1 = limitRangeDegree180(MathHelper.frac(v1 + location.getLongitude() / 360. - alpha1) * 360.);
+		double h_prime2 = limitRangeDegree180(MathHelper.frac(v2 + location.getLongitude() / 360. - alpha2) * 360.);
 		//calculate the sun altitude
 		final double hh0 = StrictMath.asin(latitude) * StrictMath.sin(delta0)
 			+ StrictMath.cos(latitude) * StrictMath.cos(delta0) * StrictMath.cos(StrictMath.toRadians(h_prime0));
@@ -429,11 +412,6 @@ Sunset hour angle	83.524274
 	private static double limitRangeDegree180(double degree){
 		degree %= 180;
 		return (degree < 0.? degree + 180: degree);
-	}
-
-	private static double limitRangeDay(double value){
-		value %= 1;
-		return (value < 0.? value + 1.: value);
 	}
 
 	private static double limitRangeDay2(double value){

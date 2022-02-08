@@ -48,6 +48,11 @@ public final class MathHelper{
 		return (degree < 0.? degree + 24.: degree);
 	}
 
+	public static double limitRangeDay(double value){
+		value %= 1;
+		return (value < 0.? value + 1.: value);
+	}
+
 	public static double degToHrs(final double degrees){
 		return degrees / JulianDay.DEGREES_PER_HOUR;
 	}
