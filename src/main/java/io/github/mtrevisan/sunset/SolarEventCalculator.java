@@ -337,42 +337,40 @@ sunset Jset = 2459581.1555420491461815326695441 = 15:43:59
 		double b_prime = coordAfter.getDeclination() - coord.getDeclination();
 		double c = b - a;
 		double c_prime = b_prime - a_prime;
-//		if(StrictMath.abs(a) > 2.)
-//			a = limitRangeDay2(a);
-//		if(StrictMath.abs(a_prime) > 2.)
-//			a_prime = limitRangeDay2(a_prime);
-//		if(StrictMath.abs(b) > 2.)
-//			b = limitRangeDay2(b);
-//		if(StrictMath.abs(b_prime) > 2.)
-//			b_prime = limitRangeDay2(b_prime);
+		if(StrictMath.abs(a) > 2.)
+			a = MathHelper.limitRangeDay(a);
+		if(StrictMath.abs(a_prime) > 2.)
+			a_prime = MathHelper.limitRangeDay(a_prime);
+		if(StrictMath.abs(b) > 2.)
+			b = MathHelper.limitRangeDay(b);
+		if(StrictMath.abs(b_prime) > 2.)
+			b_prime = MathHelper.limitRangeDay(b_prime);
 		final double alpha0 = coord.getRightAscension() + n0 * (a + b + c * n0) / 2.;
 		final double alpha1 = coord.getRightAscension() + n1 * (a + b + c * n1) / 2.;
 		final double alpha2 = coord.getRightAscension() + n1 * (a + b + c * n2) / 2.;
-		final double delta0 = coord.getDeclination() + n0 * (a_prime + b_prime + c_prime * n0) / 2.;
-		final double delta1 = coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n1) / 2.;
-		final double delta2 = coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n2) / 2.;
+		final double delta0 = StrictMath.toRadians(coord.getDeclination() + n0 * (a_prime + b_prime + c_prime * n0) / 2.);
+		final double delta1 = StrictMath.toRadians(coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n1) / 2.);
+		final double delta2 = StrictMath.toRadians(coord.getDeclination() + n1 * (a_prime + b_prime + c_prime * n2) / 2.);
 		//calculate the local hour angle (measured as positive westward from the meridian): H’
-		double h_prime0 = limitRangeDegree180(MathHelper.frac(v0 + location.getLongitude() / 360. - alpha0) * 360.);
-		double h_prime1 = limitRangeDegree180(MathHelper.frac(v1 + location.getLongitude() / 360. - alpha1) * 360.);
-		double h_prime2 = limitRangeDegree180(MathHelper.frac(v2 + location.getLongitude() / 360. - alpha2) * 360.);
+		double h_prime0 = StrictMath.toRadians(limitRangeDegree180(MathHelper.frac(v0 + location.getLongitude() - alpha0) * 360.));
+		double h_prime1 = StrictMath.toRadians(limitRangeDegree180(MathHelper.frac(v1 + location.getLongitude() - alpha1) * 360.));
+		double h_prime2 = StrictMath.toRadians(limitRangeDegree180(MathHelper.frac(v2 + location.getLongitude() - alpha2) * 360.));
 		//calculate the sun altitude
 		final double hh0 = StrictMath.asin(latitude) * StrictMath.sin(delta0)
-			+ StrictMath.cos(latitude) * StrictMath.cos(delta0) * StrictMath.cos(StrictMath.toRadians(h_prime0));
-		if(Math.abs(StrictMath.toDegrees(hh0) - 40.954407) > 0.000001)
-			throw new IllegalArgumentException("hh0: " + (StrictMath.toDegrees(hh0) - 40.954407));
+			+ StrictMath.cos(latitude) * StrictMath.cos(delta0) * StrictMath.cos(h_prime0);
 		final double hh1 = StrictMath.asin(latitude) * StrictMath.sin(delta1)
-			+ StrictMath.cos(latitude) * StrictMath.cos(delta1) * StrictMath.cos(StrictMath.toRadians(h_prime1));
+			+ StrictMath.cos(latitude) * StrictMath.cos(delta1) * StrictMath.cos(h_prime1);
 		final double hh2 = StrictMath.asin(latitude) * StrictMath.sin(delta2)
-			+ StrictMath.cos(latitude) * StrictMath.cos(delta2) * StrictMath.cos(StrictMath.toRadians(h_prime2));
-		//calculate the sun transit: T [UT]
-		final double transit = (m0 - h_prime0 / 360.) * 24.;
-		//calculate the sunrise: T [UT]
-		final double sunrise = (m1 + (hh1 - h_prime0) / (360. * StrictMath.cos(delta1) * StrictMath.cos(latitude) * StrictMath.sin(h_prime1)))
-			* 24.;
-		//calculate the sunset: T [UT]
-		final double sunset = (m2 + (hh2 - h_prime1) / (360. * StrictMath.cos(delta2) * StrictMath.cos(latitude) * StrictMath.sin(h_prime2)))
-			* 24.;
-		double aa = transit + sunrise + sunset;
+			+ StrictMath.cos(latitude) * StrictMath.cos(delta2) * StrictMath.cos(h_prime2);
+		//calculate the sun transit [UT day]
+		final double transit = m0 - h_prime0 / (2. * StrictMath.PI);
+		//calculate the sunrise [UT day]
+		final double sunrise = m1 + (hh1 - h_prime0) / (2. * StrictMath.PI * StrictMath.cos(delta1) * StrictMath.cos(latitude) * StrictMath.sin(h_prime1));
+		//calculate the sunset [UT day]
+		final double sunset = m2 + (hh2 - h_prime1) / (2. * StrictMath.PI * StrictMath.cos(delta2) * StrictMath.cos(latitude) * StrictMath.sin(h_prime2));
+		System.out.println(StringHelper.degreeToHMSString(sunrise * 360., 0));
+		System.out.println(StringHelper.degreeToHMSString(transit * 360., 0));
+		System.out.println(StringHelper.degreeToHMSString(sunset * 360., 0));
 
 /*
 Topocentric zenith angle	116.01759
