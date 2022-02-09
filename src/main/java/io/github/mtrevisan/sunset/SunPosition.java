@@ -28,6 +28,7 @@ import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 
@@ -60,10 +61,12 @@ https://ftp.imcce.fr/pub/ephem/planets/vsop2013/solution/
 public final class SunPosition{
 
 	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_DATA;
+	private static Map<ResourceReader.VariableIndex, List<ResourceReader.VSOP2013Data>> EARTH_HELIOCENTRIC_DATA2;
 	private static Map<String, Collection<Double[]>> NUTATION_DATA;
 	static{
 		try{
 			EARTH_HELIOCENTRIC_DATA = ResourceReader.read("earthHeliocentric.dat");
+			EARTH_HELIOCENTRIC_DATA2 = ResourceReader.readData("VSOP2013p3.dat");
 			NUTATION_DATA = ResourceReader.read("nutation.dat");
 		}
 		catch(final IOException ignored){}
@@ -132,7 +135,7 @@ public final class SunPosition{
 	 */
 	static double geometricMeanLatitude(final double tt){
 		final double jme = tt / 10.;
-		final double[] parameters = new double[2];
+		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
@@ -140,7 +143,84 @@ public final class SunPosition{
 				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 			parameters[i] = parameter;
 		}
-		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
+		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters));
+	}
+
+	/**
+	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geometric mean latitude of the Sun [°].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 * https://github.com/timmyd7777/SSCore/tree/a915f57f8754b206614d3f0b5055d1a7b56e9e70/SSCode/VSOP2013
+	 */
+	static double geometricMeanLatitude2(final double tt){
+		final double jme = tt / 10.;
+
+		final double[] planetLongitudes = new double[17];
+		planetLongitudes[0] =  4.402608631669 + 26087.90314068555 * jme;     // Mercury
+		planetLongitudes[1] =  3.176134461576 + 10213.28554743445 * jme;     // Venus
+		planetLongitudes[2] =  1.753470369433 +  6283.075850353215 * jme;    // Earth-Moon Barycenter
+		planetLongitudes[3] =  6.203500014141 +  3340.612434145457 * jme;    // Mars
+		planetLongitudes[4] =  4.091360003050 +  1731.170452721855 * jme;    // Vesta
+		planetLongitudes[5] =  1.713740719173 +  1704.450855027201 * jme;    // Iris
+		planetLongitudes[6] =  5.598641292287 +  1428.948917844273 * jme;    // Bamberga
+		planetLongitudes[7] =  2.805136360408 +  1364.756513629990 * jme;    // Ceres
+		planetLongitudes[8] =  2.326989734620 +  1361.923207632842 * jme;    // Pallas
+		planetLongitudes[9]  = 0.599546107035 +   529.6909615623250 * jme;   // Jupiter
+		planetLongitudes[10] = 0.874018510107 +   213.2990861084880 * jme;   // Saturn
+		planetLongitudes[11] = 5.481225395663 +    74.78165903077800 * jme;   // Uranus
+		planetLongitudes[12] = 5.311897933164 +    38.13297222612500 * jme;   // Neptune
+		planetLongitudes[13] =                      0.3595362285049309 * jme; // Pluto (mu)
+		planetLongitudes[14] = 5.198466400630 + 77713.7714481804 * jme;       // Moon (D)
+		planetLongitudes[15] = 1.627905136020 + 84334.6615717837 * jme;       // Moon (F)
+		planetLongitudes[16] = 2.355555638750 + 83286.9142477147 * jme;       // Moon (l)
+
+		final double a = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.A), jme, planetLongitudes);
+		final double l = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.L), jme, planetLongitudes);
+		final double k = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.K), jme, planetLongitudes);
+		final double h = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.H), jme, planetLongitudes);
+		final double q = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.Q), jme, planetLongitudes);
+		final double p = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.P), jme, planetLongitudes);
+
+		//eccentricity
+		final double e = StrictMath.sqrt(k * k + h * h);
+		//longitude of perihelion
+		final double w = StrictMath.atan2(h, k);
+		//longitude of ascending node
+		final double n = StrictMath.atan2(p, q);
+		//inclination
+		final double i = 2. * StrictMath.asin(StrictMath.sqrt(q * q + p * p));
+		//mean motion [rad/day]
+		final double mm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04) / StrictMath.pow(a, 1.5);
+
+		final ResourceReader.Orbit orbit = new ResourceReader.Orbit();
+		orbit.t = tt * JulianDay.CIVIL_SAECULUM;
+		orbit.periapseDistance = a * (1. - e);
+		orbit.eccentricity = e;
+		orbit.inclinationReferencePlane = i;
+		orbit.argumentPeriapse = MathHelper.mod2pi(w - n);
+		orbit.longitudeAscendingNode = MathHelper.mod2pi(n);
+		orbit.meanAnomalyAtEpoch = MathHelper.mod2pi(l - w);
+		orbit.meanMotion = mm;
+		return -StrictMath.toDegrees(a);
+	}
+
+	private static double evalSeries(final List<ResourceReader.VSOP2013Data> elements, final double jme, final double[] planetLongitudes){
+		double sum = 0.;
+		final double[] parameters = new double[elements.size()];
+		for(int i = 0; i < elements.size(); i ++){
+			final ResourceReader.VSOP2013Data data = elements.get(i);
+			for(final ResourceReader.VSOP2013Coeffs coeff : data.coeffs){
+				double phi = 0.;
+				for(int j = 0; j < 17; j ++)
+					phi += coeff.iphi[j] * planetLongitudes[j];
+				sum += coeff.sine * StrictMath.sin(phi) + coeff.cosine * StrictMath.cos(phi);
+			}
+			parameters[data.timePower] = sum;
+		}
+		return MathHelper.eval(jme, parameters);
 	}
 
 	/**
@@ -161,7 +241,7 @@ public final class SunPosition{
 				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 			parameters[i] = parameter;
 		}
-		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
+		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters));
 		return MathHelper.limitRangeDegree(longitude + 180.);
 	}
 
@@ -249,7 +329,7 @@ public final class SunPosition{
 	 */
 	static double radiusVector(final double tt){
 		final double jme = tt / 10.;
-		final double[] parameters = new double[5];
+		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);

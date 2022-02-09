@@ -27,11 +27,19 @@ package io.github.mtrevisan.sunset;
 
 public final class MathHelper{
 
+	private static final double TWO_PI = StrictMath.PI * 2.;
+
+
 	private MathHelper(){}
 
 
 	public static double frac(final double x){
 		return x - (int)x;
+	}
+
+	// Reduces an angle in degrees to the range 0 to 2.0 * M_PI.
+	public static double mod2pi(final double rad){
+		return rad - TWO_PI * StrictMath.floor(rad / TWO_PI);
 	}
 
 	public static double toDegrees(final int degree, final int minute, final double second){

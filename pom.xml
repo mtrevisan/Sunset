@@ -73,6 +73,10 @@
 		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
 		<logback.logback-classic.version>1.2.10</logback.logback-classic.version>
 
+		<!-- Apache -->
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+		<apache.commons-lang3.version>3.12.0</apache.commons-lang3.version>
+
 		<!-- JUnit -->
 		<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
 		<junit.junit-jupiter-engine.version>5.8.2</junit.junit-jupiter-engine.version>
@@ -202,6 +206,13 @@
 			<version>${logback.logback-classic.version}</version>
 			<scope>test</scope>
 			<optional>true</optional>
+		</dependency>
+
+		<!-- Apache -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>${apache.commons-lang3.version}</version>
 		</dependency>
 
 		<!-- JUnit -->
