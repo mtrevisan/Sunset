@@ -78,7 +78,7 @@ public final class ResourceReader{
 	}
 
 	public static final class VSOP2013Coeffs{
-		final short[] iphi = new short[17];
+		final int[] iphi = new int[17];
 		double sine;
 		double cosine;
 	}
@@ -128,39 +128,37 @@ public final class ResourceReader{
 				for(int i = 0; i < count; i ++){
 					line = reader.readLine();
 
-					final String[] terms = StringUtils.split(line, ' ');
-
 					//read coefficients
 					final VSOP2013Coeffs coeffs = new VSOP2013Coeffs();
-					coeffs.iphi[0] = Short.parseShort(terms[1]);
-					coeffs.iphi[1] = Short.parseShort(terms[2]);
-					coeffs.iphi[2] = Short.parseShort(terms[3]);
-					coeffs.iphi[3] = Short.parseShort(terms[4]);
+					coeffs.iphi[0] = Integer.parseInt(line.substring(5, 9).trim());
+					coeffs.iphi[1] = Integer.parseInt(line.substring(9, 12).trim());
+					coeffs.iphi[2] = Integer.parseInt(line.substring(12, 15).trim());
+					coeffs.iphi[3] = Integer.parseInt(line.substring(15, 18).trim());
 
-					coeffs.iphi[4] = Short.parseShort(terms[5]);
-					coeffs.iphi[5] = Short.parseShort(terms[6]);
-					coeffs.iphi[6] = Short.parseShort(terms[7]);
-					coeffs.iphi[7] = Short.parseShort(terms[8]);
-					coeffs.iphi[8] = Short.parseShort(terms[9]);
+					coeffs.iphi[4] = Integer.parseInt(line.substring(18, 22).trim());
+					coeffs.iphi[5] = Integer.parseInt(line.substring(22, 25).trim());
+					coeffs.iphi[6] = Integer.parseInt(line.substring(25, 28).trim());
+					coeffs.iphi[7] = Integer.parseInt(line.substring(28, 31).trim());
+					coeffs.iphi[8] = Integer.parseInt(line.substring(31, 34).trim());
 
-					coeffs.iphi[9] = Short.parseShort(terms[10]);
-					coeffs.iphi[10] = Short.parseShort(terms[11]);
-					coeffs.iphi[11] = Short.parseShort(terms[12]);
-					coeffs.iphi[12] = Short.parseShort(terms[13]);
+					coeffs.iphi[9] = Integer.parseInt(line.substring(34, 39).trim());
+					coeffs.iphi[10] = Integer.parseInt(line.substring(39, 43).trim());
+					coeffs.iphi[11] = Integer.parseInt(line.substring(43, 47).trim());
+					coeffs.iphi[12] = Integer.parseInt(line.substring(47, 51).trim());
 
-					coeffs.iphi[13] = Short.parseShort(terms[14]);
+					coeffs.iphi[13] = Integer.parseInt(line.substring(51, 58).trim());
 
-					coeffs.iphi[14] = Short.parseShort(terms[15]);
-					coeffs.iphi[15] = Short.parseShort(terms[16]);
-					coeffs.iphi[16] = Short.parseShort(terms[17]);
+					coeffs.iphi[14] = Integer.parseInt(line.substring(58, 62).trim());
+					coeffs.iphi[15] = Integer.parseInt(line.substring(62, 65).trim());
+					coeffs.iphi[16] = Integer.parseInt(line.substring(65, 68).trim());
 
-					coeffs.sine = Double.parseDouble(terms[18] + "e" + terms[19]);
-					coeffs.cosine = Double.parseDouble(terms[20] + "e" + terms[21]);
+					coeffs.sine = Double.parseDouble(line.substring(68, 88).trim() + "e" + line.substring(88, 92).trim());
+					coeffs.cosine = Double.parseDouble(line.substring(92, 112).trim() + "e" + line.substring(112, 116).trim());
 
 					data.coeffs[i] = coeffs;
 				}
 
-				datas.putIfAbsent(variable, new ArrayList<>(1))
+				datas.computeIfAbsent(variable, v -> new ArrayList<>(1))
 					.add(data);
 			}
 
@@ -195,7 +193,7 @@ public final class ResourceReader{
 					continue;
 				}
 
-				final String[] parameters = line.split(" ");
+				final String[] parameters = StringUtils.split(line, ' ');
 				values.add(Arrays.stream(parameters)
 					.map(Double::valueOf)
 					.toArray(Double[]::new));

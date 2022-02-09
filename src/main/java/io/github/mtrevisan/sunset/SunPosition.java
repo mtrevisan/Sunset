@@ -139,11 +139,13 @@ public final class SunPosition{
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
-			for(final Double[] element : elements)
-				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-			parameters[i] = parameter;
+			if(elements != null){
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
 		}
-		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters));
+		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
 	}
 
 	/**
@@ -237,11 +239,13 @@ public final class SunPosition{
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
-			for(final Double[] element : elements)
-				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-			parameters[i] = parameter;
+			if(elements != null){
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
 		}
-		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters));
+		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
 		return MathHelper.limitRangeDegree(longitude + 180.);
 	}
 
@@ -333,9 +337,11 @@ public final class SunPosition{
 		for(int i = 0; i < parameters.length; i ++){
 			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
-			for(final Double[] element : elements)
-				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-			parameters[i] = parameter;
+			if(elements != null){
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
 		}
 		return MathHelper.eval(jme, parameters) / 100_000_000.;
 	}
