@@ -51,6 +51,11 @@ https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
 
 https://www.iers.org/SharedDocs/Publikationen/EN/IERS/Publications/tn/TechnNote13/tn13.pdf?__blob=publicationFile&v=1
 https://squarewidget.com/solar-coordinates/
+
+https://dspace.mit.edu/bitstream/handle/1721.1/112396/1013461937-MIT.pdf
+https://github.com/asif31iqbal/adhanalarm/blob/master/AdhanAlarm/src/net/sourceforge/jitl/astro/AstroLib.java
+https://www.scielo.br/j/jatm/a/ZZ6L3gWKF9LpvW8tLcQPx8p/?lang=en&format=pdf
+https://ftp.imcce.fr/pub/ephem/planets/vsop2013/solution/
 */
 public final class SunPosition{
 
@@ -135,8 +140,7 @@ public final class SunPosition{
 				parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 			parameters[i] = parameter;
 		}
-		final double latitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
-		return MathHelper.limitRangeDegree(-latitude);
+		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
 	}
 
 	/**

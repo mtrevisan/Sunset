@@ -25,6 +25,8 @@
 package io.github.mtrevisan.sunset;
 
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.test.AstroDay;
+import io.github.mtrevisan.sunset.test.AstroLib;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +43,9 @@ class SunPositionTest{
 		final double jd = JulianDay.of(1957, 10, 4) + JulianDay.timeOf(LocalTime.of(19, 29));
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		EquatorialCoordinate coord = SunPosition.sunPosition(tt);
+
+		AstroDay astroDay = new AstroDay();
+		AstroLib.computeAstroDay(jd, astroDay);
 
 		Assertions.assertEquals("EquatorialCoordinate{α: 12h 42m 18.26s, δ: -4° 31' 37.18\"}", coord.toString());
 	}
