@@ -99,7 +99,7 @@ public final class SunPosition{
 	public static EclipticCoordinate sunEclipticPosition(final double jd){
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLatitude = geometricMeanLatitude(tt);
-geometricMeanLatitude2(tt);
+geometricMeanLatitude2(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(tt);
 		final double radiusVector = radiusVector(tt);
 		final EclipticCoordinate coord = EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
@@ -215,13 +215,14 @@ geometricMeanLatitude2(tt);
 	 * Calculate the geometric mean latitude of the Sun, referred to the inertial frame defined by the dynamical equinox and ecliptic J2000,
 	 * β.
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
 	 * @return	The geometric mean latitude of the Sun [°].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 * https://github.com/timmyd7777/SSCore/tree/a915f57f8754b206614d3f0b5055d1a7b56e9e70/SSCode/VSOP2013
 	 */
-	private static double geometricMeanLatitude2(final double tt){
+	private static double geometricMeanLatitude2(final double jd){
+		final double tt = JulianDay.centuryJ2000Of(jd);
 		final double jme = tt / 10.;
 
 		final double[] planetLongitudes = new double[17];
@@ -250,24 +251,19 @@ geometricMeanLatitude2(tt);
 		final double q = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.Q), jme, planetLongitudes);
 		final double p = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.P), jme, planetLongitudes);
 
-		//eccentricity
 		final double e = StrictMath.sqrt(k * k + h * h);
-		//longitude of perihelion
 		final double w = StrictMath.atan2(h, k);
-		//longitude of ascending node
 		final double n = StrictMath.atan2(p, q);
-		//inclination
 		final double i = 2. * StrictMath.asin(StrictMath.sqrt(q * q + p * p));
-		//mean motion [rad/day]
 		final double mm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04) / StrictMath.pow(a, 1.5);
 
 		final OrbitalElements orbit = new OrbitalElements();
 		orbit.t = tt * JulianDay.CIVIL_SAECULUM;
-		orbit.periapsisDistance = a * (1. - e);
 		orbit.eccentricity = e;
+		orbit.periapsisDistance = a * (1. - e);
 		orbit.inclination = i;
-		orbit.argumentOfPeriapsis = MathHelper.mod2pi(w - n);
 		orbit.longitudeAscendingNode = MathHelper.mod2pi(n);
+		orbit.argumentOfPeriapsis = MathHelper.mod2pi(w - n);
 		orbit.meanAnomaly = MathHelper.mod2pi(l - w);
 		orbit.meanMotion = mm;
 		//1.5149480825765068E-4
