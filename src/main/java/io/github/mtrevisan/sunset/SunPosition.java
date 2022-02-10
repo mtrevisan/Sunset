@@ -151,7 +151,9 @@ public final class SunPosition{
 				parameters[i] = parameter;
 			}
 		}
-		return -MathHelper.eval(jme, parameters) / 100_000_000.;
+		return -MathHelper.modpi(
+			MathHelper.eval(jme, parameters) / 100_000_000.
+		);
 	}
 
 	/**
@@ -174,7 +176,9 @@ public final class SunPosition{
 				parameters[i] = parameter;
 			}
 		}
-		return MathHelper.mod2pi(MathHelper.eval(jme, parameters) / 100_000_000. + StrictMath.PI);
+		return MathHelper.mod2pi(
+			MathHelper.eval(jme, parameters) / 100_000_000. + StrictMath.PI
+		);
 	}
 
 	/**

@@ -51,6 +51,9 @@ class SunPositionTest{
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
 
+		//https://www.eso.org/observing/etc/bin/gen/form?INS.MODE=swspectr+INS.NAME=SKYCALC
+		//α☉ = 12h 41m 32s  δ☉ = -04° 28' 14"
+		//http://cosinekitty.com/solar_system.html
 		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.28s, δ: -4° 28' 15.41\"}", coord.toString());
 	}
 
