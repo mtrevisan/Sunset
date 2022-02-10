@@ -32,9 +32,9 @@ import io.github.mtrevisan.sunset.StringHelper;
  */
 public final class GNSSLocation{
 
-	//[°]
+	//[rad]
 	private final double latitude;
-	//[°]
+	//[rad]
 	private final double longitude;
 	//[m]
 	private final double altitude;
@@ -43,8 +43,8 @@ public final class GNSSLocation{
 	/**
 	 * Creates a new instance with the given parameters.
 	 *
-	 * @param latitude	The latitude of this location [°]. North latitude is positive, south negative.
-	 * @param longitude	The longitude of this location [°]. East longitude is positive, west negative.
+	 * @param latitude	The latitude of this location [rad]. North latitude is positive, south negative.
+	 * @param longitude	The longitude of this location [rad]. East longitude is positive, west negative.
 	 * @return	An instance.
 	 */
 	public static GNSSLocation create(final double latitude, final double longitude){
@@ -76,8 +76,8 @@ public final class GNSSLocation{
 		if(altitude < 0. || altitude >= 11_000.)
 			throw new IllegalArgumentException("Meters out of range 0 <= altitude < +11000: " + altitude);
 
-		this.latitude = latitude;
-		this.longitude = longitude;
+		this.latitude = StrictMath.toRadians(latitude);
+		this.longitude = StrictMath.toRadians(longitude);
 		this.altitude = altitude;
 	}
 
@@ -85,7 +85,7 @@ public final class GNSSLocation{
 	/**
 	 * The latitude of the location.
 	 *
-	 * @return	The latitude [°].
+	 * @return	The latitude [rad].
 	 */
 	public double getLatitude(){
 		return latitude;
@@ -94,7 +94,7 @@ public final class GNSSLocation{
 	/**
 	 * The longitude of the location.
 	 *
-	 * @return	The longitude [°].
+	 * @return	The longitude [rad].
 	 */
 	public double getLongitude(){
 		return longitude;

@@ -36,9 +36,9 @@ import java.text.DecimalFormat;
  */
 public final class EclipticCoordinate{
 
-	//[°]
+	//[rad]
 	private final double latitude;
-	//[°]
+	//[rad]
 	private final double longitude;
 	//[AU]
 	private final double distance;

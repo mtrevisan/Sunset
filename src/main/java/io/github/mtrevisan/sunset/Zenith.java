@@ -37,16 +37,16 @@ public enum Zenith{
 	ASTRONOMICAL(-18.);
 
 
-	/** Solar declination [°]. */
-	private final double radians;
+	/** Solar declination [rad]. */
+	private final double angle;
 
 
 	Zenith(final double degrees){
-		radians = convertDegreesToRadians(degrees);
+		angle = convertDegreesToRadians(degrees);
 	}
 
-	public double getRadians(){
-		return radians;
+	public double getAngle(){
+		return angle;
 	}
 
 	private double convertDegreesToRadians(final double degrees){

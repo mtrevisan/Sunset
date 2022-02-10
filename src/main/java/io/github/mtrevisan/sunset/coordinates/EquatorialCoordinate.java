@@ -42,17 +42,17 @@ import io.github.mtrevisan.sunset.StringHelper;
  */
 public final class EquatorialCoordinate{
 
-	//[°]
+	//[rad]
 	private final double rightAscension;
-	//[°]
+	//[rad]
 	private final double declination;
 
 
 	/**
 	 * Creates a new instance with the given parameters.
 	 *
-	 * @param rightAscension	The right ascension [°].
-	 * @param declination	The declination [°].
+	 * @param rightAscension	The right ascension [rad].
+	 * @param declination	The declination [rad].
 	 * @return	An instance.
 	 */
 	public static EquatorialCoordinate create(final double rightAscension, final double declination){
@@ -62,16 +62,13 @@ public final class EquatorialCoordinate{
 	/**
 	 * Creates a new instance from ecliptical coordinates.
 	 *
-	 * @param eclipticLatitude   Geometric ecliptic latitude [°].
-	 * @param eclipticLongitude   Geometric ecliptic longitude [°].
-	 * @param eclipticObliquity   Obliquity of the ecliptic [°].
+	 * @param eclipticLatitude   Geometric ecliptic latitude [rad].
+	 * @param eclipticLongitude   Geometric ecliptic longitude [rad].
+	 * @param eclipticObliquity   Obliquity of the ecliptic [rad].
 	 * @return	An instance.
 	 */
-	public static EquatorialCoordinate createFromEcliptical(double eclipticLatitude, double eclipticLongitude, double eclipticObliquity){
-		eclipticLatitude = StrictMath.toRadians(eclipticLatitude);
-		eclipticLongitude = StrictMath.toRadians(eclipticLongitude);
-		eclipticObliquity = StrictMath.toRadians(eclipticObliquity);
-
+	public static EquatorialCoordinate createFromEcliptical(final double eclipticLatitude, final double eclipticLongitude,
+			final double eclipticObliquity){
 		final double sinLat = StrictMath.sin(eclipticLatitude);
 		final double cosLat = StrictMath.cos(eclipticLatitude);
 		final double sinLon = StrictMath.sin(eclipticLongitude);
@@ -79,12 +76,10 @@ public final class EquatorialCoordinate{
 		final double cosObl = StrictMath.cos(eclipticObliquity);
 		final double sinObl = StrictMath.sin(eclipticObliquity);
 
-		final double rightAscension = MathHelper.limitRangeDegree(StrictMath.toDegrees(
+		final double rightAscension = MathHelper.mod2pi(
 			StrictMath.atan2(sinLon * cosObl - sinLat * sinObl / cosLat, cosLon)
-		));
-		final double declination = StrictMath.toDegrees(
-			StrictMath.asin(sinLat * cosObl + cosLat * sinObl * sinLon)
 		);
+		final double declination = StrictMath.asin(sinLat * cosObl + cosLat * sinObl * sinLon);
 
 		return create(rightAscension, declination);
 	}
@@ -104,7 +99,7 @@ public final class EquatorialCoordinate{
 	/**
 	 * The right ascension.
 	 *
-	 * @return	The right ascension [°].
+	 * @return	The right ascension [rad].
 	 */
 	public double getRightAscension(){
 		return rightAscension;
@@ -113,7 +108,7 @@ public final class EquatorialCoordinate{
 	/**
 	 * The declination.
 	 *
-	 * @return	The declination [°].
+	 * @return	The declination [rad].
 	 */
 	public double getDeclination(){
 		return declination;

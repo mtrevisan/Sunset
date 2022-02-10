@@ -134,7 +134,7 @@ public final class TimeHelper{
 	 * Calculate Greenwich Mean Sidereal Time, ΘGMST.
 	 *
 	 * @param ut	Julian Day of Universal Time from J2000.0.
-	 * @return	mean Sidereal time at Greenwich [°].
+	 * @return	mean Sidereal time at Greenwich [rad].
 	 */
 	static double meanSiderealTime(final double ut){
 		final double[] dateAndTime = JulianDay.extractDateAndTime(ut);
@@ -176,21 +176,21 @@ public final class TimeHelper{
 	/**
 	 * Calculate Greenwich Apparent Sidereal Time, ΘGAST.
 	 *
-	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [°].
-	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [°].
-	 * @param deltaPsi	Nutation in longitude [°].
-	 * @return	apparent Sidereal time at Greenwich [°].
+	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [rad].
+	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [rad].
+	 * @param deltaPsi	Nutation in longitude [rad].
+	 * @return	apparent Sidereal time at Greenwich [rad].
 	 */
 	static double apparentSiderealTime(final double meanSiderealTime, final double trueEclipticObliquity, final double deltaPsi){
-		final double equationOfTheEquinoxes = deltaPsi * StrictMath.cos(StrictMath.toRadians(trueEclipticObliquity));
-		return MathHelper.limitRangeDegree(meanSiderealTime + equationOfTheEquinoxes);
+		final double equationOfTheEquinoxes = deltaPsi * StrictMath.cos(trueEclipticObliquity);
+		return MathHelper.mod2pi(meanSiderealTime + equationOfTheEquinoxes);
 	}
 
 	/**
 	 * Calculate Local Mean Sidereal Time, ΘLMST.
 	 *
-	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [°].
-	 * @return	The apparent local Sidereal time at Greenwich [°].
+	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [rad].
+	 * @return	The apparent local Sidereal time at Greenwich [rad].
 	 */
 	static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
 		return meanSiderealTime + location.getLongitude();
@@ -199,9 +199,9 @@ public final class TimeHelper{
 	/**
 	 * Calculate the hour angle of a body, H.
 	 *
-	 * @param localSiderealTime	Local Sidereal Time [°].
-	 * @param rightAscension	Right ascension [°].
-	 * @return	The hour angle [°].
+	 * @param localSiderealTime	Local Sidereal Time [rad].
+	 * @param rightAscension	Right ascension [rad].
+	 * @return	The hour angle [rad.
 	 */
 	static double localHourAngle(final double localSiderealTime, final double rightAscension){
 		return localSiderealTime - rightAscension;

@@ -37,18 +37,22 @@ public final class MathHelper{
 		return x - (int)x;
 	}
 
-	// Reduces an angle in degrees to the range 0 to 2.0 * M_PI.
-	public static double mod2pi(final double rad){
-		return rad - TWO_PI * StrictMath.floor(rad / TWO_PI);
+	/**
+	 * Reduce an angle in radians to the range {@code 0} to {@code 2π}.
+	 */
+	public static double mod2pi(final double angle){
+		return angle - TWO_PI * StrictMath.floor(angle / TWO_PI);
+	}
+
+	/**
+	 * Reduce an angle in radians to the range {@code -π} to {@code π}.
+	 */
+	public static double modpi(final double angle){
+		return angle - TWO_PI * StrictMath.floor((angle - -StrictMath.PI) / TWO_PI);
 	}
 
 	public static double toDegrees(final int degree, final int minute, final double second){
 		return degree + (minute + second / 60.) / 60.;
-	}
-
-	public static double limitRangeDegree(double degree){
-		degree %= 360.;
-		return (degree < 0.? degree + 360.: degree);
 	}
 
 	public static double limitRangeHour(double degree){

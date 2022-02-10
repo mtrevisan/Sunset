@@ -289,7 +289,7 @@ public class AstroLib{
 
 	public static double limitAngle(double L){
 		double F;
-		L /= 360.0;
+		L /= 360.;
 		F = L - Math.floor(L);
 		if(F > 0)
 			return 360 * F;
@@ -301,7 +301,7 @@ public class AstroLib{
 
 	public static double limitAngle180(double L){
 		double F;
-		L /= 180.0;
+		L /= 180.;
 		F = L - Math.floor(L);
 		if(F > 0)
 			return 180 * F;
@@ -321,8 +321,8 @@ public class AstroLib{
 
 	public static double limitAngle180between(double L){
 		double F;
-		L /= 360.0;
-		F = (L - Math.floor(L)) * 360.0;
+		L /= 360.;
+		F = (L - Math.floor(L)) * 360.;
 		if(F < -180)
 			F += 360;
 		else if(F > 180)
