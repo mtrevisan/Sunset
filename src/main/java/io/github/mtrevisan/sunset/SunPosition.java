@@ -24,6 +24,7 @@
  */
 package io.github.mtrevisan.sunset;
 
+import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 
 import java.io.IOException;
@@ -97,9 +98,30 @@ public final class SunPosition{
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
 	public static EquatorialCoordinate sunPosition(final double tt){
-		double geometricMeanLatitude = geometricMeanLatitude(tt);
-		double geometricMeanLongitude = geometricMeanLongitude(tt);
+		//calculate geometric mean ecliptic coordinate
+		final EclipticCoordinate eclipticCoord = sunEclipticCoordinate(tt);
+
+		//calculate the nutation in longitude and obliquity
+		final double[] nutation = nutationCorrection(tt);
+		//calculate the aberration correction
+		final double aberration = aberrationCorrection(eclipticCoord.getDistance());
+		//calculate the apparent Sun longitude: Ltrue = L0 + C
+		final double apparentGeometricLongitude = apparentGeometricLongitude(eclipticCoord.getLongitude(), nutation[0], aberration);
+
+		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
+		//and planets appear to move across the sky): ɛ0
+		final double meanEclipticObliquity = meanEclipticObliquity(tt);
+		//calculate the true obliquity of the ecliptic
+		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
+
+		return EquatorialCoordinate.createFromEcliptical(eclipticCoord.getLatitude(), apparentGeometricLongitude, trueEclipticObliquity);
+	}
+
+	public static EclipticCoordinate sunEclipticCoordinate(final double tt){
+		final double geometricMeanLatitude = geometricMeanLatitude(tt);
+		final double geometricMeanLongitude = geometricMeanLongitude(tt);
 		final double radiusVector = radiusVector(tt);
+		final EclipticCoordinate eclipticCoord = EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
 
 		//conversion to the FK5 System:
 //		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
@@ -108,30 +130,17 @@ public final class SunPosition{
 //		geometricMeanLatitude += deltaLatitude;
 //		geometricMeanLongitude += deltaLongitude;
 
-		//calculate the nutation in longitude and obliquity
-		final double[] nutation = nutationCorrection(tt);
-		//calculate the aberration correction
-		final double aberration = aberrationCorrection(radiusVector);
-		//calculate the apparent Sun longitude: Ltrue = L0 + C
-		final double apparentGeometricLongitude = apparentGeometricLongitude(geometricMeanLongitude, nutation[0], aberration);
-
-		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
-		//and planets appear to move across the sky): ɛ0
-		final double meanEclipticObliquity = meanEclipticObliquity(tt);
-		//calculate the true obliquity of the ecliptic
-		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-
-		return EquatorialCoordinate.createFromEcliptical(geometricMeanLatitude, apparentGeometricLongitude, trueEclipticObliquity);
+		return eclipticCoord;
 	}
 
-	/**
-	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
-	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geometric mean latitude of the Sun [°].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
-	 */
+		/**
+		 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
+		 *
+		 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+		 * @return	The geometric mean latitude of the Sun [°].
+		 *
+		 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+		 */
 	static double geometricMeanLatitude(final double tt){
 		final double jme = tt / 10.;
 		final double[] parameters = new double[6];

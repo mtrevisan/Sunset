@@ -60,7 +60,7 @@ public final class StringHelper{
 		return hour + "° " + minute + "' " + df.format(second) + "\"";
 	}
 
-	private static DecimalFormat decimalFormat(final int precision){
+	public static DecimalFormat decimalFormat(final int precision){
 		final DecimalFormat df = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 		df.setMaximumFractionDigits(precision);
 		return df;
