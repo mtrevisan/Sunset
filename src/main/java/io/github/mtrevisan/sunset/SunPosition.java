@@ -98,19 +98,18 @@ public final class SunPosition{
 	 */
 	public static EquatorialCoordinate sunPosition(final double tt){
 		double geometricMeanLatitude = geometricMeanLatitude(tt);
-		//calculate the geometric mean longitude L0 of the Sun referred to the mean equinox of the time T: L0
 		double geometricMeanLongitude = geometricMeanLongitude(tt);
+		final double radiusVector = radiusVector(tt);
 
 		//conversion to the FK5 System:
-		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
-		final double deltaLatitude = (0.03916 / JulianDay.SECONDS_IN_HOUR) * (StrictMath.cos(lambdaPrime) - StrictMath.sin(lambdaPrime));
-		final double deltaLongitude = -0.09033 / JulianDay.SECONDS_IN_HOUR;
-		geometricMeanLatitude += deltaLatitude;
-		geometricMeanLongitude += deltaLongitude;
+//		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
+//		final double deltaLatitude = (0.03916 / JulianDay.SECONDS_IN_HOUR) * (StrictMath.cos(lambdaPrime) - StrictMath.sin(lambdaPrime));
+//		final double deltaLongitude = -0.09033 / JulianDay.SECONDS_IN_HOUR;
+//		geometricMeanLatitude += deltaLatitude;
+//		geometricMeanLongitude += deltaLongitude;
 
 		//calculate the nutation in longitude and obliquity
 		final double[] nutation = nutationCorrection(tt);
-		final double radiusVector = radiusVector(tt);
 		//calculate the aberration correction
 		final double aberration = aberrationCorrection(radiusVector);
 		//calculate the apparent Sun longitude: Ltrue = L0 + C
@@ -147,6 +146,53 @@ public final class SunPosition{
 		}
 		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
 	}
+
+	/**
+	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geometric mean longitude of the Sun [°].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 */
+	static double geometricMeanLongitude(final double tt){
+		final double jme = tt / 10.;
+		final double[] parameters = new double[6];
+		for(int i = 0; i < parameters.length; i ++){
+			double parameter = 0.;
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
+			if(elements != null){
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
+		}
+		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
+		return MathHelper.limitRangeDegree(longitude + 180.);
+	}
+
+	/**
+	 * Calculate the distance between the center of the Sun and the center of the Earth, R.
+	 * <p>U.S. Naval Observatory function.</p>
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
+	 */
+	static double radiusVector(final double tt){
+		final double jme = tt / 10.;
+		final double[] parameters = new double[6];
+		for(int i = 0; i < parameters.length; i ++){
+			double parameter = 0.;
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
+			if(elements != null){
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
+		}
+		return MathHelper.eval(jme, parameters) / 100_000_000.;
+	}
+
 
 	/**
 	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
@@ -225,29 +271,6 @@ public final class SunPosition{
 		return MathHelper.eval(jme, parameters);
 	}
 
-	/**
-	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L.
-	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geometric mean longitude of the Sun [°].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
-	 */
-	static double geometricMeanLongitude(final double tt){
-		final double jme = tt / 10.;
-		final double[] parameters = new double[6];
-		for(int i = 0; i < parameters.length; i ++){
-			double parameter = 0.;
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
-			if(elements != null){
-				for(final Double[] element : elements)
-					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-				parameters[i] = parameter;
-			}
-		}
-		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
-		return MathHelper.limitRangeDegree(longitude + 180.);
-	}
 
 	/**
 	 * Calculate corrections of nutation in longitude (∆ψ) and obliquity (∆ε).
@@ -259,22 +282,21 @@ public final class SunPosition{
 	 * https://iopscience.iop.org/article/10.1086/375641/pdf
 	 */
 	static double[] nutationCorrection(final double tt){
-		final double d = meanElongationMoonSun(tt);
-		final double m = meanAnomalySun(tt);
-		final double mp = meanAnomalyMoon(tt);
-		final double f = argumentLatitudeMoon(tt);
-		final double omega = ascendingLongitudeMoon(tt);
+		final double d = StrictMath.toRadians(meanElongationMoonSun(tt));
+		final double m = StrictMath.toRadians(meanAnomalySun(tt));
+		final double mp = StrictMath.toRadians(meanAnomalyMoon(tt));
+		final double f = StrictMath.toRadians(argumentLatitudeMoon(tt));
+		final double omega = StrictMath.toRadians(ascendingLongitudeMoon(tt));
 
 		final Collection<Double[]> elements = NUTATION_DATA.get("coeffs");
 		final double[] x = {d, m, mp, f, omega};
 		double deltaPsi = 0.;
 		double deltaEpsilon = 0.;
-		for(int i = 0; i < elements.size(); i ++)
-			for(final Double[] element : elements){
-				final double parameter = xyTermSummation(x, element);
-				deltaPsi += (element[x.length] + element[x.length + 1] * tt) * StrictMath.sin(parameter);
-				deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * tt) * StrictMath.cos(parameter);
-			}
+		for(final Double[] element : elements){
+			final double parameter = xyTermSummation(x, element);
+			deltaPsi += (element[x.length] + element[x.length + 1] * tt) * StrictMath.sin(parameter);
+			deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * tt) * StrictMath.cos(parameter);
+		}
 		//[°]
 		deltaPsi /= JulianDay.SECONDS_IN_HOUR * 10_000.;
 		//[°]
@@ -282,39 +304,29 @@ public final class SunPosition{
 		return new double[]{deltaPsi, deltaEpsilon};
 	}
 
-	//mean elongation of the Moon from the Sun [rad]
+	//mean elongation of the Moon from the Sun [°]
 	private static double meanElongationMoonSun(final double tt){
-		return StrictMath.toRadians(MathHelper.limitRangeDegree(
-			MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS)
-		));
+		return MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS);
 	}
 
-	//mean anomaly of the Sun [rad]
+	//mean anomaly of the Sun [°]
 	private static double meanAnomalySun(final double tt){
-		return StrictMath.toRadians(MathHelper.limitRangeDegree(
-			MathHelper.eval(tt, SUN_MEAN_ANOMALY_PARAMETERS)
-		));
+		return MathHelper.eval(tt, SUN_MEAN_ANOMALY_PARAMETERS);
 	}
 
-	//mean anomaly of the Moon [rad]
+	//mean anomaly of the Moon [°]
 	private static double meanAnomalyMoon(final double tt){
-		return StrictMath.toRadians(MathHelper.limitRangeDegree(
-			MathHelper.eval(tt, MOON_MEAN_ANOMALY_PARAMETERS)
-		));
+		return MathHelper.eval(tt, MOON_MEAN_ANOMALY_PARAMETERS);
 	}
 
-	//Moon's argument of Latitude [rad]
+	//Moon's argument of Latitude [°]
 	private static double argumentLatitudeMoon(final double tt){
-		return StrictMath.toRadians(MathHelper.limitRangeDegree(
-			MathHelper.eval(tt, MOON_ARGUMENT_OF_LATITUDE)
-		));
+		return MathHelper.eval(tt, MOON_ARGUMENT_OF_LATITUDE);
 	}
 
 	//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
 	private static double ascendingLongitudeMoon(final double tt){
-		return StrictMath.toRadians(MathHelper.limitRangeDegree(
-			MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE)
-		));
+		return MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE);
 	}
 
 	private static double xyTermSummation(final double[] x, final Double[] terms){
@@ -322,28 +334,6 @@ public final class SunPosition{
 		for(int j = 0; j < x.length; j ++)
 			result += x[j] * terms[j];
 		return result;
-	}
-
-	/**
-	 * Calculate the distance between the center of the Sun and the center of the Earth, R.
-	 * <p>U.S. Naval Observatory function.</p>
-	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
-	 */
-	static double radiusVector(final double tt){
-		final double jme = tt / 10.;
-		final double[] parameters = new double[6];
-		for(int i = 0; i < parameters.length; i ++){
-			double parameter = 0.;
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
-			if(elements != null){
-				for(final Double[] element : elements)
-					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-				parameters[i] = parameter;
-			}
-		}
-		return MathHelper.eval(jme, parameters) / 100_000_000.;
 	}
 
 	/**
