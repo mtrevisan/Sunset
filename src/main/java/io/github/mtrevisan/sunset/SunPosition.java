@@ -90,22 +90,44 @@ public final class SunPosition{
 
 
 	/**
-	 * Calculated the Sun position.
+	 * Calculated the Sun ecliptic position.
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The Sun position.
+	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
+	 * @return	The Sun ecliptic position.
+	 */
+	public static EclipticCoordinate sunEclipticPosition(final double jd){
+		final double tt = JulianDay.centuryJ2000Of(jd);
+		final double geometricMeanLatitude = geometricMeanLatitude(tt);
+		final double geometricMeanLongitude = geometricMeanLongitude(tt);
+		final double radiusVector = radiusVector(tt);
+		final EclipticCoordinate coord = EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
+
+		//conversion to the FK5 System:
+//		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
+//		final double deltaLatitude = (0.03916 / JulianDay.SECONDS_IN_HOUR) * (StrictMath.cos(lambdaPrime) - StrictMath.sin(lambdaPrime));
+//		final double deltaLongitude = -0.09033 / JulianDay.SECONDS_IN_HOUR;
+//		geometricMeanLatitude += deltaLatitude;
+//		geometricMeanLongitude += deltaLongitude;
+
+		return coord;
+	}
+
+	/**
+	 * Calculated the Sun equatorial position.
+	 *
+	 * @param eclipticCoord	Geometric mean ecliptic coordinate of the Sun.
+	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
+	 * @return	The Sun equatorial position.
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
-	public static EquatorialCoordinate sunPosition(final double tt){
-		//calculate geometric mean ecliptic coordinate
-		final EclipticCoordinate eclipticCoord = sunEclipticCoordinate(tt);
-
+	public static EquatorialCoordinate sunEquatorialPosition(final EclipticCoordinate eclipticCoord, final double jd){
+		final double tt = JulianDay.centuryJ2000Of(jd);
 		//calculate the nutation in longitude and obliquity
 		final double[] nutation = nutationCorrection(tt);
 		//calculate the aberration correction
 		final double aberration = aberrationCorrection(eclipticCoord.getDistance());
-		//calculate the apparent Sun longitude: Ltrue = L0 + C
+		//calculate the apparent Sun longitude: Ltrue = L + C
 		final double apparentGeometricLongitude = apparentGeometricLongitude(eclipticCoord.getLongitude(), nutation[0], aberration);
 
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
@@ -117,31 +139,15 @@ public final class SunPosition{
 		return EquatorialCoordinate.createFromEcliptical(eclipticCoord.getLatitude(), apparentGeometricLongitude, trueEclipticObliquity);
 	}
 
-	public static EclipticCoordinate sunEclipticCoordinate(final double tt){
-		final double geometricMeanLatitude = geometricMeanLatitude(tt);
-		final double geometricMeanLongitude = geometricMeanLongitude(tt);
-		final double radiusVector = radiusVector(tt);
-		final EclipticCoordinate eclipticCoord = EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
-
-		//conversion to the FK5 System:
-//		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
-//		final double deltaLatitude = (0.03916 / JulianDay.SECONDS_IN_HOUR) * (StrictMath.cos(lambdaPrime) - StrictMath.sin(lambdaPrime));
-//		final double deltaLongitude = -0.09033 / JulianDay.SECONDS_IN_HOUR;
-//		geometricMeanLatitude += deltaLatitude;
-//		geometricMeanLongitude += deltaLongitude;
-
-		return eclipticCoord;
-	}
-
-		/**
-		 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
-		 *
-		 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-		 * @return	The geometric mean latitude of the Sun [°].
-		 *
-		 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
-		 */
-	static double geometricMeanLatitude(final double tt){
+	/**
+	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geometric mean latitude of the Sun [°].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 */
+	private static double geometricMeanLatitude(final double tt){
 		final double jme = tt / 10.;
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
@@ -164,7 +170,7 @@ public final class SunPosition{
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
-	static double geometricMeanLongitude(final double tt){
+	private static double geometricMeanLongitude(final double tt){
 		final double jme = tt / 10.;
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
@@ -187,7 +193,7 @@ public final class SunPosition{
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
-	static double radiusVector(final double tt){
+	private static double radiusVector(final double tt){
 		final double jme = tt / 10.;
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
@@ -212,7 +218,7 @@ public final class SunPosition{
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 * https://github.com/timmyd7777/SSCore/tree/a915f57f8754b206614d3f0b5055d1a7b56e9e70/SSCode/VSOP2013
 	 */
-	static double geometricMeanLatitude2(final double tt){
+	private static double geometricMeanLatitude2(final double tt){
 		final double jme = tt / 10.;
 
 		final double[] planetLongitudes = new double[17];
