@@ -251,6 +251,8 @@ geometricMeanLatitude2(jd);
 		final double q = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.Q), jme, planetLongitudes);
 		final double p = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.P), jme, planetLongitudes);
 
+		double[] cart = orbitalElementsToCartesian(a, l, k, h, q, p);
+
 		final double e = StrictMath.sqrt(k * k + h * h);
 		final double w = StrictMath.atan2(h, k);
 		final double n = StrictMath.atan2(p, q);
@@ -268,6 +270,68 @@ geometricMeanLatitude2(jd);
 		orbit.meanMotion = mm;
 		//1.5149480825765068E-4
 		return -StrictMath.toDegrees(a);
+	}
+
+	public static double[] orbitalElementsToCartesian(final double xa, final double xl, final double xk, final double xh, final double xq,
+			final double xp){
+		double rgm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04);
+
+		double xfi = StrictMath.sqrt(1. - xk * xk - xh * xh);
+		double xki = StrictMath.sqrt(1. - xq * xq - xp * xp);
+		double u = 1. / (1. + xfi);
+		double[] z = {xk, xh};
+		double ex = StrictMath.sqrt(z[0] * z[0] + z[1] * z[1]);
+		double ex2 = ex * ex;
+		double ex3 = ex2 * ex;
+		//complex conjugate of z
+		double[] z1 = {xk, -xh};
+
+		double gl = xl % (2. * StrictMath.PI);
+		double gm = gl - StrictMath.atan2(xh, xk);
+		double e = gl + (ex - 0.125 * ex3) * StrictMath.sin(gm)
+			+ 0.5 * ex2 * StrictMath.sin(2. * gm)
+			+ 0.375 * ex3 * StrictMath.sin(3. * gm);
+
+		double dl;
+		double[] z2 = new double[2];
+		double[] zteta = new double[2];;
+		double[] z3 = new double[2];
+		double rsa;
+		do{
+			z2[0] = 0.;
+			z2[1] = e;
+			zteta[0] = StrictMath.exp(z2[0]) * StrictMath.cos(z2[1]);
+			zteta[1] = StrictMath.exp(z2[0]) * StrictMath.sin(z2[1]);
+			z3[0] = z1[0] * zteta[0] - z1[1] * zteta[1];
+			z3[1] = z1[0] * zteta[1] + z1[1] * zteta[0];
+			dl = gl - e + z3[1];
+			rsa = 1. - z3[0];
+			e += dl / rsa;
+		}while(StrictMath.abs(dl) >= 1.e-15);
+
+		z1[0] = u * z[0] * z3[1];
+		z1[1] = u * z[1] * z3[1];
+		z2[0] = z1[1];
+		z2[1] = -z1[0];
+		double[] zto = {(-z[0] + zteta[0] + z2[0]) / rsa, (-z[1] + zteta[1] + z2[1]) / rsa};
+		double xcw = zto[0];
+		double xsw = zto[1];
+		double xm = xp * xcw - xq * xsw;
+		double xr = xa * rsa;
+
+		double[] w = new double[6];
+		w[0] = xr * (xcw - 2. * xp * xm);
+		w[1] = xr * (xsw + 2. * xq * xm);
+		w[2] = -2. * xr * xki * xm;
+
+		double xms = xa * (xh + xsw) / xfi;
+		double xmc = xa * (xk + xcw) / xfi;
+		double xn = rgm / StrictMath.pow(xa, 1.5);
+
+		w[3] = xn * ((2. * xp * xp - 1.)*xms + 2. * xp * xq * xmc);
+		w[4] = xn * ((1. - 2. * xq * xq)*xmc - 2. * xp * xq * xms);
+		w[5] = 2. * xn * xki * (xp * xms + xq * xmc);
+		return w;
 	}
 
 	private static double evalSeries(final List<ResourceReader.VSOP2013Data> elements, final double jme, final double[] planetLongitudes){
