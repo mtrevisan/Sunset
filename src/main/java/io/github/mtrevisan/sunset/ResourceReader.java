@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Mauro Trevisan
+ * Copyright (c) 2022-2022 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -50,13 +50,13 @@ public final class ResourceReader{
 		A(1),
 		//mean longitude [rad]
 		L(2),
-		//e * cos(v)
+		//e * cos(w_bar), where e is the eccentricity, and w_bar = W + w is the longitude of the perihelion
 		K(3),
-		//e * sin(v)
+		//e * sin(w_bar), where e is the eccentricity, and w_bar = W + w is the longitude of the perihelion
 		H(4),
-		//sin(i/2) * cos(W)
+		//sin(i/2) * cos(W), where i is the inclination, and W is the longitude of the ascending node
 		Q(5),
-		//sin(i/2) * sin(W)
+		//sin(i/2) * sin(W), where i is the inclination, and W is the longitude of the ascending node
 		P(6);
 
 		private int index;
@@ -81,25 +81,6 @@ public final class ResourceReader{
 		final int[] iphi = new int[17];
 		double sine;
 		double cosine;
-	}
-
-	public static final class Orbit{
-		//epoch of orbital elements as Julian Ephemeris Date [JD]
-		double t;
-		//[AU]
-		double periapseDistance;
-		//0 = circular, 1 = parabolic, > 1 = hyperbolic
-		double eccentricity;
-		//[rad]
-		double inclinationReferencePlane;
-		//[rad]
-		double argumentPeriapse;
-		//[rad]
-		double longitudeAscendingNode;
-		//[rad]
-		double meanAnomalyAtEpoch;
-		//[rad/day]
-		double meanMotion;
 	}
 
 

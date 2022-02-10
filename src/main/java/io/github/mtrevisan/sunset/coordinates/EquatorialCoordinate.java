@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Mauro Trevisan
+ * Copyright (c) 2022-2022 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 package io.github.mtrevisan.sunset.coordinates;
-
 
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.StringHelper;

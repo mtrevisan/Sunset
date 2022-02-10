@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022. * mauro Trevisan
+ * Copyright (c) 2022-2022 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -26,6 +26,7 @@ package io.github.mtrevisan.sunset;
 
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.coordinates.OrbitalElements;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -98,6 +99,7 @@ public final class SunPosition{
 	public static EclipticCoordinate sunEclipticPosition(final double jd){
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLatitude = geometricMeanLatitude(tt);
+geometricMeanLatitude2(tt);
 		final double geometricMeanLongitude = geometricMeanLongitude(tt);
 		final double radiusVector = radiusVector(tt);
 		final EclipticCoordinate coord = EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
@@ -210,7 +212,8 @@ public final class SunPosition{
 
 
 	/**
-	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 * Calculate the geometric mean latitude of the Sun, referred to the inertial frame defined by the dynamical equinox and ecliptic J2000,
+	 * β.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The geometric mean latitude of the Sun [°].
@@ -258,15 +261,16 @@ public final class SunPosition{
 		//mean motion [rad/day]
 		final double mm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04) / StrictMath.pow(a, 1.5);
 
-		final ResourceReader.Orbit orbit = new ResourceReader.Orbit();
+		final OrbitalElements orbit = new OrbitalElements();
 		orbit.t = tt * JulianDay.CIVIL_SAECULUM;
-		orbit.periapseDistance = a * (1. - e);
+		orbit.periapsisDistance = a * (1. - e);
 		orbit.eccentricity = e;
-		orbit.inclinationReferencePlane = i;
-		orbit.argumentPeriapse = MathHelper.mod2pi(w - n);
+		orbit.inclination = i;
+		orbit.argumentOfPeriapsis = MathHelper.mod2pi(w - n);
 		orbit.longitudeAscendingNode = MathHelper.mod2pi(n);
-		orbit.meanAnomalyAtEpoch = MathHelper.mod2pi(l - w);
+		orbit.meanAnomaly = MathHelper.mod2pi(l - w);
 		orbit.meanMotion = mm;
+		//1.5149480825765068E-4
 		return -StrictMath.toDegrees(a);
 	}
 
