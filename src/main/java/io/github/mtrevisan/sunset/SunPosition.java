@@ -260,10 +260,10 @@ geometricMeanLatitude2(jd);
 		final OrbitalElements orbit = new OrbitalElements();
 		orbit.t = tt * JulianDay.CIVIL_SAECULUM;
 		orbit.eccentricity = e;
-		orbit.periapsisDistance = a * (1. - e);
+		orbit.semimajorAxis = a;
 		orbit.inclination = i;
 		orbit.longitudeAscendingNode = MathHelper.mod2pi(n);
-		orbit.argumentOfPeriapsis = MathHelper.mod2pi(w - n);
+		orbit.argumentOfPerihelion = MathHelper.mod2pi(w - n);
 		orbit.meanAnomaly = MathHelper.mod2pi(l - w);
 		orbit.meanMotion = mm;
 		//1.5149480825765068E-4

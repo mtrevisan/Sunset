@@ -30,6 +30,8 @@ import java.text.DecimalFormat;
 
 
 /**
+ * (Polar) Ecliptic coordinates.
+ *
  * @see <a href="https://en.wikipedia.org/wiki/Ecliptic_coordinate_system">Ecliptic coordinate system</>
  */
 public final class EclipticCoordinate{

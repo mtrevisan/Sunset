@@ -28,22 +28,24 @@ package io.github.mtrevisan.sunset.coordinates;
 /**
  * @see <a href="https://en.wikipedia.org/wiki/Orbital_elements">Orbital elements</>
  * @see <a href="https://en.wikipedia.org/wiki/Mean_motion">Mean motion</>
+ * @see <a href="http://www.astro.utoronto.ca/~astrolab/files/AST326_Lab4_2017.pdf">Astrometric orbit determination</a>
+ * @see <a href="https://phas.ubc.ca/~newhouse/p210/orbits/cometreport.pdf">Calculating celestial coordinates from orbital parameters using Javascript</a>
  */
 public class OrbitalElements{
 
-	//epoch of orbital elements as Julian Ephemeris Date [JD]
+	//epoch of orbital elements as Julian Ephemeris Date, t [JD].
 	public double t;
 
 	//shape and size of the ellipse:
-	/** Shape of the ellipse (0 = circular, 1 = parabolic, > 1 = hyperbolic). */
+	/** Shape of the ellipse (0 = circular, 1 = parabolic, > 1 = hyperbolic), e. */
 	public double eccentricity;
-	/** Distance to the nearest point in the orbit of a planetary body about its primary body [AU]. */
-	public double periapsisDistance;
+	/** Semimajor axis, a [AU]. */
+	public double semimajorAxis;
 
 	//orientation of the orbital plane in which the ellipse is embedded:
 	/**
 	 * Vertical tilt of the ellipse with respect to the reference plane, measured at the ascending node (where the orbit passes upward
-	 * through the reference plane, the green angle i in the diagram) [rad].
+	 * through the reference plane, the green angle i in the diagram), i [rad].
 	 * <p>Tilt angle is measured perpendicular to line of intersection between orbital plane and reference plane.</p>
 	 */
 	public double inclination;
@@ -53,19 +55,22 @@ public class OrbitalElements{
 	 */
 	public double longitudeAscendingNode;
 
-	/** Orientation of the ellipse in the orbital plane, as an angle measured from the ascending node to the periapsis [rad]. */
-	public double argumentOfPeriapsis;
+	/** Orientation of the ellipse in the orbital plane, as an angle measured from the ascending node to the periapsis, ω [rad]. */
+	public double argumentOfPerihelion;
 	/**
 	 * Fraction of an elliptical orbit's period that has elapsed since the orbiting body passed periapsis, expressed as an angle which can
 	 * be used in calculating the position of that body in the classical two-body problem. It is the angular distance from the pericenter
 	 * which a fictitious body would have if it moved in a circular orbit, with constant speed, in the same orbital period as the actual
-	 * body in its elliptical orbit [rad].
+	 * body in its elliptical orbit, M [rad].
+	 * <p>
+	 * True anomaly, v, is meanAnomaly + equationOfCenter.
+	 * </p>
 	 */
 	public double meanAnomaly;
 
 	/**
 	 *  Angular speed required for a body to complete one orbit, assuming constant speed in a circular orbit which completes in the same
-	 *  time as the variable speed, elliptical orbit of the actual body [rad/day].
+	 *  time as the variable speed, elliptical orbit of the actual body, n [rad/day].
 	 */
 	public double meanMotion;
 

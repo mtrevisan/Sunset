@@ -29,7 +29,7 @@ import io.github.mtrevisan.sunset.StringHelper;
 
 
 /**
- * Describes a celestial coordinate system which projects the Earth equator and poles onto the celestial sphere
+ * Describes a (polar) celestial coordinate system which projects the Earth equator and poles onto the celestial sphere
  * using right ascension and declination in the reference frame J2000 as epoch.
  *
  * <p>
