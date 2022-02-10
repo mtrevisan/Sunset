@@ -99,19 +99,9 @@ public final class SunPosition{
 	public static EclipticCoordinate sunEclipticPosition(final double jd){
 		final double tt = JulianDay.centuryJ2000Of(jd);
 		final double geometricMeanLatitude = geometricMeanLatitude(tt);
-geometricMeanLatitude2(jd);
 		final double geometricMeanLongitude = geometricMeanLongitude(tt);
 		final double radiusVector = radiusVector(tt);
-		final EclipticCoordinate coord = EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
-
-		//conversion to the FK5 System:
-//		final double lambdaPrime = geometricMeanLongitude + MathHelper.eval(tt, new double[]{0., -1.397, -0.00031});
-//		final double deltaLatitude = (0.03916 / JulianDay.SECONDS_IN_HOUR) * (StrictMath.cos(lambdaPrime) - StrictMath.sin(lambdaPrime));
-//		final double deltaLongitude = -0.09033 / JulianDay.SECONDS_IN_HOUR;
-//		geometricMeanLatitude += deltaLatitude;
-//		geometricMeanLongitude += deltaLongitude;
-
-		return coord;
+		return EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
 	}
 
 	/**
@@ -130,7 +120,8 @@ geometricMeanLatitude2(jd);
 		//calculate the aberration correction
 		final double aberration = aberrationCorrection(eclipticCoord.getDistance());
 		//calculate the apparent Sun longitude: Ltrue = L + C
-		final double apparentGeometricLongitude = apparentGeometricLongitude(eclipticCoord.getLongitude(), nutation[0], aberration);
+		final double apparentGeometricLongitude = apparentGeometricLongitude(StrictMath.toDegrees(eclipticCoord.getLongitude()),
+			nutation[0], aberration);
 
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
@@ -138,14 +129,15 @@ geometricMeanLatitude2(jd);
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
-		return EquatorialCoordinate.createFromEcliptical(eclipticCoord.getLatitude(), apparentGeometricLongitude, trueEclipticObliquity);
+		return EquatorialCoordinate.createFromEcliptical(StrictMath.toDegrees(eclipticCoord.getLatitude()), apparentGeometricLongitude,
+			trueEclipticObliquity);
 	}
 
 	/**
 	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geometric mean latitude of the Sun [°].
+	 * @return	The geometric mean latitude of the Sun [rad].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
@@ -161,14 +153,14 @@ geometricMeanLatitude2(jd);
 				parameters[i] = parameter;
 			}
 		}
-		return -StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
+		return -MathHelper.eval(jme, parameters) / 100_000_000.;
 	}
 
 	/**
 	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geometric mean longitude of the Sun [°].
+	 * @return	The geometric mean longitude of the Sun [rad].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
@@ -184,8 +176,7 @@ geometricMeanLatitude2(jd);
 				parameters[i] = parameter;
 			}
 		}
-		final double longitude = StrictMath.toDegrees(MathHelper.eval(jme, parameters) / 100_000_000.);
-		return MathHelper.limitRangeDegree(longitude + 180.);
+		return MathHelper.mod2pi(MathHelper.eval(jme, parameters) / 100_000_000. + StrictMath.PI);
 	}
 
 	/**

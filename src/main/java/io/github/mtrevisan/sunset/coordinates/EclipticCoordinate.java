@@ -47,8 +47,8 @@ public final class EclipticCoordinate{
 	/**
 	 * Creates a new instance with the given parameters.
 	 *
-	 * @param latitude	The latitude [°].
-	 * @param longitude	The longitude [°].
+	 * @param latitude	The latitude [rad].
+	 * @param longitude	The longitude [rad].
 	 * @param distance	The distance [AU].
 	 * @return	An instance.
 	 */
@@ -74,7 +74,7 @@ public final class EclipticCoordinate{
 	/**
 	 * The latitude.
 	 *
-	 * @return	The latitude [°].
+	 * @return	The latitude [rad].
 	 */
 	public double getLatitude(){
 		return latitude;
@@ -83,7 +83,7 @@ public final class EclipticCoordinate{
 	/**
 	 * The longitude.
 	 *
-	 * @return	The longitude [°].
+	 * @return	The longitude [rad].
 	 */
 	public double getLongitude(){
 		return longitude;
@@ -102,8 +102,8 @@ public final class EclipticCoordinate{
 	public String toString(){
 		final DecimalFormat df = StringHelper.decimalFormat(2);
 		return "EclipticCoordinate{"
-			+ "b: " + StringHelper.degreeToDegMinSecString(latitude, 2)
-			+ ", l: " + StringHelper.degreeToDegMinSecString(longitude, 2)
+			+ "b: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(latitude), 2)
+			+ ", l: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(longitude), 2)
 			+ ", r: " + df.format(distance)
 			+ '}';
 	}

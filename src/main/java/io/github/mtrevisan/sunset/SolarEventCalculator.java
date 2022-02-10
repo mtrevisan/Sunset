@@ -589,7 +589,7 @@ Sunset hour angle	83.524274
 	private static double equationOfTime(final EclipticCoordinate eclipticCoord, final double tt){
 		final double e0 = SunPosition.meanEclipticObliquity(tt);
 		final double epsilon = apparentEclipticObliquity(e0, tt);
-		final double l0 = StrictMath.toRadians(eclipticCoord.getLongitude());
+		final double l0 = StrictMath.toRadians(StrictMath.toDegrees(eclipticCoord.getLongitude()));
 		final double e = earthOrbitEccentricity(tt);
 		final double m = StrictMath.toRadians(geometricMeanAnomaly(tt));
 		double y = StrictMath.tan(StrictMath.toRadians(epsilon) / 2.);
@@ -687,7 +687,7 @@ Sunset hour angle	83.524274
 		final double t = JulianDay.centuryJ2000Of(jd);
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		final double equationOfTime = equationOfTime(eclipticCoord, t);
-		final double geometricMeanLongitude = eclipticCoord.getLongitude();
+		final double geometricMeanLongitude = StrictMath.toDegrees(eclipticCoord.getLongitude());
 		final double meanAnomaly = geometricMeanAnomaly(t);
 		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
 		//Ltrue = L0 + C
