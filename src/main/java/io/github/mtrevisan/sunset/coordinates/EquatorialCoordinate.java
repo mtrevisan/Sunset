@@ -117,8 +117,8 @@ public final class EquatorialCoordinate{
 	@Override
 	public String toString(){
 		return "EquatorialCoordinate{"
-			+ "α: " + StringHelper.degreeToHMSString(rightAscension, 2)
-			+ ", δ: " + StringHelper.degreeToDegMinSecString(declination, 2)
+			+ "α: " + StringHelper.degreeToHMSString(StrictMath.toDegrees(rightAscension), 2)
+			+ ", δ: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(declination), 2)
 			+ '}';
 	}
 
