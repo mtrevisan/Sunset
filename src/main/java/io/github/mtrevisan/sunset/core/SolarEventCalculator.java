@@ -576,9 +576,14 @@ Sunset hour angle	83.524274
 		final double dUT1 = 0.;
 		//[day]
 		final double h = MathHelper.frac(h0 + earthSiderealRotationRate * (t - dUT1));
+double as = MathHelper.mod2pi(StrictMath.toRadians(
+	MathHelper.eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.})
+));
 		return StrictMath.toRadians(h * JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR);
 		//alternative:
-		//return MathHelper.limitRangeDegree(MathHelper.eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.}));
+//		return MathHelper.mod2pi(StrictMath.toRadians(
+//			MathHelper.eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.})
+//		));
 	}
 
 	/**
