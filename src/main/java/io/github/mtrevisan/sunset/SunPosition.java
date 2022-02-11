@@ -97,10 +97,11 @@ public final class SunPosition{
 	 * @return	The Sun ecliptic position.
 	 */
 	public static EclipticCoordinate sunEclipticPosition(final double jd){
-		final double tt = JulianDay.centuryJ2000Of(jd);
-		final double geometricMeanLatitude = geometricMeanLatitude(tt);
-		final double geometricMeanLongitude = geometricMeanLongitude(tt);
-		final double radiusVector = radiusVector(tt);
+		final double jme = JulianDay.millenniumJ2000Of(jd);
+
+		final double geometricMeanLatitude = geometricMeanLatitude(jme);
+		final double geometricMeanLongitude = geometricMeanLongitude(jme);
+		final double radiusVector = radiusVector(jme);
 		return EclipticCoordinate.create(geometricMeanLatitude, geometricMeanLongitude, radiusVector);
 	}
 
@@ -115,6 +116,7 @@ public final class SunPosition{
 	 */
 	public static EquatorialCoordinate sunEquatorialPosition(final EclipticCoordinate eclipticCoord, final double jd){
 		final double tt = JulianDay.centuryJ2000Of(jd);
+
 		//calculate the nutation in longitude and obliquity
 		final double[] nutation = nutationCorrection(tt);
 		//calculate the aberration correction
@@ -134,18 +136,17 @@ public final class SunPosition{
 	/**
 	 * Calculate the geometric mean latitude of the Sun, referred to the mean equinox of the date, β.
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	The geometric mean latitude of the Sun [rad].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
-	private static double geometricMeanLatitude(final double tt){
-		final double jme = tt / 10.;
+	private static double geometricMeanLatitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
-			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
 			if(elements != null){
+				double parameter = 0.;
 				for(final Double[] element : elements)
 					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 				parameters[i] = parameter;
@@ -159,18 +160,17 @@ public final class SunPosition{
 	/**
 	 * Calculate the geometric mean longitude of the Sun, referred to the mean equinox of the date, L.
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	The geometric mean longitude of the Sun [rad].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
 	 */
-	private static double geometricMeanLongitude(final double tt){
-		final double jme = tt / 10.;
+	private static double geometricMeanLongitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
-			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
 			if(elements != null){
+				double parameter = 0.;
 				for(final Double[] element : elements)
 					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 				parameters[i] = parameter;
@@ -185,16 +185,15 @@ public final class SunPosition{
 	 * Calculate the distance between the center of the Sun and the center of the Earth, R.
 	 * <p>U.S. Naval Observatory function.</p>
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
-	private static double radiusVector(final double tt){
-		final double jme = tt / 10.;
+	private static double radiusVector(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
-			double parameter = 0.;
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
 			if(elements != null){
+				double parameter = 0.;
 				for(final Double[] element : elements)
 					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 				parameters[i] = parameter;

@@ -48,6 +48,7 @@ public final class JulianDay{
 	private static final double J2000 = 2451545.;
 
 	public static final double CIVIL_SAECULUM = 36525.;
+	public static final double CIVIL_MILLENNIUM = CIVIL_SAECULUM * 10.;
 	//[°/h]
 	public static final double DEGREES_PER_HOUR = 15.;
 	public static final double HOURS_IN_DAY = 24.;
@@ -121,6 +122,16 @@ public final class JulianDay{
 	 */
 	public static double centuryJ2000Of(final double jd){
 		return (jd - J2000) / CIVIL_SAECULUM;
+	}
+
+	/**
+	 * Calculated the Julian Millennium since JDE2451545, that is J2000.0.
+	 *
+	 * @param jd	The Julian Day [day].
+	 * @return	The Julian Century.
+	 */
+	public static double millenniumJ2000Of(final double jd){
+		return (jd - J2000) / CIVIL_MILLENNIUM;
 	}
 
 	/**
