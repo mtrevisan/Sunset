@@ -22,8 +22,15 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.sunset.core;
 
+import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.MathHelper;
+import io.github.mtrevisan.sunset.SolarEventError;
+import io.github.mtrevisan.sunset.SolarEventException;
+import io.github.mtrevisan.sunset.StringHelper;
+import io.github.mtrevisan.sunset.TimeHelper;
+import io.github.mtrevisan.sunset.Zenith;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
@@ -160,7 +167,7 @@ public class SolarEventCalculator{
 	 * @param solarZenith	Enumeration corresponding to the type of sunset to compute.
 	 * @param date	Date to compute the sunset for.
 	 * @return	The sunset time or {@code null} for no sunset.
-	 * @throws SolarEventException	Whenever the Sun never rises or sets.
+	 * @throws SolarEventException   Whenever the Sun never rises or sets.
 	 */
 	public final LocalDateTime sunset(final LocalDate date, final Zenith solarZenith) throws SolarEventException{
 		final double jd = JulianDay.of(date);

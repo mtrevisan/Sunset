@@ -22,8 +22,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.sunset.core;
 
+import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.MathHelper;
+import io.github.mtrevisan.sunset.ResourceReader;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.OrbitalElements;
@@ -264,7 +267,7 @@ public final class SunPosition{
 		return -a;
 	}
 
-	public static double[] orbitalElementsToCartesian(final double xa, final double xl, final double xk, final double xh, final double xq,
+	static double[] orbitalElementsToCartesian(final double xa, final double xl, final double xk, final double xh, final double xq,
 			final double xp){
 		double rgm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04);
 

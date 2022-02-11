@@ -73,14 +73,14 @@ public final class ResourceReader{
 	}
 
 	public static final class VSOP2013Data{
-		int timePower;
-		VSOP2013Coeffs[] coeffs;
+		public int timePower;
+		public VSOP2013Coeffs[] coeffs;
 	}
 
 	public static final class VSOP2013Coeffs{
-		final int[] iphi = new int[17];
-		double sine;
-		double cosine;
+		public final int[] iphi = new int[17];
+		public double sine;
+		public double cosine;
 	}
 
 
