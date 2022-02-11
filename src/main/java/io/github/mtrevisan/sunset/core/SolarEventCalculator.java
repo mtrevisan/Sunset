@@ -77,16 +77,10 @@ public class SolarEventCalculator{
 	//---
 
 	private final GNSSLocation location;
-	//[m]
-	private double observerElevation;
 	//[hPa]
 	private double pressure;
 	//[°C]
 	private double temperature;
-	//[rad]
-	private Double surfaceSlope;
-	//[rad]
-	private Double surfaceAzimuthRotation;
 
 
 	/**
@@ -101,16 +95,6 @@ public class SolarEventCalculator{
 
 	private SolarEventCalculator(final GNSSLocation location){
 		this.location = location;
-	}
-
-	public double getObserverElevation(){
-		return observerElevation;
-	}
-
-	public SolarEventCalculator withObserverElevation(final double observerElevation){
-		this.observerElevation = observerElevation;
-
-		return this;
 	}
 
 	public double getPressure(){
@@ -129,28 +113,6 @@ public class SolarEventCalculator{
 
 	public SolarEventCalculator withTemperature(final double temperature){
 		this.temperature = temperature;
-
-		return this;
-	}
-
-	public Double getSurfaceSlope(){
-		return surfaceSlope;
-	}
-
-	public Double getSurfaceAzimuthRotation(){
-		return surfaceAzimuthRotation;
-	}
-
-	/**
-	 * Slope of the surface measured from the horizontal plane.
-	 *
-	 * @param surfaceSlope	The surface slope [rad].
-	 * @param surfaceAzimuthRotation	The surface azimuth rotation angle [rad].
-	 * @return	This instance.
-	 */
-	public SolarEventCalculator withSurfaceSlopeAndAzimuthRotation(final double surfaceSlope, final double surfaceAzimuthRotation){
-		this.surfaceSlope = surfaceSlope;
-		this.surfaceAzimuthRotation = surfaceAzimuthRotation;
 
 		return this;
 	}
@@ -259,18 +221,20 @@ public class SolarEventCalculator{
 	//http://phpsciencelabs.us/wiki_programs/Sidereal_Time_Calculator.php
 	//https://lweb.cfa.harvard.edu/~jzhao/times.html
 	public static void main(String[] args) throws SolarEventException{
-		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
-		//[m]
-		final double observerElevation = 1830.14;
+		final GNSSLocation location = GNSSLocation.create(
+			MathHelper.toDegrees(45, 42, 54.),
+			MathHelper.toDegrees(12, 11, 37.),
+			40.
+		);
 		//[hPa]
-		final double pressure = 820.;
+		final double pressure = 1021.5;
 		//[°C]
-		final double temperature = 11.;
-		//slope of the surface measured from the horizontal plane [rad]
-		final Double surfaceSlope = 30.;
-		//surface azimuth rotation angle, measured from south to the projection of the surface normal on the horizontal plane, positive if
-		//oriented west from south [rad]
-		final Double surfaceAzimuthRotation = -10.;
+		final double temperature = 8.;
+//		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
+//		//[hPa]
+//		final double pressure = 820.;
+//		//[°C]
+//		final double temperature = 11.;
 
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
@@ -412,18 +376,11 @@ Sunset hour angle	83.524274
 	}
 
 	public static void main2(String[] args){
-		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
-		//[m]
-		final double observerElevation = 1830.14;
+		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
 		//[hPa]
 		final double pressure = 820.;
 		//[°C]
 		final double temperature = 11.;
-		//slope of the surface measured from the horizontal plane [rad]
-		final Double surfaceSlope = StrictMath.toRadians(30.);
-		//surface azimuth rotation angle, measured from south to the projection of the surface normal on the horizontal plane, positive if
-		//oriented west from south [rad]
-		final Double surfaceAzimuthRotation = StrictMath.toRadians(-10.);
 
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
@@ -454,8 +411,8 @@ Sunset hour angle	83.524274
 		final double equatorialHorizontalParallax = equatorialHorizontalParallax(eclipticCoord.getDistance());
 		final double latitude = StrictMath.toRadians(location.getLatitude());
 		final double u = StrictMath.atan((1. - EARTH_FLATTENING) * StrictMath.tan(latitude));
-		final double chi = StrictMath.cos(u) + (observerElevation / EARTH_EQUATORIAL_RADIUS) * StrictMath.cos(latitude);
-		final double y = 0.99664719 * StrictMath.sin(u) + (observerElevation / EARTH_EQUATORIAL_RADIUS) * StrictMath.sin(latitude);
+		final double chi = StrictMath.cos(u) + (location.getAltitude() / EARTH_EQUATORIAL_RADIUS) * StrictMath.cos(latitude);
+		final double y = 0.99664719 * StrictMath.sin(u) + (location.getAltitude() / EARTH_EQUATORIAL_RADIUS) * StrictMath.sin(latitude);
 		final double deltaRightAscension = StrictMath.atan2(
 			-chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(localHourAngle),
 			StrictMath.cos(coord.getDeclination()) - chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(localHourAngle)
@@ -497,16 +454,6 @@ Sunset hour angle	83.524274
 		final double azimuthTopocentricNavigators = MathHelper.mod2pi(azimuthTopocentric + StrictMath.PI);
 		if(Math.abs(azimuthTopocentricNavigators - 279.725959) > 0.000001)
 			throw new IllegalArgumentException("azimuthTopocentricNavigators: " + (azimuthTopocentricNavigators - 279.725959));
-		//calculate the incidence angle for a surface oriented in any direction, I
-		if(surfaceSlope != null && surfaceAzimuthRotation != null){
-			final double incidence = StrictMath.acos(
-				StrictMath.cos(zenithTopocentric) * StrictMath.cos(surfaceSlope)
-					+ StrictMath.sin(zenithTopocentric) * StrictMath.sin(surfaceSlope)
-					* StrictMath.cos(azimuthTopocentric - surfaceAzimuthRotation)
-			);
-			if(Math.abs(incidence - StrictMath.toRadians(25.18700)) > 0.00001)
-				throw new IllegalArgumentException("incidence: " + incidence);
-		}
 
 
 //		EquatorialCoordinate coord2 = sunPosition(jd);
