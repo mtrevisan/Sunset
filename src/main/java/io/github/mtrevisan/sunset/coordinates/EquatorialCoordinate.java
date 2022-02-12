@@ -62,8 +62,8 @@ public final class EquatorialCoordinate{
 	/**
 	 * Creates a new instance from ecliptical coordinates.
 	 *
-	 * @param eclipticLatitude   Geometric ecliptic latitude [rad].
-	 * @param eclipticLongitude   Geometric ecliptic longitude [rad].
+	 * @param eclipticLatitude   Ecliptic latitude [rad].
+	 * @param eclipticLongitude   Ecliptic longitude [rad].
 	 * @param eclipticObliquity   Obliquity of the ecliptic [rad].
 	 * @return	An instance.
 	 */

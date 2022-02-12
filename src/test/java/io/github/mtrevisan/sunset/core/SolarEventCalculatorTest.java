@@ -24,11 +24,16 @@
  */
 package io.github.mtrevisan.sunset.core;
 
+import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.SolarEventException;
+import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 import io.github.mtrevisan.sunset.core.SolarEventCalculator;
 import io.github.mtrevisan.sunset.core.SunPosition;
+import io.github.mtrevisan.sunset.test.AstroDay;
+import io.github.mtrevisan.sunset.test.AstroLib;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -41,27 +46,28 @@ import java.time.format.DateTimeFormatter;
 @SuppressWarnings("ALL")
 class SolarEventCalculatorTest{
 
-//	@Test
-//	void localSunPosition() throws SolarEventException{
-//		GNSSLocation location = GNSSLocation.create(39.742476, -105.1786);
-//		SolarEventCalculator calc = SolarEventCalculator.create(location)
-//			.withObserverElevation(1830.14)
-//			.withPressure(820.)
-//			.withTemperature(11.)
-//			.withSurfaceSlopeAndAzimuthRotation(30., -10.);
-//
-//		double ut = JulianDay.of(2003, 10, 17)
-//			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
-//		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
-//		double tt = JulianDay.centuryJ2000Of(jd);
-//
+	@Test
+	void localSunPosition() throws SolarEventException{
+		GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
+		SolarEventCalculator calc = SolarEventCalculator.create(location)
+			.withPressure(820.)
+			.withTemperature(11.);
+
+		double ut = JulianDay.of(2003, 10, 17)
+			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
+		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
+		double tt = JulianDay.centuryJ2000Of(jd);
+
 //		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 //		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
 //		double[] nutation = SunPosition.nutationCorrection(tt);
 //		double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
 //		double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 //
-//		double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
+		double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
+		AstroLib lib = new AstroLib();
+		AstroDay ad = new AstroDay();
+		lib.computeAstroDay(jd, ad);
 //		double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
 //		double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
 //		double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, coord.getRightAscension());
@@ -127,7 +133,7 @@ class SolarEventCalculatorTest{
 //		);
 //		if(Math.abs(incidence - StrictMath.toRadians(25.18700)) > 0.00001)
 //			throw new IllegalArgumentException("incidence: " + incidence);
-//	}
+	}
 
 //	@Test
 //	void astronomicalSunset() throws SolarEventException{

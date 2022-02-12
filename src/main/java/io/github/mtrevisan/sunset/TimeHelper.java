@@ -136,7 +136,7 @@ public final class TimeHelper{
 	 * @param ut	Julian Day of Universal Time from J2000.0.
 	 * @return	mean Sidereal time at Greenwich [rad].
 	 */
-	static double meanSiderealTime(final double ut){
+	public static double meanSiderealTime(final double ut){
 		final double[] dateAndTime = JulianDay.extractDateAndTime(ut);
 		final double ut0 = JulianDay.centuryJ2000Of(dateAndTime[0]);
 		//[s]
