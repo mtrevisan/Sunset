@@ -36,6 +36,8 @@ import java.time.LocalTime;
  * A Julian day number is defined as continuous number associated with the solar day and is zero at Greenwich mean noon on 1st of January
  * 4713 BC.
  * </p>
+ *
+ * @see <a href="https://en.wikipedia.org/wiki/Julian_day">Julian day</>
  */
 public final class JulianDay{
 
@@ -108,7 +110,7 @@ public final class JulianDay{
 			//number of full centuries
 			final int aa = (int)(yy / 100.);
 			//days within the whole centuries (in the Julian Calendar) adding back days removed in the Gregorian Calendar
-			jd += 2 - aa + (int)(aa / 4);
+			jd += 2 - aa + StrictMath.floor(aa / 4.);
 		}
 
 		return jd;
@@ -142,6 +144,31 @@ public final class JulianDay{
 	 */
 	public static double mjdOf(final double jd){
 		return jd - MJD;
+	}
+
+
+	public static LocalDateTime dateTimeOf(final double jd){
+		long b = (long)StrictMath.floor(jd + 0.5);
+		final double timeOfDay = jd - b + 0.5;
+
+		if(b > JULIAN_CALENDAR_END){
+			final int aa = (int)StrictMath.floor((b - 1867216.25) / 36524.25);
+			b += 1 + aa - (int)StrictMath.floor(aa * 0.25);
+		}
+		b += 1524;
+		//year in a calendar whose years start on March 1
+		int year = (int)StrictMath.floor((b - 122.1) / 365.25);
+		b -=StrictMath.floor(365.25 * year);
+		int month = (int)StrictMath.floor(b / 30.6) - 1;
+		final int day = (int)(b - StrictMath.floor(30.6 * (month + 1)));
+		month = ((month - 1) % 12) + 1;
+		if(month > 2)
+			year --;
+		year -= 4715;
+
+		final LocalDate date = LocalDate.of(year, month, day);
+		final LocalTime time = LocalTime.ofSecondOfDay(Math.round(timeOfDay * JulianDay.SECONDS_IN_DAY));
+		return LocalDateTime.of(date, time);
 	}
 
 

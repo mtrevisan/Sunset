@@ -112,8 +112,8 @@ public final class GNSSLocation{
 	@Override
 	public String toString(){
 		return "Location{"
-			+ "lat: " + StringHelper.degreeToDegMinSecString(latitude, 2)
-			+ ", lon: "  + StringHelper.degreeToDegMinSecString(longitude, 2)
+			+ "lat: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(latitude), 2)
+			+ ", lon: "  + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(longitude), 2)
 			+ ", alt: "  + altitude + " m"
 			+ '}';
 	}

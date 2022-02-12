@@ -56,6 +56,26 @@ public final class TimeHelper{
 	}
 
 	/**
+	 * Convert <a href="https://en.wikipedia.org/wiki/Terrestrial_Time">Terrestrial (Dynamical) Time</a> to
+	 * <a href="https://en.wikipedia.org/wiki/Universal_Time">Universal Time</a>.
+	 * <p>
+	 * The Universal Time (UT), or Greenwich civil time, is based on the Earth’s rotation and counted from 0-hour at midnight; the unit is
+	 * mean solar day.<br/>
+	 * The Terrestrial (Dynamical) Time (TDT or TT) is the time scale of ephemerides for observations from the Earth surface. For practical
+	 * purposes, TT must be realized by actual clocks in the Earth system.
+	 * </p>
+	 *
+	 * @param tt	Julian Day of Terrestrial Time. [day]
+	 * @param deltaT   The difference between the Earth rotation time and the TT; it is derived from observation only and reported yearly
+	 * 	in the Astronomical Almanac [s].
+	 * @return	The Universal Time [day].
+	 * @see #deltaT(int)
+	 */
+	public static double terrestrialTimeToUniversalTime(final double tt, final double deltaT){
+		return tt - deltaT / JulianDay.SECONDS_IN_DAY;
+	}
+
+	/**
 	 * Calculate the predicted difference between the Earth rotation time and the TT.
 	 *
 	 * @param year	The year.
@@ -194,7 +214,7 @@ public final class TimeHelper{
 	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [rad].
 	 * @return	The apparent local Sidereal time at Greenwich [rad].
 	 */
-	static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
+	public static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
 		return meanSiderealTime + location.getLongitude();
 	}
 
@@ -205,7 +225,7 @@ public final class TimeHelper{
 	 * @param rightAscension	Right ascension [rad].
 	 * @return	The hour angle [rad.
 	 */
-	static double localHourAngle(final double localSiderealTime, final double rightAscension){
+	public static double localHourAngle(final double localSiderealTime, final double rightAscension){
 		return localSiderealTime - rightAscension;
 	}
 

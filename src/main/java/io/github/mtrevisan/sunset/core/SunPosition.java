@@ -24,14 +24,19 @@
  */
 package io.github.mtrevisan.sunset.core;
 
+import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.ResourceReader;
+import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.HorizontalCoordinate;
 import io.github.mtrevisan.sunset.coordinates.OrbitalElements;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +140,88 @@ public final class SunPosition{
 
 		return EquatorialCoordinate.createFromEcliptical(eclipticCoord.getLatitude(), apparentGeocentricLongitude, trueEclipticObliquity);
 	}
+
+	/**
+	 * Calculated the Sun topocentric position.
+	 *
+	 * @param location	Location of the place.
+	 * @param atmosphericModel	Atmospheric model of the place.
+	 * @param eclipticCoord	Mean ecliptic coordinate of the Sun.
+	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
+	 * @return	The Sun topocentric position.
+	 */
+	public static HorizontalCoordinate sunTopocentricPosition(final GNSSLocation location, final AtmosphericModel atmosphericModel,
+			final EclipticCoordinate eclipticCoord, final double jd){
+		final LocalDateTime date = JulianDay.dateTimeOf(jd);
+		final double dt = TimeHelper.deltaT(date.getYear());
+		final double ut = TimeHelper.terrestrialTimeToUniversalTime(jd, dt);
+		final double tt = JulianDay.centuryJ2000Of(jd);
+
+		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
+		final double[] nutation = SunPosition.nutationCorrection(tt);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
+
+		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
+		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
+		final double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
+		final double rightAscension = equatorialCoord.getRightAscension();
+		final double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, rightAscension);
+
+		//compute the sun position (right ascension and declination) with respect to the observer local position at the Earth surface:
+		final double equatorialHorizontalParallax = equatorialHorizontalParallax(eclipticCoord.getDistance());
+		final double latitude = location.getLatitude();
+		final double u = StrictMath.atan((1. - SunPosition.EARTH_FLATTENING) * StrictMath.tan(latitude));
+		final double height = location.getAltitude() / SunPosition.EARTH_EQUATORIAL_RADIUS;
+		final double x = StrictMath.cos(u) + height * StrictMath.cos(latitude);
+		final double y = 0.99664719 * StrictMath.sin(u) + height * StrictMath.sin(latitude);
+		final double declination = equatorialCoord.getDeclination();
+		final double deltaRightAscension = StrictMath.atan2(
+			-x * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(localHourAngle),
+			StrictMath.cos(declination) - x * StrictMath.sin(equatorialHorizontalParallax)
+				* StrictMath.cos(localHourAngle)
+		);
+		//calculate the topocentric Sun Right Ascension: α'
+		//final double topocentricRightAscension = rightAscension + deltaRightAscension;
+		//calculate the topocentric Sun declination: δ'
+		final double topocentricDeclination = StrictMath.atan2(
+			(StrictMath.sin(declination) - y * StrictMath.sin(equatorialHorizontalParallax)) * StrictMath.cos(deltaRightAscension),
+			StrictMath.cos(declination) - y * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(localHourAngle)
+		);
+		//calculate the topocentric local hour angle: H’
+		final double topocentricLocalHourAngle = localHourAngle - deltaRightAscension;
+		//calculate the true elevation angle without atmospheric refraction correction: e0
+		final double trueElevation = StrictMath.asin(
+			StrictMath.sin(latitude) * StrictMath.sin(topocentricDeclination)
+				+ StrictMath.cos(latitude) * StrictMath.cos(topocentricDeclination) * StrictMath.cos(topocentricLocalHourAngle)
+		);
+		//calculate the atmospheric refraction correction: Δe
+		final double deltaElevation = atmosphericModel.atmosphericRefractionCorrection(trueElevation);
+		//calculate the topocentric elevation angle: e
+		final double topocentricElevation = trueElevation + deltaElevation;
+		//calculate the topocentric zenith angle: θ
+		//final double topocentricZenith = StrictMath.PI / 2. - topocentricElevation;
+		//calculate the topocentric astronomers azimuth angle (measured westward from south): Γ
+		final double topocentricAzimuth = StrictMath.atan2(
+			StrictMath.sin(topocentricLocalHourAngle),
+			StrictMath.cos(topocentricLocalHourAngle) * StrictMath.sin(latitude)
+				- StrictMath.tan(topocentricDeclination) * StrictMath.cos(latitude)
+		);
+		//calculate the (navigators) topocentric azimuth angle (measured westward from north): M
+		final double topocentricAzimuthNavigators = MathHelper.mod2pi(topocentricAzimuth + StrictMath.PI);
+		return HorizontalCoordinate.create(topocentricAzimuthNavigators, topocentricElevation, eclipticCoord.getDistance());
+	}
+
+	/**
+	 * Calculate the equatorial horizontal parallax of the Sun, ξ.
+	 *
+	 * @param radiusVector	Radius vector of the Earth [AU].
+	 * @return	The equatorial horizontal parallax of the Sun [rad].
+	 */
+	private static double equatorialHorizontalParallax(double radiusVector){
+		return StrictMath.toRadians(8.794 / (JulianDay.SECONDS_IN_HOUR * radiusVector));
+	}
+
 
 	/**
 	 * Calculate the geocentric mean latitude of the Sun, referred to the mean equinox of the date, β.
