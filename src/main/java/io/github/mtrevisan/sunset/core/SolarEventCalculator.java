@@ -24,7 +24,6 @@
  */
 package io.github.mtrevisan.sunset.core;
 
-import io.github.mtrevisan.sunset.AtmosphereHelper;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventError;
@@ -35,7 +34,6 @@ import io.github.mtrevisan.sunset.Zenith;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
-import io.github.mtrevisan.sunset.coordinates.HorizontalCoordinate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -139,61 +137,61 @@ public class SolarEventCalculator{
 		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, dt);
 		double tt = JulianDay.centuryJ2000Of(jd);
 
-		//calculate geocentric mean ecliptic coordinate
-		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
-		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
-		final double[] nutation = SunPosition.nutationCorrection(tt);
-		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
-		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-
-		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
-		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
-		final double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
-		final double rightAscension = equatorialCoord.getRightAscension();
-		final double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, rightAscension);
-
-		//compute the sun position (right ascension and declination) with respect to the observer local position at the Earth surface:
-		final double equatorialHorizontalParallax = equatorialHorizontalParallax(eclipticCoord.getDistance());
-		final double latitude = location.getLatitude();
-		final double u = StrictMath.atan((1. - SunPosition.EARTH_FLATTENING) * StrictMath.tan(latitude));
-		final double height = location.getAltitude() / SunPosition.EARTH_EQUATORIAL_RADIUS;
-		final double x = StrictMath.cos(u) + height * StrictMath.cos(latitude);
-		final double y = 0.99664719 * StrictMath.sin(u) + height * StrictMath.sin(latitude);
-		final double declination = equatorialCoord.getDeclination();
-		final double deltaRightAscension = StrictMath.atan2(
-			-x * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(localHourAngle),
-			StrictMath.cos(declination) - x * StrictMath.sin(equatorialHorizontalParallax)
-				* StrictMath.cos(localHourAngle)
-		);
-		//calculate the topocentric Sun Right Ascension: α'
-		final double topocentricRightAscension = rightAscension + deltaRightAscension;
-		//calculate the topocentric Sun declination: δ'
-		final double topocentricDeclination = StrictMath.atan2(
-			(StrictMath.sin(declination) - y * StrictMath.sin(equatorialHorizontalParallax)) * StrictMath.cos(deltaRightAscension),
-			StrictMath.cos(declination) - y * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(localHourAngle)
-		);
-		//calculate the topocentric local hour angle: H’
-		final double topocentricLocalHourAngle = localHourAngle - deltaRightAscension;
-		//calculate the true elevation angle without atmospheric refraction correction: e0
-		final double trueElevation = StrictMath.asin(
-			StrictMath.sin(latitude) * StrictMath.sin(topocentricDeclination)
-				+ StrictMath.cos(latitude) * StrictMath.cos(topocentricDeclination) * StrictMath.cos(topocentricLocalHourAngle)
-		);
-		//calculate the atmospheric refraction correction: Δe
-		final double deltaElevation = AtmosphereHelper.atmosphericRefractionCorrection(pressure, temperature, trueElevation);
-		//calculate the topocentric elevation angle: e
-		final double topocentricElevation = trueElevation + deltaElevation;
-		//calculate the topocentric zenith angle: θ
-		final double topocentricZenith = StrictMath.PI / 2. - topocentricElevation;
-		//calculate the topocentric astronomers azimuth angle (measured westward from south): Γ
-		final double topocentricAzimuth = StrictMath.atan2(
-			StrictMath.sin(topocentricLocalHourAngle),
-			StrictMath.cos(topocentricLocalHourAngle) * StrictMath.sin(latitude)
-				- StrictMath.tan(topocentricDeclination) * StrictMath.cos(latitude)
-		);
-		//calculate the (navigators) topocentric azimuth angle (measured westward from north): M
-		final double topocentricAzimuthNavigators = MathHelper.mod2pi(topocentricAzimuth + StrictMath.PI);
-		HorizontalCoordinate.create(topocentricAzimuth, topocentricElevation, eclipticCoord.getDistance());
+//		//calculate geocentric mean ecliptic coordinate
+//		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
+//		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
+//		final double[] nutation = SunPosition.nutationCorrection(tt);
+//		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+//		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
+//
+//		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
+//		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
+//		final double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
+//		final double rightAscension = equatorialCoord.getRightAscension();
+//		final double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, rightAscension);
+//
+//		//compute the sun position (right ascension and declination) with respect to the observer local position at the Earth surface:
+//		final double equatorialHorizontalParallax = equatorialHorizontalParallax(eclipticCoord.getDistance());
+//		final double latitude = location.getLatitude();
+//		final double u = StrictMath.atan((1. - SunPosition.EARTH_FLATTENING) * StrictMath.tan(latitude));
+//		final double height = location.getAltitude() / SunPosition.EARTH_EQUATORIAL_RADIUS;
+//		final double x = StrictMath.cos(u) + height * StrictMath.cos(latitude);
+//		final double y = 0.99664719 * StrictMath.sin(u) + height * StrictMath.sin(latitude);
+//		final double declination = equatorialCoord.getDeclination();
+//		final double deltaRightAscension = StrictMath.atan2(
+//			-x * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(localHourAngle),
+//			StrictMath.cos(declination) - x * StrictMath.sin(equatorialHorizontalParallax)
+//				* StrictMath.cos(localHourAngle)
+//		);
+//		//calculate the topocentric Sun Right Ascension: α'
+//		final double topocentricRightAscension = rightAscension + deltaRightAscension;
+//		//calculate the topocentric Sun declination: δ'
+//		final double topocentricDeclination = StrictMath.atan2(
+//			(StrictMath.sin(declination) - y * StrictMath.sin(equatorialHorizontalParallax)) * StrictMath.cos(deltaRightAscension),
+//			StrictMath.cos(declination) - y * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(localHourAngle)
+//		);
+//		//calculate the topocentric local hour angle: H’
+//		final double topocentricLocalHourAngle = localHourAngle - deltaRightAscension;
+//		//calculate the true elevation angle without atmospheric refraction correction: e0
+//		final double trueElevation = StrictMath.asin(
+//			StrictMath.sin(latitude) * StrictMath.sin(topocentricDeclination)
+//				+ StrictMath.cos(latitude) * StrictMath.cos(topocentricDeclination) * StrictMath.cos(topocentricLocalHourAngle)
+//		);
+//		//calculate the atmospheric refraction correction: Δe
+//		final double deltaElevation = AtmosphereHelper.atmosphericRefractionCorrection(pressure, temperature, trueElevation);
+//		//calculate the topocentric elevation angle: e
+//		final double topocentricElevation = trueElevation + deltaElevation;
+//		//calculate the topocentric zenith angle: θ
+//		final double topocentricZenith = StrictMath.PI / 2. - topocentricElevation;
+//		//calculate the topocentric astronomers azimuth angle (measured westward from south): Γ
+//		final double topocentricAzimuth = StrictMath.atan2(
+//			StrictMath.sin(topocentricLocalHourAngle),
+//			StrictMath.cos(topocentricLocalHourAngle) * StrictMath.sin(latitude)
+//				- StrictMath.tan(topocentricDeclination) * StrictMath.cos(latitude)
+//		);
+//		//calculate the (navigators) topocentric azimuth angle (measured westward from north): M
+//		final double topocentricAzimuthNavigators = MathHelper.mod2pi(topocentricAzimuth + StrictMath.PI);
+//		HorizontalCoordinate.create(topocentricAzimuth, topocentricElevation, eclipticCoord.getDistance());
 
 //		//[h]
 //		final double ra = MathHelper.degToHrs(coord.getRightAscension());
