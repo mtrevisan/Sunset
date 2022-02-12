@@ -60,15 +60,15 @@ class SolarEventCalculatorTest{
 
 //		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 //		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
-//		double[] nutation = SunPosition.nutationCorrection(tt);
-//		double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
-//		double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-//
+		double[] nutation = SunPosition.nutationCorrection(tt);
+		double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
+
 		double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
+		double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
 		AstroLib lib = new AstroLib();
 		AstroDay ad = new AstroDay();
 		lib.computeAstroDay(jd, ad);
-//		double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
 //		double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
 //		double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, coord.getRightAscension());
 //		if(Math.abs(localHourAngle - 11.105902) > 0.000001)
