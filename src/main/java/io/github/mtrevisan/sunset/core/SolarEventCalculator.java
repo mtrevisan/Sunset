@@ -77,10 +77,6 @@ public class SolarEventCalculator{
 	//---
 
 	private final GNSSLocation location;
-	//[hPa]
-	private double pressure;
-	//[°C]
-	private double temperature;
 
 
 	/**
@@ -95,26 +91,6 @@ public class SolarEventCalculator{
 
 	private SolarEventCalculator(final GNSSLocation location){
 		this.location = location;
-	}
-
-	public double getPressure(){
-		return pressure;
-	}
-
-	public SolarEventCalculator withPressure(final double pressure){
-		this.pressure = pressure;
-
-		return this;
-	}
-
-	public double getTemperature(){
-		return temperature;
-	}
-
-	public SolarEventCalculator withTemperature(final double temperature){
-		this.temperature = temperature;
-
-		return this;
 	}
 
 

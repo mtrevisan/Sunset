@@ -24,7 +24,7 @@
  */
 package io.github.mtrevisan.sunset.core;
 
-import io.github.mtrevisan.sunset.AtmosphereHelper;
+import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventException;
@@ -48,9 +48,8 @@ class SolarEventCalculatorTest{
 	@Test
 	void localSunPosition() throws SolarEventException{
 		GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
-		SolarEventCalculator calc = SolarEventCalculator.create(location)
-			.withPressure(820.)
-			.withTemperature(11.);
+		SolarEventCalculator calc = SolarEventCalculator.create(location);
+		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820, 11.);
 
 		double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
@@ -95,8 +94,7 @@ class SolarEventCalculatorTest{
 				* StrictMath.cos(localHourAngleTopocentric)
 		);
 		//calculate the atmospheric refraction correction: Δe
-		double deltaElevation = AtmosphereHelper.atmosphericRefractionCorrection(calc.getPressure(), calc.getTemperature(),
-			trueElevation);
+		final double deltaElevation = atmosphericModel.atmosphericRefractionCorrection(trueElevation);
 		//calculate the topocentric elevation angle: e
 		double elevationTopocentric = trueElevation + deltaElevation;
 		//calculate the topocentric zenith angle: θ

@@ -27,6 +27,10 @@ package io.github.mtrevisan.sunset;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 
 
+/**
+ * @see <a href="https://www.stjarnhimlen.se/comp/time.html">Time scales</>
+ * @see <a href="https://webspace.science.uu.nl/~gent0113/deltat/deltat.htm">Delta T: Terrestrial Time, Universal Time and algorithms for historical periods</>
+ */
 public final class TimeHelper{
 
 	/** Lunar acceleration parameter ["/cy^2]. */

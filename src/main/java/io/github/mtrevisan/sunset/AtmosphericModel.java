@@ -31,7 +31,7 @@ package io.github.mtrevisan.sunset;
 public final class AtmosphericModel{
 
 	/** [°C] */
-	private static final double ABSOLUTE_ZERO = 273.15;
+	private static final double ABSOLUTE_ZERO = -273.15;
 
 
 	//[hPa]
@@ -91,7 +91,7 @@ public final class AtmosphericModel{
 	public double atmosphericRefractionCorrection(final double elevation){
 		final double elev = StrictMath.toDegrees(elevation);
 		return StrictMath.toRadians((pressure / 1010.)
-			* ((ABSOLUTE_ZERO + 10.) / (ABSOLUTE_ZERO + temperature))
+			* ((ABSOLUTE_ZERO - 10.) / (ABSOLUTE_ZERO - temperature))
 			* (1.02 / (60. * StrictMath.tan(StrictMath.toRadians(elev + 10.3 / (elev + 5.11)))))
 		);
 	}

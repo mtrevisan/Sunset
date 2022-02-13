@@ -38,8 +38,12 @@ import java.time.LocalTime;
  * </p>
  *
  * @see <a href="https://en.wikipedia.org/wiki/Julian_day">Julian day</>
+ * @see <a href="https://calendars.fandom.com/wiki/Julian_day_number">Julian day number</>
+ * @see <a href="https://www.aa.quae.nl/en/reken/juliaansedag.html">Astronomy answers - Julian Day Number</>
  */
 public final class JulianDay{
+
+	private static final int[] F = new int[]{428, 459, 122, 153, 183, 214, 244, 275, 306, 336, 367, 397};
 
 	/** Last day of the Julian calendar, that is October 4, 1582, after which 10 day were added [day]. */
 	private static final double JULIAN_CALENDAR_END = 2299160.;
@@ -97,23 +101,15 @@ public final class JulianDay{
 	 * @return	The Julian Day [day].
 	 */
 	public static double of(final int year, final int month, final int day){
-		int yy = year;
-		int mm = month;
-		if(month < 3){
-			yy --;
-			mm += 12;
-		}
-
-		double jd =  (int)(365.25 * (yy + 4716)) + (int)(30.6001 * (mm + 1)) + day - 1524.5;
-
+		final int z = year + (month - 14) / 12;
+		int jd =  (int)(365.25 * (z + 4716)) + F[month - 1] + day;
 		if(jd > JULIAN_CALENDAR_END){
 			//number of full centuries
-			final int aa = (int)(yy / 100.);
+			final int aa = z / 100;
 			//days within the whole centuries (in the Julian Calendar) adding back days removed in the Gregorian Calendar
-			jd += 2 - aa + StrictMath.floor(aa / 4.);
+			jd += 2 - aa + (aa / 4);
 		}
-
-		return jd;
+		return jd - 1524.5;
 	}
 
 	/**
@@ -169,6 +165,25 @@ public final class JulianDay{
 		final LocalDate date = LocalDate.of(year, month, day);
 		final LocalTime time = LocalTime.ofSecondOfDay(Math.round(timeOfDay * JulianDay.SECONDS_IN_DAY));
 		return LocalDateTime.of(date, time);
+	}
+
+	public static int getYear(final double jd){
+		long b = (long)StrictMath.floor(jd + 0.5);
+
+		if(b > JULIAN_CALENDAR_END){
+			final int aa = (int)StrictMath.floor((b - 1867216.25) / 36524.25);
+			b += 1 + aa - (int)StrictMath.floor(aa * 0.25);
+		}
+		b += 1524;
+		//year in a calendar whose years start on March 1
+		int year = (int)StrictMath.floor((b - 122.1) / 365.25);
+		b -= StrictMath.floor(365.25 * year);
+		final int month = (int)StrictMath.floor(b / 30.6) - 1;
+		if((month - 1) % 12 > 1)
+			year --;
+		year -= 4715;
+
+		return year;
 	}
 
 
