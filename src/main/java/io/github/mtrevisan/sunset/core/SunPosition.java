@@ -212,16 +212,6 @@ public final class SunPosition{
 		return HorizontalCoordinate.create(topocentricAzimuthNavigators, topocentricElevation, eclipticCoord.getDistance());
 	}
 
-	/**
-	 * Calculate the equatorial horizontal parallax of the Sun, ξ.
-	 *
-	 * @param radiusVector	Radius vector of the Earth [AU].
-	 * @return	The equatorial horizontal parallax of the Sun [rad].
-	 */
-	private static double equatorialHorizontalParallax(double radiusVector){
-		return StrictMath.toRadians(8.794 / (JulianDay.SECONDS_IN_HOUR * radiusVector));
-	}
-
 
 	/**
 	 * Calculate the geocentric mean latitude of the Sun, referred to the mean equinox of the date, β.
@@ -295,144 +285,144 @@ public final class SunPosition{
 	}
 
 
-	/**
-	 * Calculate the geocentric mean latitude of the Sun, referred to the inertial frame defined by the dynamical equinox and ecliptic J2000,
-	 * β.
-	 *
-	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
-	 * @return	The geocentric mean latitude of the Sun [rad].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
-	 * https://github.com/timmyd7777/SSCore/tree/a915f57f8754b206614d3f0b5055d1a7b56e9e70/SSCode/VSOP2013
-	 */
-	private static double geocentricMeanLatitude2(final double jd){
-		final double tt = JulianDay.centuryJ2000Of(jd);
-		final double jme = tt / 10.;
-
-		final double[] planetLongitudes = new double[17];
-		planetLongitudes[0] =  4.402608631669 + 26087.90314068555 * jme;     // Mercury
-		planetLongitudes[1] =  3.176134461576 + 10213.28554743445 * jme;     // Venus
-		planetLongitudes[2] =  1.753470369433 +  6283.075850353215 * jme;    // Earth-Moon Barycenter
-		planetLongitudes[3] =  6.203500014141 +  3340.612434145457 * jme;    // Mars
-		planetLongitudes[4] =  4.091360003050 +  1731.170452721855 * jme;    // Vesta
-		planetLongitudes[5] =  1.713740719173 +  1704.450855027201 * jme;    // Iris
-		planetLongitudes[6] =  5.598641292287 +  1428.948917844273 * jme;    // Bamberga
-		planetLongitudes[7] =  2.805136360408 +  1364.756513629990 * jme;    // Ceres
-		planetLongitudes[8] =  2.326989734620 +  1361.923207632842 * jme;    // Pallas
-		planetLongitudes[9]  = 0.599546107035 +   529.6909615623250 * jme;   // Jupiter
-		planetLongitudes[10] = 0.874018510107 +   213.2990861084880 * jme;   // Saturn
-		planetLongitudes[11] = 5.481225395663 +    74.78165903077800 * jme;   // Uranus
-		planetLongitudes[12] = 5.311897933164 +    38.13297222612500 * jme;   // Neptune
-		planetLongitudes[13] =                      0.3595362285049309 * jme; // Pluto (mu)
-		planetLongitudes[14] = 5.198466400630 + 77713.7714481804 * jme;       // Moon (D)
-		planetLongitudes[15] = 1.627905136020 + 84334.6615717837 * jme;       // Moon (F)
-		planetLongitudes[16] = 2.355555638750 + 83286.9142477147 * jme;       // Moon (l)
-
-		final double a = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.A), jme, planetLongitudes);
-		final double l = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.L), jme, planetLongitudes);
-		final double k = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.K), jme, planetLongitudes);
-		final double h = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.H), jme, planetLongitudes);
-		final double q = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.Q), jme, planetLongitudes);
-		final double p = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.P), jme, planetLongitudes);
-
-		double[] cart = orbitalElementsToCartesian(a, l, k, h, q, p);
-
-		final double e = StrictMath.sqrt(k * k + h * h);
-		final double w = StrictMath.atan2(h, k);
-		final double n = StrictMath.atan2(p, q);
-		final double i = 2. * StrictMath.asin(StrictMath.sqrt(q * q + p * p));
-		final double mm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04) / StrictMath.pow(a, 1.5);
-
-		final OrbitalElements orbit = new OrbitalElements();
-		orbit.t = tt * JulianDay.CIVIL_SAECULUM;
-		orbit.eccentricity = e;
-		orbit.semimajorAxis = a;
-		orbit.inclination = i;
-		orbit.longitudeAscendingNode = MathHelper.mod2pi(n);
-		orbit.argumentOfPerihelion = MathHelper.mod2pi(w - n);
-		orbit.meanAnomaly = MathHelper.mod2pi(l - w);
-		orbit.meanMotion = mm;
-		//1.5149480825765068E-4
-		return -a;
-	}
-
-	static double[] orbitalElementsToCartesian(final double xa, final double xl, final double xk, final double xh, final double xq,
-			final double xp){
-		double rgm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04);
-
-		double xfi = StrictMath.sqrt(1. - xk * xk - xh * xh);
-		double xki = StrictMath.sqrt(1. - xq * xq - xp * xp);
-		double u = 1. / (1. + xfi);
-		double[] z = {xk, xh};
-		double ex = StrictMath.sqrt(z[0] * z[0] + z[1] * z[1]);
-		double ex2 = ex * ex;
-		double ex3 = ex2 * ex;
-		//complex conjugate of z
-		double[] z1 = {xk, -xh};
-
-		double gl = xl % (2. * StrictMath.PI);
-		double gm = gl - StrictMath.atan2(xh, xk);
-		double e = gl + (ex - 0.125 * ex3) * StrictMath.sin(gm)
-			+ 0.5 * ex2 * StrictMath.sin(2. * gm)
-			+ 0.375 * ex3 * StrictMath.sin(3. * gm);
-
-		double dl;
-		double[] z2 = new double[2];
-		double[] zteta = new double[2];;
-		double[] z3 = new double[2];
-		double rsa;
-		do{
-			z2[0] = 0.;
-			z2[1] = e;
-			zteta[0] = StrictMath.exp(z2[0]) * StrictMath.cos(z2[1]);
-			zteta[1] = StrictMath.exp(z2[0]) * StrictMath.sin(z2[1]);
-			z3[0] = z1[0] * zteta[0] - z1[1] * zteta[1];
-			z3[1] = z1[0] * zteta[1] + z1[1] * zteta[0];
-			dl = gl - e + z3[1];
-			rsa = 1. - z3[0];
-			e += dl / rsa;
-		}while(StrictMath.abs(dl) >= 1.e-15);
-
-		z1[0] = u * z[0] * z3[1];
-		z1[1] = u * z[1] * z3[1];
-		z2[0] = z1[1];
-		z2[1] = -z1[0];
-		double[] zto = {(-z[0] + zteta[0] + z2[0]) / rsa, (-z[1] + zteta[1] + z2[1]) / rsa};
-		double xcw = zto[0];
-		double xsw = zto[1];
-		double xm = xp * xcw - xq * xsw;
-		double xr = xa * rsa;
-
-		double[] w = new double[6];
-		w[0] = xr * (xcw - 2. * xp * xm);
-		w[1] = xr * (xsw + 2. * xq * xm);
-		w[2] = -2. * xr * xki * xm;
-
-		double xms = xa * (xh + xsw) / xfi;
-		double xmc = xa * (xk + xcw) / xfi;
-		double xn = rgm / StrictMath.pow(xa, 1.5);
-
-		w[3] = xn * ((2. * xp * xp - 1.)*xms + 2. * xp * xq * xmc);
-		w[4] = xn * ((1. - 2. * xq * xq)*xmc - 2. * xp * xq * xms);
-		w[5] = 2. * xn * xki * (xp * xms + xq * xmc);
-		return w;
-	}
-
-	private static double evalSeries(final List<ResourceReader.VSOP2013Data> elements, final double jme, final double[] planetLongitudes){
-		double sum = 0.;
-		final double[] parameters = new double[elements.size()];
-		for(int i = 0; i < elements.size(); i ++){
-			final ResourceReader.VSOP2013Data data = elements.get(i);
-			for(final ResourceReader.VSOP2013Coeffs coeff : data.coeffs){
-				double phi = 0.;
-				for(int j = 0; j < 17; j ++)
-					phi += coeff.iphi[j] * planetLongitudes[j];
-				sum += coeff.sine * StrictMath.sin(phi) + coeff.cosine * StrictMath.cos(phi);
-			}
-			parameters[data.timePower] = sum;
-		}
-		return MathHelper.eval(jme, parameters);
-	}
+//	/**
+//	 * Calculate the geocentric mean latitude of the Sun, referred to the inertial frame defined by the dynamical equinox and ecliptic J2000,
+//	 * β.
+//	 *
+//	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
+//	 * @return	The geocentric mean latitude of the Sun [rad].
+//	 *
+//	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+//	 * https://github.com/timmyd7777/SSCore/tree/a915f57f8754b206614d3f0b5055d1a7b56e9e70/SSCode/VSOP2013
+//	 */
+//	private static double geocentricMeanLatitude2(final double jd){
+//		final double tt = JulianDay.centuryJ2000Of(jd);
+//		final double jme = tt / 10.;
+//
+//		final double[] planetLongitudes = new double[17];
+//		planetLongitudes[0] =  4.402608631669 + 26087.90314068555 * jme;     // Mercury
+//		planetLongitudes[1] =  3.176134461576 + 10213.28554743445 * jme;     // Venus
+//		planetLongitudes[2] =  1.753470369433 +  6283.075850353215 * jme;    // Earth-Moon Barycenter
+//		planetLongitudes[3] =  6.203500014141 +  3340.612434145457 * jme;    // Mars
+//		planetLongitudes[4] =  4.091360003050 +  1731.170452721855 * jme;    // Vesta
+//		planetLongitudes[5] =  1.713740719173 +  1704.450855027201 * jme;    // Iris
+//		planetLongitudes[6] =  5.598641292287 +  1428.948917844273 * jme;    // Bamberga
+//		planetLongitudes[7] =  2.805136360408 +  1364.756513629990 * jme;    // Ceres
+//		planetLongitudes[8] =  2.326989734620 +  1361.923207632842 * jme;    // Pallas
+//		planetLongitudes[9]  = 0.599546107035 +   529.6909615623250 * jme;   // Jupiter
+//		planetLongitudes[10] = 0.874018510107 +   213.2990861084880 * jme;   // Saturn
+//		planetLongitudes[11] = 5.481225395663 +    74.78165903077800 * jme;   // Uranus
+//		planetLongitudes[12] = 5.311897933164 +    38.13297222612500 * jme;   // Neptune
+//		planetLongitudes[13] =                      0.3595362285049309 * jme; // Pluto (mu)
+//		planetLongitudes[14] = 5.198466400630 + 77713.7714481804 * jme;       // Moon (D)
+//		planetLongitudes[15] = 1.627905136020 + 84334.6615717837 * jme;       // Moon (F)
+//		planetLongitudes[16] = 2.355555638750 + 83286.9142477147 * jme;       // Moon (l)
+//
+//		final double a = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.A), jme, planetLongitudes);
+//		final double l = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.L), jme, planetLongitudes);
+//		final double k = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.K), jme, planetLongitudes);
+//		final double h = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.H), jme, planetLongitudes);
+//		final double q = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.Q), jme, planetLongitudes);
+//		final double p = evalSeries(EARTH_HELIOCENTRIC_DATA2.get(ResourceReader.VariableIndex.P), jme, planetLongitudes);
+//
+//		double[] cart = orbitalElementsToCartesian(a, l, k, h, q, p);
+//
+//		final double e = StrictMath.sqrt(k * k + h * h);
+//		final double w = StrictMath.atan2(h, k);
+//		final double n = StrictMath.atan2(p, q);
+//		final double i = 2. * StrictMath.asin(StrictMath.sqrt(q * q + p * p));
+//		final double mm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04) / StrictMath.pow(a, 1.5);
+//
+//		final OrbitalElements orbit = new OrbitalElements();
+//		orbit.t = tt * JulianDay.CIVIL_SAECULUM;
+//		orbit.eccentricity = e;
+//		orbit.semimajorAxis = a;
+//		orbit.inclination = i;
+//		orbit.longitudeAscendingNode = MathHelper.mod2pi(n);
+//		orbit.argumentOfPerihelion = MathHelper.mod2pi(w - n);
+//		orbit.meanAnomaly = MathHelper.mod2pi(l - w);
+//		orbit.meanMotion = mm;
+//		//1.5149480825765068E-4
+//		return -a;
+//	}
+//
+//	private static double[] orbitalElementsToCartesian(final double xa, final double xl, final double xk, final double xh, final double xq,
+//			final double xp){
+//		double rgm = StrictMath.sqrt(8.9970116036316091182e-10 + 2.9591220836841438269e-04);
+//
+//		double xfi = StrictMath.sqrt(1. - xk * xk - xh * xh);
+//		double xki = StrictMath.sqrt(1. - xq * xq - xp * xp);
+//		double u = 1. / (1. + xfi);
+//		double[] z = {xk, xh};
+//		double ex = StrictMath.sqrt(z[0] * z[0] + z[1] * z[1]);
+//		double ex2 = ex * ex;
+//		double ex3 = ex2 * ex;
+//		//complex conjugate of z
+//		double[] z1 = {xk, -xh};
+//
+//		double gl = xl % (2. * StrictMath.PI);
+//		double gm = gl - StrictMath.atan2(xh, xk);
+//		double e = gl + (ex - 0.125 * ex3) * StrictMath.sin(gm)
+//			+ 0.5 * ex2 * StrictMath.sin(2. * gm)
+//			+ 0.375 * ex3 * StrictMath.sin(3. * gm);
+//
+//		double dl;
+//		double[] z2 = new double[2];
+//		double[] zteta = new double[2];;
+//		double[] z3 = new double[2];
+//		double rsa;
+//		do{
+//			z2[0] = 0.;
+//			z2[1] = e;
+//			zteta[0] = StrictMath.exp(z2[0]) * StrictMath.cos(z2[1]);
+//			zteta[1] = StrictMath.exp(z2[0]) * StrictMath.sin(z2[1]);
+//			z3[0] = z1[0] * zteta[0] - z1[1] * zteta[1];
+//			z3[1] = z1[0] * zteta[1] + z1[1] * zteta[0];
+//			dl = gl - e + z3[1];
+//			rsa = 1. - z3[0];
+//			e += dl / rsa;
+//		}while(StrictMath.abs(dl) >= 1.e-15);
+//
+//		z1[0] = u * z[0] * z3[1];
+//		z1[1] = u * z[1] * z3[1];
+//		z2[0] = z1[1];
+//		z2[1] = -z1[0];
+//		double[] zto = {(-z[0] + zteta[0] + z2[0]) / rsa, (-z[1] + zteta[1] + z2[1]) / rsa};
+//		double xcw = zto[0];
+//		double xsw = zto[1];
+//		double xm = xp * xcw - xq * xsw;
+//		double xr = xa * rsa;
+//
+//		double[] w = new double[6];
+//		w[0] = xr * (xcw - 2. * xp * xm);
+//		w[1] = xr * (xsw + 2. * xq * xm);
+//		w[2] = -2. * xr * xki * xm;
+//
+//		double xms = xa * (xh + xsw) / xfi;
+//		double xmc = xa * (xk + xcw) / xfi;
+//		double xn = rgm / StrictMath.pow(xa, 1.5);
+//
+//		w[3] = xn * ((2. * xp * xp - 1.)*xms + 2. * xp * xq * xmc);
+//		w[4] = xn * ((1. - 2. * xq * xq)*xmc - 2. * xp * xq * xms);
+//		w[5] = 2. * xn * xki * (xp * xms + xq * xmc);
+//		return w;
+//	}
+//
+//	private static double evalSeries(final List<ResourceReader.VSOP2013Data> elements, final double jme, final double[] planetLongitudes){
+//		double sum = 0.;
+//		final double[] parameters = new double[elements.size()];
+//		for(int i = 0; i < elements.size(); i ++){
+//			final ResourceReader.VSOP2013Data data = elements.get(i);
+//			for(final ResourceReader.VSOP2013Coeffs coeff : data.coeffs){
+//				double phi = 0.;
+//				for(int j = 0; j < 17; j ++)
+//					phi += coeff.iphi[j] * planetLongitudes[j];
+//				sum += coeff.sine * StrictMath.sin(phi) + coeff.cosine * StrictMath.cos(phi);
+//			}
+//			parameters[data.timePower] = sum;
+//		}
+//		return MathHelper.eval(jme, parameters);
+//	}
 
 
 	/**
@@ -555,6 +545,17 @@ public final class SunPosition{
 	 */
 	static double trueEclipticObliquity(final double meanEclipticObliquity, final double deltaEpsilon){
 		return meanEclipticObliquity + deltaEpsilon;
+	}
+
+
+	/**
+	 * Calculate the equatorial horizontal parallax of the Sun, ξ.
+	 *
+	 * @param radiusVector	Radius vector of the Earth [AU].
+	 * @return	The equatorial horizontal parallax of the Sun [rad].
+	 */
+	private static double equatorialHorizontalParallax(double radiusVector){
+		return StrictMath.toRadians(8.794 / (JulianDay.SECONDS_IN_HOUR * radiusVector));
 	}
 
 }

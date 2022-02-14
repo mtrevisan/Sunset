@@ -26,6 +26,8 @@ package io.github.mtrevisan.sunset.coordinates;
 
 import io.github.mtrevisan.sunset.StringHelper;
 
+import java.text.DecimalFormat;
+
 
 /**
  * @see <a href="https://en.wikipedia.org/wiki/Horizontal_coordinate_system">Horizontal coordinate system</>
@@ -96,10 +98,11 @@ public final class HorizontalCoordinate{
 
 	@Override
 	public String toString(){
+		final DecimalFormat formatter = StringHelper.decimalFormat(2);
 		return "HorizontalCoordinate{"
-			+ "alt: " + StringHelper.degreeToHMSString(StrictMath.toDegrees(azimuth), 2)
-			+ ", az: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(altitude), 2)
-			+ ", r: " + StringHelper.degreeToDegMinSecString(radius, 2)
+			+ "alt: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(azimuth), 2)
+			+ ", azi: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(altitude), 2)
+			+ ", r: " + formatter.format(radius)
 			+ '}';
 	}
 

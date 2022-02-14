@@ -24,9 +24,12 @@
  */
 package io.github.mtrevisan.sunset.core;
 
+import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.HorizontalCoordinate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -40,9 +43,9 @@ class SunPositionTest{
 	void sunEclipticPositionSputnik(){
 		double jd = JulianDay.of(1957, 10, 4)
 			+ JulianDay.timeOf(LocalTime.of(19, 29));
-		EclipticCoordinate coord = SunPosition.sunEclipticPosition(jd);
+		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 
-		Assertions.assertEquals("EclipticCoordinate{b: 0° 0' 0.55\", l: 191° 18' 9.93\", r: 1}", coord.toString());
+		Assertions.assertEquals("EclipticCoordinate{b: 0° 0' 0.55\", l: 191° 18' 9.93\", r: 1}", eclipticCoord.toString());
 	}
 
 	@Test
@@ -50,12 +53,25 @@ class SunPositionTest{
 		double jd = JulianDay.of(1957, 10, 4)
 			+ JulianDay.timeOf(LocalTime.of(19, 29));
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
-		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
+		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
 
 		//https://www.eso.org/observing/etc/bin/gen/form?INS.MODE=swspectr+INS.NAME=SKYCALC
 		//α☉ = 12h 41m 32s  δ☉ = -04° 28' 14"
 		//http://cosinekitty.com/solar_system.html
-		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.28s, δ: -4° 28' 15.41\"}", coord.toString());
+		Assertions.assertEquals("EquatorialCoordinate{α: 12h 41m 33.28s, δ: -4° 28' 15.41\"}", equatorialCoord.toString());
+	}
+
+	@Test
+	void sunTopocentricPosition(){
+		double jd = JulianDay.of(1957, 10, 4)
+			+ JulianDay.timeOf(LocalTime.of(19, 29));
+		GNSSLocation location = GNSSLocation.create(45.65, 12.18, 23.);
+		AtmosphericModel atmosphericModel = AtmosphericModel.create(1017., 18.);
+		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
+		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
+		HorizontalCoordinate horizontalCoord = SunPosition.sunTopocentricPosition(location, atmosphericModel, eclipticCoord, jd);
+
+		Assertions.assertEquals("HorizontalCoordinate{alt: 295° 18' 11.89\", azi: -28° 28' 53.12\", r: 1}", horizontalCoord.toString());
 	}
 
 }

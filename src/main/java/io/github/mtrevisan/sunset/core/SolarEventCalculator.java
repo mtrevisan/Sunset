@@ -24,6 +24,7 @@
  */
 package io.github.mtrevisan.sunset.core;
 
+import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventError;
@@ -43,12 +44,9 @@ import java.time.temporal.ChronoUnit;
 
 public class SolarEventCalculator{
 
-	static final double EARTH_FLATTENING = 1. / 298.25642;
+	private static final double EARTH_FLATTENING = 1. / 298.25642;
 	//[m]
-	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
-
-	/** [°C] */
-	static final double ABSOLUTE_ZERO = 273.15;
+	private static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 
 
 // Calculates the approximate set time of a body which has the specified right ascension and declination.
@@ -392,10 +390,7 @@ Sunset hour angle	83.524274
 
 	public static void main2(String[] args){
 		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
-		//[hPa]
-		final double pressure = 820.;
-		//[°C]
-		final double temperature = 11.;
+		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820., 11.);
 
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
@@ -452,7 +447,7 @@ Sunset hour angle	83.524274
 			StrictMath.sin(latitude) * StrictMath.sin(declinationTopocentric)
 				+ StrictMath.cos(latitude) * StrictMath.cos(declinationTopocentric) * StrictMath.cos(localHourAngleTopocentric)
 		);
-		final double deltaE = atmosphericRefractionCorrection(pressure, temperature, e0);
+		final double deltaE = atmosphericModel.atmosphericRefractionCorrection(e0);
 		//calculate the topocentric elevation angle: e
 		final double elevationTopocentric = e0 + deltaE;
 		//calculate the topocentric zenith angle: θ
@@ -476,21 +471,6 @@ Sunset hour angle	83.524274
 	}
 
 	/**
-	 * Calculate the atmospheric refraction correction, Δe.
-	 *
-	 * @param pressure	The pressure [hPa].
-	 * @param temperature	The temperature [°C].
-	 * @param e0	The topocentric elevation angle without atmospheric refraction correction [rad].
-	 * @return	The correction [rad].
-	 */
-	static double atmosphericRefractionCorrection(final double pressure, final double temperature, double e0){
-		e0 = StrictMath.toDegrees(e0);
-		return (pressure / 1010.)
-			* ((ABSOLUTE_ZERO + 10.) / (ABSOLUTE_ZERO + temperature))
-			* (1.02 / (60. * StrictMath.tan(StrictMath.toRadians(e0 + 10.3 / (e0 + 5.11)))));
-	}
-
-	/**
 	 * Calculate the eccentricity of Earth's orbit, e.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
@@ -498,17 +478,6 @@ Sunset hour angle	83.524274
 	 */
 	private static double earthOrbitEccentricity(final double tt){
 		return MathHelper.eval(tt, new double[]{0.016708634, -0.000042037, -0.0000001267});
-	}
-
-	/**
-	 * Calculate the distance between the center of the Sun and the center of the Earth, R.
-	 *
-	 * @param eccentricity	The eccentricity of Earth's orbit.
-	 * @param trueAnomaly	The true anomaly of the Sun [rad].
-	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
-	 */
-	private static double radiusVector(final double eccentricity, final double trueAnomaly){
-		return 1.000001018 * (1. - eccentricity * eccentricity) / (1. + eccentricity * StrictMath.cos(trueAnomaly));
 	}
 
 	/**
