@@ -100,8 +100,8 @@ public final class HorizontalCoordinate{
 	public String toString(){
 		final DecimalFormat formatter = StringHelper.decimalFormat(2);
 		return "HorizontalCoordinate{"
-			+ "alt: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(azimuth), 2)
-			+ ", azi: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(altitude), 2)
+			+ "azi: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(azimuth), 2)
+			+ ", alt: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(altitude), 2)
 			+ ", r: " + formatter.format(radius)
 			+ '}';
 	}

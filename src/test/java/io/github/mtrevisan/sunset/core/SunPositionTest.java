@@ -26,6 +26,7 @@ package io.github.mtrevisan.sunset.core;
 
 import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
@@ -38,6 +39,15 @@ import java.time.LocalTime;
 
 @SuppressWarnings("ALL")
 class SunPositionTest{
+
+	@Test
+	void test(){
+		double jd = JulianDay.of(2005, 1, 1)
+			+ JulianDay.timeOf(LocalTime.of(19, 29));
+		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
+
+		Assertions.assertEquals("EclipticCoordinate{b: 0° 0' 0.55\", l: 191° 18' 9.93\", r: 1}", eclipticCoord.toString());
+	}
 
 	@Test
 	void sunEclipticPositionSputnik(){
@@ -71,7 +81,7 @@ class SunPositionTest{
 		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
 		HorizontalCoordinate horizontalCoord = SunPosition.sunTopocentricPosition(location, atmosphericModel, eclipticCoord, jd);
 
-		Assertions.assertEquals("HorizontalCoordinate{alt: 295° 18' 11.89\", azi: -28° 28' 53.12\", r: 1}", horizontalCoord.toString());
+		Assertions.assertEquals("HorizontalCoordinate{azi: 295° 18' 11.89\", alt: -28° 28' 53.12\", r: 1}", horizontalCoord.toString());
 	}
 
 }

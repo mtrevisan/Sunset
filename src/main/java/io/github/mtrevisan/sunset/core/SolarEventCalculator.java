@@ -249,15 +249,9 @@ public class SolarEventCalculator{
 			MathHelper.toDegrees(12, 11, 37.),
 			40.
 		);
-		//[hPa]
-		final double pressure = 1021.5;
-		//[°C]
-		final double temperature = 8.;
+		AtmosphericModel atmosphericModel = AtmosphericModel.create(1021.5, 8.);
 //		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
-//		//[hPa]
-//		final double pressure = 820.;
-//		//[°C]
-//		final double temperature = 11.;
+//		AtmosphericModel atmosphericModel = AtmosphericModel.create(1021.5, 8.);
 
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
