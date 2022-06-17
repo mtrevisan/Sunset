@@ -124,7 +124,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
 	 * @return	The Sun equatorial position.
 	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
 	public static EquatorialCoordinate sunEquatorialPosition(final EclipticCoordinate eclipticCoord, final double jd){
 		final double tt = JulianDay.centuryJ2000Of(jd);
@@ -223,7 +223,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	The geocentric mean latitude of the Sun [rad].
 	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
 	private static double geocentricMeanLatitude(final double jme){
 		final double[] parameters = new double[6];
@@ -248,7 +248,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	The geocentric mean longitude of the Sun [rad].
 	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</>
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
 	private static double geocentricMeanLongitude(final double jme){
 		final double[] parameters = new double[6];
