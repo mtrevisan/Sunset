@@ -249,11 +249,12 @@ public class SolarEventCalculator{
 
 		//calculate an initial guess
 		final double jde0 = MathHelper.eval((year - 2000) / 1000., new double[]{2451900.05952, 365242.74049, -0.06223, -0.00823, 0.00032});
-		final double t = (jde0 - 2451545.) / 36525;
+		final double t = JulianDay.centuryJ2000Of(jde0);
 		final double w = StrictMath.toRadians(35_999.373 * t - 2.47);
 		final double deltaLambda = 1. + 0.033_4 * StrictMath.cos(w) + 0.000_7 * StrictMath.cos(2. * w);
 
-		final double[] a = {485., 203., 199., 182., 156., 136., 77., 74., 70., 58., 52., 50., 45., 44., 29., 18., 17., 16., 14., 12., 12., 12., 9., 8.};
+		final double[] a = {0.00485, 0.00203, 0.00199, 0.00182, 0.00156, 0.00136, 0.00077, 0.00074, 0.00070, 0.00058, 0.00052, 0.00050, 0.00045, 0.00044, 0.00029, 0.00018, 0.00017, 0.00016, 0.00014,
+			0.00012, 0.00012, 0.00012, 0.00009, 0.00008};
 		final double[] b = {324.96, 337.23, 342.08, 27.85, 73.14, 171.52, 222.54, 296.72, 243.58, 119.81, 297.17, 21.02,
 			247.54, 325.15, 60.93, 155.12, 288.79, 198.04, 199.76, 95.39, 287.11, 320.81, 227.73, 15.45};
 		final double[] c = {1934.136, 32964.467, 20.186, 445267.112, 45036.886, 22518.443,
@@ -264,19 +265,18 @@ public class SolarEventCalculator{
 		for(int i = 0; i < a.length; i ++)
 			s += a[i] * StrictMath.cos(StrictMath.toRadians(b[i] + c[i] * t));
 
-		final double jde = jde0 + 0.00001 * s / deltaLambda;
+		final double tdt = jde0 + s / deltaLambda;
 
-		//convert Julian Days to TDT
+		final double deltaT = deltaT(year);
 		//NOTE: the error is less than one minute for the years 1951-2050
-		final LocalDateTime tdt = JulianDay.dateTimeOf(jde);
-		//correct TDT to UTC
-		final LocalDateTime utc = toUTC(tdt);
+		final double utc = TimeHelper.terrestrialTimeToUniversalTime(tdt, deltaT);
 
-		System.out.println("tdt: " + tdt);
-		System.out.println("utc: " + utc);
+		System.out.println("deltaT: " + deltaT);
+		System.out.println("tdt: " + JulianDay.dateTimeOf(tdt));
+		System.out.println("utc: " + JulianDay.dateTimeOf(utc));
 	}
 
-	private static LocalDateTime toUTC(LocalDateTime tdt){
+	private static double deltaT(final int year){
 		//from Meeus Astronomical Algorithms Chapter 10
 		//Correction lookup table has entry for every even year between tableFirstYear and tableLastYear
 
@@ -312,7 +312,6 @@ public class SolarEventCalculator{
 		//values for Delta T for 2000 thru 2002 from NASA
 		//deltaT = TDT - UTC (in Seconds)
 		double deltaT;
-		final int year = tdt.getYear();
 		//centuries from the epoch 2000.0
 		final double t = (year - 2000) / 100.;
 
@@ -333,7 +332,7 @@ public class SolarEventCalculator{
 			if(year >= 2000 && year <= 2100)
 				deltaT += 0.37 * (year - 2100);
 		}
-		return tdt.minus(Math.round(deltaT), ChronoUnit.SECONDS);
+		return deltaT;
 	}
 
 
@@ -341,21 +340,25 @@ public class SolarEventCalculator{
 	//https://midcdmz.nrel.gov/solpos/spa.html
 	//http://phpsciencelabs.us/wiki_programs/Sidereal_Time_Calculator.php
 	//https://lweb.cfa.harvard.edu/~jzhao/times.html
+	//https://www.meteopiateda.it/busteggia/pages/astronomy/equisol.php
+	//https://www.researchgate.net/publication/262200491_Calcolo_analitico_della_posizione_del_sole_per_l%27allineamento_di_impianti_solari_ed_altre_applicazioni
+	//https://www.suncalc.org/#/45.7149,12.1941,17/2022.06.27/14:23/1/3
 	public static void main(String[] args) throws SolarEventException{
+		meeus();
 		final GNSSLocation location = GNSSLocation.create(
 			MathHelper.toDegrees(45, 42, 54.),
 			MathHelper.toDegrees(12, 11, 37.),
 			40.
 		);
-		AtmosphericModel atmosphericModel = AtmosphericModel.create(1021.5, 8.);
+		AtmosphericModel atmosphericModel = AtmosphericModel.create(1013.25, 25.);
 //		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
 //		AtmosphericModel atmosphericModel = AtmosphericModel.create(1021.5, 8.);
 
-		final double ut = JulianDay.of(2003, 10, 17)
+		final double ut = JulianDay.of(2022, 12, 22)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
 		//[s]
-		final double dt = 67.;
-		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, dt);
+		final double deltaT = deltaT(2022);
+		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, deltaT);
 		final double tt = JulianDay.centuryJ2000Of(jd);
 
 		final EclipticCoordinate eclipticCoordBefore = SunPosition.sunEclipticPosition(jd - 1.);
@@ -400,9 +403,9 @@ public class SolarEventCalculator{
 		final double v0 = apparentSiderealTime + 360.985647 * m0;
 		final double v1 = apparentSiderealTime + 360.985647 * m1;
 		final double v2 = apparentSiderealTime + 360.985647 * m2;
-		final double n0 = m0 + dt / 86400.;
-		final double n1 = m1 + dt / 86400.;
-		final double n2 = m2 + dt / 86400.;
+		final double n0 = m0 + deltaT / 86400.;
+		final double n1 = m1 + deltaT / 86400.;
+		final double n2 = m2 + deltaT / 86400.;
 		//calculate the Right Ascension and declination
 		double a = coord.getRightAscension() - coordBefore.getRightAscension();
 		double a_prime = coord.getDeclination() - coordBefore.getDeclination();
