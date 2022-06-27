@@ -37,13 +37,13 @@ import java.time.LocalTime;
  * 4713 BC.
  * </p>
  *
- * @see <a href="https://en.wikipedia.org/wiki/Julian_day">Julian day</>
- * @see <a href="https://calendars.fandom.com/wiki/Julian_day_number">Julian day number</>
- * @see <a href="https://www.aa.quae.nl/en/reken/juliaansedag.html">Astronomy answers - Julian Day Number</>
+ * @see <a href="https://en.wikipedia.org/wiki/Julian_day">Julian day</a>
+ * @see <a href="https://calendars.fandom.com/wiki/Julian_day_number">Julian day number</a>
+ * @see <a href="https://www.aa.quae.nl/en/reken/juliaansedag.html">Astronomy answers - Julian Day Number</a>
  */
 public final class JulianDay{
 
-	private static final int[] F = new int[]{428, 459, 122, 153, 183, 214, 244, 275, 306, 336, 367, 397};
+	private static final int[] F = {428, 459, 122, 153, 183, 214, 244, 275, 306, 336, 367, 397};
 
 	/** Last day of the Julian calendar, that is October 4, 1582, after which 10 day were added [day]. */
 	private static final double JULIAN_CALENDAR_END = 2299160.;
