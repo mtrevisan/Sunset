@@ -58,6 +58,7 @@ public final class JulianDay{
 	//[°/h]
 	public static final double DEGREES_PER_HOUR = 15.;
 	public static final double HOURS_IN_DAY = 24.;
+	public static final double MINUTES_IN_HOUR = 60.;
 	public static final double SECONDS_IN_HOUR = 3600.;
 	public static final double SECONDS_IN_DAY = SECONDS_IN_HOUR * HOURS_IN_DAY;
 
