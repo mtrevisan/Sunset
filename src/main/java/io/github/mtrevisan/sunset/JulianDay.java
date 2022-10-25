@@ -163,7 +163,7 @@ public final class JulianDay{
 		year -= 4715;
 
 		final LocalDate date = LocalDate.of(year, month, day);
-		final LocalTime time = LocalTime.ofSecondOfDay(Math.round(timeOfDay * JulianDay.SECONDS_IN_DAY));
+		final LocalTime time = LocalTime.ofSecondOfDay(Math.round(timeOfDay * SECONDS_IN_DAY));
 		return LocalDateTime.of(date, time);
 	}
 
