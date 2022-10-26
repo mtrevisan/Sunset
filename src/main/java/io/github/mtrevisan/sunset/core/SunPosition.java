@@ -383,8 +383,13 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		));
 	}
 
-	//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
-	private static double ascendingLongitudeMoon(final double tt){
+	/**
+	 * Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	Longitude of the ascending node of the Moon's mean orbit on the ecliptic [rad].
+	 */
+	public static double ascendingLongitudeMoon(final double tt){
 		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE)
 		));

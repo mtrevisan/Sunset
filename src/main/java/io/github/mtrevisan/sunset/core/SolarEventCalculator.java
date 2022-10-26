@@ -234,7 +234,7 @@ public class SolarEventCalculator{
 	}
 
 	private static double nutationAndAberrationCorrection(final double tt){
-		return 0.00569 + 0.00478 * StrictMath.sin(omega(tt));
+		return 0.005_69 + 0.004_78 * StrictMath.sin(omega(tt));
 	}
 
 	private static double omega(final double tt){

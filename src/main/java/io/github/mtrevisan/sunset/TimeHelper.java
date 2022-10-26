@@ -84,6 +84,10 @@ public final class TimeHelper{
 	 *
 	 * @param year	The year.
 	 * @return	The predicted {@code TT – UT1}.
+	 *
+	 * https://eclipse.gsfc.nasa.gov/SEhelp/deltaT.html
+	 * https://eclipse.gsfc.nasa.gov/SEhelp/deltat2004.html
+	 * https://astro.ukho.gov.uk/nao/miscellanea/DeltaT/
 	 */
 	public static double deltaT(final int year){
 		double yat2 = 0.;
