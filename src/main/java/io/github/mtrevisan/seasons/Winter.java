@@ -3,11 +3,15 @@ package io.github.mtrevisan.seasons;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.TimeHelper;
+import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
+import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
+import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 import io.github.mtrevisan.sunset.core.SunPosition;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -43,22 +47,22 @@ public class Winter{
 		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolsticeDateTime)
 			+ " @ " + decimalFormatter.format(longitude) + "°" + (longitude > 0.? " E": (longitude < 0.? " W": "")));
 
-//		sunset(winterSolsticeDateTime);
+		sunset(winterSolsticeDateTime);
 	}
 
 
-/*	private static LocalTime sunset(final LocalDateTime dateTime){
+	private static LocalTime sunset(final LocalDateTime dateTime){
 		//pag 109
-		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
+		final GNSSLocation location = GNSSLocation.create(45.65, 12.19, 100.);
 
 		double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
 ut = JulianDay.of(1987, 4, 10);
 		final double tt = JulianDay.centuryJ2000Of(ut);
 
-		final EclipticCoordinate eclipticCoord = sunEclipticPosition(ut);
+		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(ut);
 		//EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(ut);
-		final EquatorialCoordinate equatorialCoord = sunEquatorialPosition(eclipticCoord, ut);
+		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, ut);
 		//Sun's geometric mean longitude (referred to the mean equinox of the date)
 		final double meanLongitudeSun = sunGeocentricMeanLongitude(tt);
 //		final double meanLongitudeSun2 = SunPosition.geocentricMeanLongitude(tt);
@@ -76,10 +80,8 @@ ut = JulianDay.of(1987, 4, 10);
 				+ (0.1426 - 0.000_34 * tt) * StrictMath.sin(meanAnomaly)
 		) / 3600.), 0.};
 		//double[] nutation = SunPosition.nutationCorrection(tt);
-		final double meanEclipticObliquity = meanEclipticObliquity(tt);
-		//double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
-		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-		//double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
 		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
 		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
