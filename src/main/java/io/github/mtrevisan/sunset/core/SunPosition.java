@@ -33,7 +33,6 @@ import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
 import io.github.mtrevisan.sunset.coordinates.HorizontalCoordinate;
-import io.github.mtrevisan.sunset.coordinates.OrbitalElements;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -85,9 +84,13 @@ public final class SunPosition{
 	static final double EARTH_FLATTENING = 1. / 298.25642;
 	//[m]
 	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
+	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_1267};
+
+	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.5277233, 35999.0503400, -0.0001603, -1. / 300000.};
+	private static final double[] SUN_EQUATION_OF_CENTER_1 = {1.914_602, -0.004_817, -0.000_014};
+	private static final double[] SUN_EQUATION_OF_CENTER_2 = {0.019_993, -0.000_101};
 
 	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.8503631, 445267.1114800, -0.0019142, 1. / 189474.};
-	private static final double[] SUN_MEAN_ANOMALY_PARAMETERS = {357.5277233, 35999.0503400, -0.0001603, -1. / 300000.};
 	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.9629814, 477198.8673981, 0.0086972, 1. / 56250.};
 	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.2719103, 483202.0175381, -0.00368250, 1. / 327270.};
 	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.0445222, -1934.1362608, 0.002070833, 1. / 450000.};
@@ -250,7 +253,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
-	private static double geocentricMeanLongitude(final double jme){
+	public static double geocentricMeanLongitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
@@ -274,7 +277,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
 	 */
-	private static double radiusVector(final double jme){
+	public static double radiusVector(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
@@ -288,6 +291,31 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		return MathHelper.eval(jme, parameters) / 100_000_000.;
 	}
 
+	/**
+	 * Calculate the Sun's equation of center, C.
+	 *
+	 * @param geocentricMeanAnomaly	The mean anomaly of the Sun [rad].
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The Sun's equation of center [rad].
+	 */
+	public static double equationOfCenter(final double geocentricMeanAnomaly, final double tt){
+		return Math.toRadians(
+			MathHelper.eval(tt, SUN_EQUATION_OF_CENTER_1) * StrictMath.sin(geocentricMeanAnomaly)
+				+ MathHelper.eval(tt, SUN_EQUATION_OF_CENTER_2) * StrictMath.sin(2. * geocentricMeanAnomaly)
+				+ 0.000_289 * StrictMath.sin(3. * geocentricMeanAnomaly)
+		);
+	}
+
+	/**
+	 * Calculate the eccentricity of Earth's orbit, e.
+	 *
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The eccentricity of Earth's orbit.
+	 */
+	public static double earthOrbitEccentricity(final double tt){
+		return MathHelper.eval(tt, EARTH_ORBIT_ECCENTRICITY);
+	}
+
 
 	/**
 	 * Calculate corrections of nutation in longitude (∆ψ) and obliquity (∆ε).
@@ -298,7 +326,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * http://physics.uwyo.edu/~wiro/planet/nutate.c
 	 * https://iopscience.iop.org/article/10.1086/375641/pdf
 	 */
-	static double[] nutationCorrection(final double tt){
+	public static double[] nutationCorrection(final double tt){
 		final double d = meanElongationMoonSun(tt);
 		final double m = meanAnomalySun(tt);
 		final double mp = meanAnomalyMoon(tt);
@@ -323,37 +351,42 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 
 	//mean elongation of the Moon from the Sun [rad]
 	private static double meanElongationMoonSun(final double tt){
-		return StrictMath.toRadians(
+		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS)
-		);
+		));
 	}
 
-	//mean anomaly of the Sun [rad]
-	private static double meanAnomalySun(final double tt){
-		return StrictMath.toRadians(
-			MathHelper.eval(tt, SUN_MEAN_ANOMALY_PARAMETERS)
-		);
+	/**
+	 * Calculate the geocentric mean anomaly of the Sun, M.
+	 *
+	 * @param tdb	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geocentric mean anomaly of the Sun [rad].
+	 */
+	public static double meanAnomalySun(final double tdb){
+		return MathHelper.mod2pi(StrictMath.toRadians(
+			MathHelper.eval(tdb, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)
+		));
 	}
 
 	//mean anomaly of the Moon [rad]
 	private static double meanAnomalyMoon(final double tt){
-		return StrictMath.toRadians(
+		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tt, MOON_MEAN_ANOMALY_PARAMETERS)
-		);
+		));
 	}
 
 	//Moon's argument of Latitude [rad]
 	private static double argumentLatitudeMoon(final double tt){
-		return StrictMath.toRadians(
+		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tt, MOON_ARGUMENT_OF_LATITUDE)
-		);
+		));
 	}
 
 	//Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date [rad]
 	private static double ascendingLongitudeMoon(final double tt){
-		return StrictMath.toRadians(
+		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE)
-		);
+		));
 	}
 
 	private static double xyTermSummation(final double[] x, final Double[] terms){
@@ -393,7 +426,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
-	static double meanEclipticObliquity(final double tt){
+	public static double meanEclipticObliquity(final double tt){
 		final double u = tt / 100.;
 		return StrictMath.toRadians(
 			MathHelper.eval(u, MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS) / JulianDay.SECONDS_IN_HOUR
@@ -407,7 +440,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param deltaEpsilon	Nutation in obliquity [rad.
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
-	static double trueEclipticObliquity(final double meanEclipticObliquity, final double deltaEpsilon){
+	public static double trueEclipticObliquity(final double meanEclipticObliquity, final double deltaEpsilon){
 		return meanEclipticObliquity + deltaEpsilon;
 	}
 

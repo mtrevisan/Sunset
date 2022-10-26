@@ -48,8 +48,10 @@ public class SolarEventCalculator{
 	//[m]
 	private static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 
+	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY = {357.52911, 35_999.050_29, -0.000_1537};
 
-// Calculates the approximate set time of a body which has the specified right ascension and declination.
+
+	// Calculates the approximate set time of a body which has the specified right ascension and declination.
 // The resultant value will be close to the specified date.
 // Return values are undef if the object is circumpolar for that date.
 //	private double approxRiseSet(date, lat, long, ra, decl, h0 = -0.5667 degrees){
@@ -204,7 +206,7 @@ public class SolarEventCalculator{
 	 * @return	The geocentric mean anomaly of the Sun [rad].
 	 */
 	private static double geocentricMeanAnomaly(final double tt){
-		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, new double[]{357.52911, 35999.05029, -0.0001537})));
+		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, SUN_GEOCENTRIC_MEAN_ANOMALY)));
 	}
 
 	/**
