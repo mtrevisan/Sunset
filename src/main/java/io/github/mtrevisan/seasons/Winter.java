@@ -104,9 +104,9 @@ ut = JulianDay.of(1987, 4, 10);
 		do{
 			//Sun's geometric mean longitude (referred to the mean equinox of the date)
 			final double meanLongitudeSun = sunGeocentricMeanLongitude(tt);
-//			final double meanLongitudeSun2 = SunPosition.geocentricMeanLongitude(tt);
+			final double meanLongitudeSun2 = SunPosition.geocentricMeanLongitude(tt);
 			//Sun's mean anomaly
-			final double meanAnomaly = SunPosition.meanAnomalySun(tt);
+			final double meanAnomaly = SunPosition.geocentricMeanAnomaly(tt);
 			//Sun's equation of center
 			final double equationOfCenter = SunPosition.equationOfCenter(meanAnomaly, tt);
 			//eccentricity of the Earth's orbit

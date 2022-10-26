@@ -86,14 +86,15 @@ public final class SunPosition{
 	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_1267};
 
-	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.5277233, 35999.0503400, -0.0001603, -1. / 300000.};
+	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.527_723_33, 35_999.050_34, -0.000_160_28, -0.000_003_33};
 	private static final double[] SUN_EQUATION_OF_CENTER_1 = {1.914_602, -0.004_817, -0.000_014};
 	private static final double[] SUN_EQUATION_OF_CENTER_2 = {0.019_993, -0.000_101};
 
-	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.8503631, 445267.1114800, -0.0019142, 1. / 189474.};
-	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.9629814, 477198.8673981, 0.0086972, 1. / 56250.};
-	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.2719103, 483202.0175381, -0.00368250, 1. / 327270.};
-	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.0445222, -1934.1362608, 0.002070833, 1. / 450000.};
+	//http://vadimchazov.narod.ru/besmfore.htm
+	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.850_363_06, 445_267.111_48, -0.001_914_17, 0.000_005_28};
+	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.962_981_39, 477_198.867_398_055_6, 0.008_697_22, 0.000_017_78};
+	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.271_910_28, 483_202.017_538_055_5, -0.003_682_50, 0.000_003_06};
+	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.044_522_22, -1934.1362608, 0.002070833, 1. / 450000.};
 	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
 		27.87, 5.79, 2.45};
 
@@ -328,7 +329,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static double[] nutationCorrection(final double tt){
 		final double d = meanElongationMoonSun(tt);
-		final double m = meanAnomalySun(tt);
+		final double m = geocentricMeanAnomaly(tt);
 		final double mp = meanAnomalyMoon(tt);
 		final double f = argumentLatitudeMoon(tt);
 		final double omega = ascendingLongitudeMoon(tt);
@@ -362,7 +363,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param tdb	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The geocentric mean anomaly of the Sun [rad].
 	 */
-	public static double meanAnomalySun(final double tdb){
+	public static double geocentricMeanAnomaly(final double tdb){
 		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tdb, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)
 		));
