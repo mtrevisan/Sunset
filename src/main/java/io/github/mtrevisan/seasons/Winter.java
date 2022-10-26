@@ -54,9 +54,7 @@ public class Winter{
 		//pag 109
 		final GNSSLocation location = GNSSLocation.create(45.65, 12.19, 100.);
 
-		double ut = JulianDay.of(2003, 10, 17)
-			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
-ut = JulianDay.of(1987, 4, 10);
+		final double ut = JulianDay.of(dateTime);
 		final double tt = JulianDay.centuryJ2000Of(ut);
 
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(ut);
