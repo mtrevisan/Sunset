@@ -5,7 +5,8 @@ import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
-import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
+import io.github.mtrevisan.sunset.core.SolarEventCalculator;
 import io.github.mtrevisan.sunset.core.SunPosition;
 
 import java.text.DecimalFormat;
@@ -35,7 +36,7 @@ public class Winter{
 	//https://gml.noaa.gov/grad/solcalc/calcdetails.html
 	public static void main(final String[] args){
 		final int year = 2022;
-		final GNSSLocation location = GNSSLocation.create(45.714920, 12.194179, 100.);
+		final GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 100.);
 
 		final DecimalFormat decimalFormatter = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 
@@ -62,14 +63,56 @@ public class Winter{
 		return sunset(dateTime, null);
 	}
 
-	public static LocalTime sunset(final LocalDate dateTime, final GNSSLocation location){
+	public static LocalTime sunset(final LocalDate dateTime, final GeographicLocation location){
 		//pag 109
 		final double ut = JulianDay.of(dateTime);
 		final double tt = JulianDay.centuryJ2000Of(ut);
 
+		//Sun's geometric mean longitude (referred to the mean equinox of the date)
+		final double sunMeanLongitude = sunGeocentricMeanLongitude(tt);
+		//FIXME WRONG
+//			final double sunMeanLongitude2 = SunPosition.geocentricMeanLongitude(tt);
+		//Sun's mean anomaly
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(tt);
+		//eccentricity of the Earth's orbit
+		final double eccentricity = SunPosition.earthOrbitEccentricity(tt);
+		//Sun's equation of center
+		final double equationOfCenter = SunPosition.equationOfCenter(sunMeanAnomaly, tt);
+		final double trueAnomaly = sunMeanAnomaly + equationOfCenter;
+		//Sun's radius vector [AU]
+		final double earthRadiusVector = earthRadiusVector(eccentricity, trueAnomaly);
+		//FIXME WRONG
+//			final double earthRadiusVector2 = SunPosition.radiusVector(tt);
+		//[arcsec]
+		final double aberration = ABERRATION_CONSTANT * 1.000_001_018 * (1. - eccentricity * eccentricity);
+		final double sunTrueLongitude = sunMeanLongitude + equationOfCenter
+			- Math.toRadians(
+			//reduction to the FK5 system
+			(0.09033
+				//correction for aberration
+				+ aberration / earthRadiusVector) / 3600.);
+		final double ascendingLongitudeMoon = SunPosition.ascendingLongitudeMoon(tt);
+		final double meanLongitudeMoon = moonGeocentricMeanLongitude(tt);
+		final double[] nutationCorrection = {Math.toRadians((
+			(-17.1996 - 0.01742 * tt) * StrictMath.sin(ascendingLongitudeMoon)
+				+ (-1.3187 - 0.000_16 * tt) * StrictMath.sin(2. * sunMeanLongitude)
+				+ (-0.2274 - 0.000_02 * tt) * StrictMath.sin(2. * meanLongitudeMoon)
+				+ (0.2062 + 0.000_02 * tt) * StrictMath.sin(2. * ascendingLongitudeMoon)
+				+ (0.1426 - 0.000_34 * tt) * StrictMath.sin(sunMeanAnomaly)
+		) / 3600.), 0.};
+		//final double[] nutationCorrection = SunPosition.nutationCorrection(tt);
+		//Sun's apparent longitude, referred to the true equinox of the date
+		final double apparentLongitudeSun = sunGeocentricApparentLongitude(sunTrueLongitude, nutationCorrection[0], ascendingLongitudeMoon);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		final double apparentEclipticObliquity = SunPosition.apparentEclipticObliquity(meanEclipticObliquity, tt);
+
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(ut);
 		//EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(ut);
 		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, ut);
+
+		final double equationOfTime = SolarEventCalculator.equationOfTime(eclipticCoord, tt);
+
+
 		//Sun's geometric mean longitude (referred to the mean equinox of the date)
 		final double meanLongitudeSun = sunGeocentricMeanLongitude(tt);
 //		final double meanLongitudeSun2 = SunPosition.geocentricMeanLongitude(tt);
@@ -77,8 +120,7 @@ public class Winter{
 		final double meanAnomaly = sunGeocentricMeanAnomaly(tt);
 		//final double meanAnomaly = SunPosition.meanAnomalySun(tt);
 		//EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, ut);
-		final double omega = sunGeocentricApparentLongitude(0., new double[]{0., 0.}, 0.);
-		final double meanLongitudeMoon = moonGeocentricMeanLongitude(tt);
+		final double omega = sunGeocentricApparentLongitude(0., 0., 0.);
 		final double[] nutation = {Math.toRadians((
 			(-17.1996 - 0.01742 * tt) * StrictMath.sin(omega)
 				+ (-1.3187 - 0.000_16 * tt) * StrictMath.sin(2. * meanLongitudeSun)
@@ -87,7 +129,6 @@ public class Winter{
 				+ (0.1426 - 0.000_34 * tt) * StrictMath.sin(meanAnomaly)
 		) / 3600.), 0.};
 		//double[] nutation = SunPosition.nutationCorrection(tt);
-		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
 		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
@@ -103,7 +144,7 @@ public class Winter{
 		return winterSolstice(year, null);
 	}
 
-	public static LocalDateTime winterSolstice(final int year, final GNSSLocation location){
+	public static LocalDateTime winterSolstice(final int year, final GeographicLocation location){
 		//calculate the approximate date
 		double winterSolsticeTDB = winterSolsticeTDB(year);
 		double tt = JulianDay.centuryJ2000Of(winterSolsticeTDB);
@@ -117,10 +158,10 @@ public class Winter{
 //			final double sunMeanLongitude2 = SunPosition.geocentricMeanLongitude(tt);
 			//Sun's mean anomaly
 			final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(tt);
-			//Sun's equation of center
-			final double equationOfCenter = SunPosition.equationOfCenter(sunMeanAnomaly, tt);
 			//eccentricity of the Earth's orbit
 			final double eccentricity = SunPosition.earthOrbitEccentricity(tt);
+			//Sun's equation of center
+			final double equationOfCenter = SunPosition.equationOfCenter(sunMeanAnomaly, tt);
 			final double trueAnomaly = sunMeanAnomaly + equationOfCenter;
 			//Sun's radius vector [AU]
 			final double earthRadiusVector = earthRadiusVector(eccentricity, trueAnomaly);
@@ -134,8 +175,8 @@ public class Winter{
 					(0.09033
 					//correction for aberration
 					+ aberration / earthRadiusVector) / 3600.);
-			final double meanLongitudeMoon = moonGeocentricMeanLongitude(tt);
 			final double ascendingLongitudeMoon = SunPosition.ascendingLongitudeMoon(tt);
+			final double meanLongitudeMoon = moonGeocentricMeanLongitude(tt);
 			final double[] nutationCorrection = {Math.toRadians((
 				(-17.1996 - 0.01742 * tt) * StrictMath.sin(ascendingLongitudeMoon)
 				+ (-1.3187 - 0.000_16 * tt) * StrictMath.sin(2. * sunMeanLongitude)
@@ -145,7 +186,7 @@ public class Winter{
 			) / 3600.), 0.};
 			//final double[] nutationCorrection = SunPosition.nutationCorrection(tt);
 			//Sun's apparent longitude, referred to the true equinox of the date
-			final double apparentLongitudeSun = sunGeocentricApparentLongitude(sunTrueLongitude, nutationCorrection, ascendingLongitudeMoon);
+			final double apparentLongitudeSun = sunGeocentricApparentLongitude(sunTrueLongitude, nutationCorrection[0], ascendingLongitudeMoon);
 
 			//[day]
 			correction = 58. * StrictMath.sin(1.5 * Math.PI - apparentLongitudeSun);
@@ -201,15 +242,15 @@ public class Winter{
 	 * Calculate the geocentric apparent longitude of the Sun, referred to the true equinox of the date.
 	 *
 	 * @param geocentricTrueLongitude	Suns geocentric true longitude [rad].
-	 * @param nutationCorrection	Corrections of nutation in longitude (∆ψ) and obliquity (∆ε) [rad].
+	 * @param longitudeNutation	Corrections of nutation in longitude (∆ψ) [rad].
 	 * @param ascendingLongitudeMoon	Longitude of the ascending node of the Moon's mean orbit on the ecliptic [rad].
 	 * @return	The apparent true longitude of the Sun [rad].
 	 */
-	private static double sunGeocentricApparentLongitude(final double geocentricTrueLongitude, final double[] nutationCorrection,
+	private static double sunGeocentricApparentLongitude(final double geocentricTrueLongitude, final double longitudeNutation,
 			final double ascendingLongitudeMoon){
 		return MathHelper.mod2pi(
 			geocentricTrueLongitude
-			+ nutationCorrection[0]
+			+ longitudeNutation
 			- Math.toRadians(0.005_69 + 0.004_78 * StrictMath.sin(ascendingLongitudeMoon))
 		);
 	}

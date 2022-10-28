@@ -24,7 +24,7 @@
  */
 package io.github.mtrevisan.sunset;
 
-import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 
 
 /**
@@ -171,7 +171,7 @@ public final class TimeHelper{
 		final double t = dateAndTime[1] * JulianDay.SECONDS_IN_DAY;
 
 		//Greenwich Sidereal Time at midnight [day]
-		final double h0 = MathHelper.eval(ut0, new double[]{24110.54841, 8640184.812866, 0.093104, -6.2e-6}) / JulianDay.SECONDS_IN_DAY;
+		final double h0 = MathHelper.eval(ut0, new double[]{24110.5493771, 8640184.79447825, 0.093104, -6.2e-6}) / JulianDay.SECONDS_IN_DAY;
 
 		final double earthSiderealRotationRate = earthSiderealRotationRate(ut0);
 		/*
@@ -222,7 +222,7 @@ public final class TimeHelper{
 	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [rad].
 	 * @return	The apparent local Sidereal time at Greenwich [rad].
 	 */
-	public static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
+	public static double localMeanSiderealTime(final double meanSiderealTime, final GeographicLocation location){
 		return meanSiderealTime + Math.toRadians(location.getLongitude());
 	}
 

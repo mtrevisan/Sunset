@@ -26,10 +26,9 @@ package io.github.mtrevisan.sunset.core;
 
 import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDay;
-import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
-import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 import io.github.mtrevisan.sunset.coordinates.HorizontalCoordinate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -75,7 +74,7 @@ class SunPositionTest{
 	void sunTopocentricPosition(){
 		double jd = JulianDay.of(1957, 10, 4)
 			+ JulianDay.timeOf(LocalTime.of(19, 29));
-		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179, 23.);
+		GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 23.);
 		AtmosphericModel atmosphericModel = AtmosphericModel.create(1017., 18.);
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);

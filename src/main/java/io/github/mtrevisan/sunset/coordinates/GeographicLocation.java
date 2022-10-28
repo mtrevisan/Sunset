@@ -26,13 +26,11 @@ package io.github.mtrevisan.sunset.coordinates;
 
 import io.github.mtrevisan.sunset.StringHelper;
 
-import java.text.DecimalFormat;
-
 
 /**
  * Describes a geographical position.
  */
-public final class GNSSLocation{
+public final class GeographicLocation{
 
 	//[deg]
 	private final double latitude;
@@ -49,7 +47,7 @@ public final class GNSSLocation{
 	 * @param longitude	The longitude of this location [deg]. East longitude is positive, west negative.
 	 * @return	An instance.
 	 */
-	public static GNSSLocation create(final double latitude, final double longitude){
+	public static GeographicLocation create(final double latitude, final double longitude){
 		return create(latitude, longitude, 0.);
 	}
 
@@ -61,12 +59,12 @@ public final class GNSSLocation{
 	 * @param altitude	The altitude of this location [m].
 	 * @return	An instance.
 	 */
-	public static GNSSLocation create(final double latitude, final double longitude, final double altitude){
-		return new GNSSLocation(latitude, longitude, altitude);
+	public static GeographicLocation create(final double latitude, final double longitude, final double altitude){
+		return new GeographicLocation(latitude, longitude, altitude);
 	}
 
 
-	private GNSSLocation(final double latitude, final double longitude, final double altitude){
+	private GeographicLocation(final double latitude, final double longitude, final double altitude){
 		if(!Double.isFinite(latitude))
 			throw new IllegalArgumentException("Latitude must be a finite value: " + latitude);
 		if(!Double.isFinite(longitude))

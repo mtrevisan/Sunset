@@ -31,7 +31,7 @@ import io.github.mtrevisan.sunset.SolarEventException;
 import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
-import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 import io.github.mtrevisan.sunset.test.AstroDay;
 import io.github.mtrevisan.sunset.test.AstroLib;
 import org.junit.jupiter.api.Assertions;
@@ -47,7 +47,7 @@ class SolarEventCalculatorTest{
 
 	@Test
 	void localSunPosition() throws SolarEventException{
-		GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
+		GeographicLocation location = GeographicLocation.create(39.742476, -105.1786, 1830.14);
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820, 11.);
 

@@ -31,7 +31,7 @@ import io.github.mtrevisan.sunset.ResourceReader;
 import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
-import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 import io.github.mtrevisan.sunset.coordinates.HorizontalCoordinate;
 
 import java.io.IOException;
@@ -95,8 +95,8 @@ public final class SunPosition{
 	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.962_981_39, 477_198.867_398_055_6, 0.008_697_22, 0.000_017_78};
 	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.271_910_28, 483_202.017_538_055_5, -0.003_682_50, 0.000_003_06};
 	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.044_522_22, -1934.1362608, 0.002070833, 1. / 450000.};
-	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
-		27.87, 5.79, 2.45};
+	//https://www.aanda.org/articles/aa/pdf/2003/48/aa4068.pdf
+	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.406, -4683.6769, -1.831, 2003.40, -57.6};
 
 
 	private SunPosition(){}
@@ -158,8 +158,8 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
 	 * @return	The Sun topocentric position.
 	 */
-	public static HorizontalCoordinate sunTopocentricPosition(final GNSSLocation location, final AtmosphericModel atmosphericModel,
-			final EclipticCoordinate eclipticCoord, final double jd){
+	public static HorizontalCoordinate sunTopocentricPosition(final GeographicLocation location, final AtmosphericModel atmosphericModel,
+																				 final EclipticCoordinate eclipticCoord, final double jd){
 		final LocalDateTime date = JulianDay.dateTimeOf(jd);
 		final double dt = TimeHelper.deltaT(date.getYear());
 		final double ut = TimeHelper.terrestrialTimeToUniversalTime(jd, dt);
@@ -440,14 +440,25 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
+	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, ɛ'.
+	 *
+	 * @param meanEclipticObliquity	Mean obliquity of the ecliptic [rad].
+	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	Apparent longitude of the Sun [rad].
+	 */
+	public static double apparentEclipticObliquity(final double meanEclipticObliquity, final double tt){
+		return meanEclipticObliquity + 0.00256 * StrictMath.cos(ascendingLongitudeMoon(tt));
+	}
+
+	/**
 	 * True obliquity of the ecliptic corrected for nutation, ɛ.
 	 *
 	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [rad].
-	 * @param deltaEpsilon	Nutation in obliquity [rad.
+	 * @param obliquityNutation	Corrections of nutation in obliquity (∆ε) [rad].
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
-	public static double trueEclipticObliquity(final double meanEclipticObliquity, final double deltaEpsilon){
-		return meanEclipticObliquity + deltaEpsilon;
+	public static double trueEclipticObliquity(final double meanEclipticObliquity, final double obliquityNutation){
+		return meanEclipticObliquity + obliquityNutation;
 	}
 
 

@@ -34,7 +34,7 @@ import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.Zenith;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
-import io.github.mtrevisan.sunset.coordinates.GNSSLocation;
+import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -76,7 +76,7 @@ public class SolarEventCalculator{
 
 	//---
 
-	private final GNSSLocation location;
+	private final GeographicLocation location;
 
 
 	/**
@@ -84,12 +84,12 @@ public class SolarEventCalculator{
 	 *
 	 * @param location	Location of the place.
 	 */
-	public static SolarEventCalculator create(final GNSSLocation location){
+	public static SolarEventCalculator create(final GeographicLocation location){
 		return new SolarEventCalculator(location);
 	}
 
 
-	private SolarEventCalculator(final GNSSLocation location){
+	private SolarEventCalculator(final GeographicLocation location){
 		this.location = location;
 	}
 
@@ -230,15 +230,11 @@ public class SolarEventCalculator{
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
 	private static double apparentEclipticObliquity(final double meanEclipticObliquity, final double tt){
-		return meanEclipticObliquity + 0.00256 * StrictMath.cos(omega(tt));
+		return meanEclipticObliquity + 0.00256 * StrictMath.cos(SunPosition.ascendingLongitudeMoon(tt));
 	}
 
 	private static double nutationAndAberrationCorrection(final double tt){
-		return 0.005_69 + 0.004_78 * StrictMath.sin(omega(tt));
-	}
-
-	private static double omega(final double tt){
-		return 125.04 - 1934.136 * tt;
+		return 0.005_69 + 0.004_78 * StrictMath.sin(SunPosition.ascendingLongitudeMoon(tt));
 	}
 
 	//WORKS
@@ -347,7 +343,7 @@ public class SolarEventCalculator{
 	//https://www.suncalc.org/#/45.7149,12.194179,17/2022.06.27/14:23/1/3
 	public static void main(String[] args) throws SolarEventException{
 		meeus();
-		final GNSSLocation location = GNSSLocation.create(
+		final GeographicLocation location = GeographicLocation.create(
 			MathHelper.toDegrees(45, 42, 54.),
 			MathHelper.toDegrees(12, 11, 37.),
 			40.
@@ -486,7 +482,7 @@ Sunset hour angle	83.524274
 	}
 
 	public static void main3(String[] args){
-		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
+		final GeographicLocation location = GeographicLocation.create(39.742476, -105.1786, 1830.14);
 		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820., 11.);
 
 		final double ut = JulianDay.of(2003, 10, 17)
@@ -616,7 +612,7 @@ Sunset hour angle	83.524274
 	 * @return	The Equation of Time [h].
 	 */
 	@SuppressWarnings("OverlyComplexArithmeticExpression")
-	private static double equationOfTime(final EclipticCoordinate eclipticCoord, final double tt){
+	public static double equationOfTime(final EclipticCoordinate eclipticCoord, final double tt){
 		final double e0 = SunPosition.meanEclipticObliquity(tt);
 		final double epsilon = apparentEclipticObliquity(e0, tt);
 		final double l0 = eclipticCoord.getLongitude();
@@ -695,7 +691,7 @@ Sunset hour angle	83.524274
 	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [rad].
 	 * @return	The apparent local Sidereal time at Greenwich [rad].
 	 */
-	static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
+	static double localMeanSiderealTime(final double meanSiderealTime, final GeographicLocation location){
 		return meanSiderealTime + location.getLongitude();
 	}
 
