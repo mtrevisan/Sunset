@@ -110,7 +110,9 @@ public class Winter{
 		//EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(ut);
 		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, ut);
 
+		//TODO here
 		final double equationOfTime = SolarEventCalculator.equationOfTime(eclipticCoord, tt);
+
 
 
 		//Sun's geometric mean longitude (referred to the mean equinox of the date)
