@@ -10,6 +10,7 @@ import io.github.mtrevisan.sunset.core.SunPosition;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -38,18 +39,30 @@ public class Winter{
 
 		final DecimalFormat decimalFormatter = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 
-		LocalDateTime winterSolsticeDateTime = winterSolstice(year);
-		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolsticeDateTime) + " UTC");
 
-		winterSolsticeDateTime = winterSolstice(year, location);
+		LocalDateTime winterSolstice = winterSolstice(year);
+		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolstice) + " UTC");
+
+		winterSolstice = winterSolstice(year, location);
 		decimalFormatter.applyPattern("0.######");
-		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolsticeDateTime) + " local");
+		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolstice) + " local");
 
-		sunset(winterSolsticeDateTime, location);
+
+		final LocalDate winterSolsticeDate = winterSolstice.toLocalDate();
+		LocalTime winterSolsticeSunset = sunset(winterSolsticeDate, location);
+		System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(winterSolsticeSunset) + " UTC");
+
+		winterSolsticeSunset = sunset(winterSolsticeDate, location);
+		decimalFormatter.applyPattern("0.######");
+		System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(winterSolsticeSunset) + " local");
 	}
 
 
-	private static LocalTime sunset(final LocalDateTime dateTime, final GNSSLocation location){
+	public static LocalTime sunset(final LocalDate dateTime){
+		return sunset(dateTime, null);
+	}
+
+	public static LocalTime sunset(final LocalDate dateTime, final GNSSLocation location){
 		//pag 109
 		final double ut = JulianDay.of(dateTime);
 		final double tt = JulianDay.centuryJ2000Of(ut);
@@ -79,18 +92,18 @@ public class Winter{
 
 		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
 		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
-		final double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
+		final double localMeanSiderealTime = (location != null? TimeHelper.localMeanSiderealTime(apparentSiderealTime, location): apparentSiderealTime);
 		final double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, equatorialCoord.getRightAscension());
 
 		return null;
 	}/**/
 
 
-	private static LocalDateTime winterSolstice(final int year){
+	public static LocalDateTime winterSolstice(final int year){
 		return winterSolstice(year, null);
 	}
 
-	private static LocalDateTime winterSolstice(final int year, final GNSSLocation location){
+	public static LocalDateTime winterSolstice(final int year, final GNSSLocation location){
 		//calculate the approximate date
 		double winterSolsticeTDB = winterSolsticeTDB(year);
 		double tt = JulianDay.centuryJ2000Of(winterSolsticeTDB);
