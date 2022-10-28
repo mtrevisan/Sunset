@@ -75,7 +75,7 @@ class SunPositionTest{
 	void sunTopocentricPosition(){
 		double jd = JulianDay.of(1957, 10, 4)
 			+ JulianDay.timeOf(LocalTime.of(19, 29));
-		GNSSLocation location = GNSSLocation.create(45.65, 12.18, 23.);
+		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179, 23.);
 		AtmosphericModel atmosphericModel = AtmosphericModel.create(1017., 18.);
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);

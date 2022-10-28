@@ -223,7 +223,7 @@ public final class TimeHelper{
 	 * @return	The apparent local Sidereal time at Greenwich [rad].
 	 */
 	public static double localMeanSiderealTime(final double meanSiderealTime, final GNSSLocation location){
-		return meanSiderealTime + location.getLongitude();
+		return meanSiderealTime + Math.toRadians(location.getLongitude());
 	}
 
 	/**

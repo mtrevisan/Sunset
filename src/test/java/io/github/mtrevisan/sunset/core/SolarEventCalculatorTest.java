@@ -114,7 +114,7 @@ class SolarEventCalculatorTest{
 
 //	@Test
 //	void astronomicalSunset() throws SolarEventException{
-//		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
+//		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179);
 //		SolarEventCalculator calc = SolarEventCalculator.create(location);
 //
 //		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.ASTRONOMICAL);
@@ -124,7 +124,7 @@ class SolarEventCalculatorTest{
 
 //	@Test
 //	void civilSunset() throws SolarEventException{
-//		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
+//		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179);
 //		SolarEventCalculator calc = SolarEventCalculator.create(location);
 //
 //		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.CIVIL);
@@ -134,7 +134,7 @@ class SolarEventCalculatorTest{
 
 //	@Test
 //	void officialSunset() throws SolarEventException{
-//		GNSSLocation location = GNSSLocation.create(45.65, 12.19);
+//		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179);
 //		SolarEventCalculator calc = SolarEventCalculator.create(location);
 //
 //		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.OFFICIAL);

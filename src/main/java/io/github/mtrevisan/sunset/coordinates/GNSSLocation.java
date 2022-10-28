@@ -26,15 +26,17 @@ package io.github.mtrevisan.sunset.coordinates;
 
 import io.github.mtrevisan.sunset.StringHelper;
 
+import java.text.DecimalFormat;
+
 
 /**
  * Describes a geographical position.
  */
 public final class GNSSLocation{
 
-	//[rad]
+	//[deg]
 	private final double latitude;
-	//[rad]
+	//[deg]
 	private final double longitude;
 	//[m]
 	private final double altitude;
@@ -43,8 +45,8 @@ public final class GNSSLocation{
 	/**
 	 * Creates a new instance with the given parameters.
 	 *
-	 * @param latitude	The latitude of this location [rad]. North latitude is positive, south negative.
-	 * @param longitude	The longitude of this location [rad]. East longitude is positive, west negative.
+	 * @param latitude	The latitude of this location [deg]. North latitude is positive, south negative.
+	 * @param longitude	The longitude of this location [deg]. East longitude is positive, west negative.
 	 * @return	An instance.
 	 */
 	public static GNSSLocation create(final double latitude, final double longitude){
@@ -76,8 +78,8 @@ public final class GNSSLocation{
 		if(altitude < 0. || altitude >= 11_000.)
 			throw new IllegalArgumentException("Meters out of range 0 <= altitude < +11000: " + altitude);
 
-		this.latitude = StrictMath.toRadians(latitude);
-		this.longitude = StrictMath.toRadians(longitude);
+		this.latitude = latitude;
+		this.longitude = longitude;
 		this.altitude = altitude;
 	}
 
@@ -85,7 +87,7 @@ public final class GNSSLocation{
 	/**
 	 * The latitude of the location.
 	 *
-	 * @return	The latitude [rad].
+	 * @return	The latitude [deg].
 	 */
 	public double getLatitude(){
 		return latitude;
@@ -94,7 +96,7 @@ public final class GNSSLocation{
 	/**
 	 * The longitude of the location.
 	 *
-	 * @return	The longitude [rad].
+	 * @return	The longitude [deg].
 	 */
 	public double getLongitude(){
 		return longitude;
@@ -112,8 +114,8 @@ public final class GNSSLocation{
 	@Override
 	public String toString(){
 		return "Location{"
-			+ "lat: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(latitude), 2)
-			+ ", lon: "  + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(longitude), 2)
+			+ "lat: " + StringHelper.degreeToDegMinSecString(latitude, 2)
+			+ ", lon: "  + StringHelper.degreeToDegMinSecString(longitude, 2)
 			+ ", alt: "  + altitude + " m"
 			+ '}';
 	}

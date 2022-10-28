@@ -34,26 +34,23 @@ public class Winter{
 	//https://gml.noaa.gov/grad/solcalc/calcdetails.html
 	public static void main(final String[] args){
 		final int year = 2022;
-		final double longitude = 12.19415;
+		final GNSSLocation location = GNSSLocation.create(45.714920, 12.194179, 100.);
 
 		final DecimalFormat decimalFormatter = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 
 		LocalDateTime winterSolsticeDateTime = winterSolstice(year);
 		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolsticeDateTime) + " UTC");
 
-		winterSolsticeDateTime = winterSolstice(year, longitude);
+		winterSolsticeDateTime = winterSolstice(year, location);
 		decimalFormatter.applyPattern("0.######");
-		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolsticeDateTime)
-			+ " @ " + decimalFormatter.format(longitude) + "°" + (longitude > 0.? " E": (longitude < 0.? " W": "")));
+		System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolsticeDateTime) + " local");
 
-		sunset(winterSolsticeDateTime);
+		sunset(winterSolsticeDateTime, location);
 	}
 
 
-	private static LocalTime sunset(final LocalDateTime dateTime){
+	private static LocalTime sunset(final LocalDateTime dateTime, final GNSSLocation location){
 		//pag 109
-		final GNSSLocation location = GNSSLocation.create(45.65, 12.19, 100.);
-
 		final double ut = JulianDay.of(dateTime);
 		final double tt = JulianDay.centuryJ2000Of(ut);
 
@@ -90,10 +87,10 @@ public class Winter{
 
 
 	private static LocalDateTime winterSolstice(final int year){
-		return winterSolstice(year, Double.NaN);
+		return winterSolstice(year, null);
 	}
 
-	private static LocalDateTime winterSolstice(final int year, final double longitude){
+	private static LocalDateTime winterSolstice(final int year, final GNSSLocation location){
 		//calculate the approximate date
 		double winterSolsticeTDB = winterSolsticeTDB(year);
 		double tt = JulianDay.centuryJ2000Of(winterSolsticeTDB);
@@ -156,9 +153,9 @@ public class Winter{
 		final double winterSolsticeUT = TimeHelper.terrestrialTimeToUniversalTime(winterSolsticeTDT, deltaT);
 		LocalDateTime winterSolsticeDateTime = JulianDay.dateTimeOf(winterSolsticeUT);
 
-		if(!Double.isNaN(longitude)){
+		if(location != null){
 			//convert UT into local time
-			final double winterSolsticeLocalTime = winterSolsticeUT + longitude / (JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR);
+			final double winterSolsticeLocalTime = winterSolsticeUT + location.getLongitude() / (JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR);
 			winterSolsticeDateTime = JulianDay.dateTimeOf(winterSolsticeLocalTime);
 		}
 

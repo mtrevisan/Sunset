@@ -344,7 +344,7 @@ public class SolarEventCalculator{
 	//https://lweb.cfa.harvard.edu/~jzhao/times.html
 	//https://www.meteopiateda.it/busteggia/pages/astronomy/equisol.php
 	//https://www.researchgate.net/publication/262200491_Calcolo_analitico_della_posizione_del_sole_per_l%27allineamento_di_impianti_solari_ed_altre_applicazioni
-	//https://www.suncalc.org/#/45.7149,12.1941,17/2022.06.27/14:23/1/3
+	//https://www.suncalc.org/#/45.7149,12.194179,17/2022.06.27/14:23/1/3
 	public static void main(String[] args) throws SolarEventException{
 		meeus();
 		final GNSSLocation location = GNSSLocation.create(
