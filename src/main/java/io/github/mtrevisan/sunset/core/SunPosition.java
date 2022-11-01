@@ -94,9 +94,11 @@ public final class SunPosition{
 	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.850_363_06, 445_267.111_48, -0.001_914_17, 0.000_005_28};
 	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.962_981_39, 477_198.867_398_055_6, 0.008_697_22, 0.000_017_78};
 	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.271_910_28, 483_202.017_538_055_5, -0.003_682_50, 0.000_003_06};
-	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.044_522_22, -1934.1362608, 0.002070833, 1. / 450000.};
+//	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.044_522_22, -1934.1362608, 0.002070833, 1. / 450000.};
+	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.04, -1934.136};
 	//https://www.aanda.org/articles/aa/pdf/2003/48/aa4068.pdf
-	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.406, -4683.6769, -1.831, 2003.40, -57.6};
+	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
+		27.87, 5.79, 2.45};
 
 
 	private SunPosition(){}
@@ -384,7 +386,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date.
+	 * Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date, ☊.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	Longitude of the ascending node of the Moon's mean orbit on the ecliptic [rad].
