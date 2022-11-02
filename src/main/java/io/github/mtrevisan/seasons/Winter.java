@@ -152,65 +152,70 @@ public class Winter{
 	public static LocalDateTime winterSolstice(final int year, final GeographicLocation location){
 		//calculate the approximate date
 		double winterSolsticeTDB = winterSolsticeTDB(year);
-		double tt = JulianDay.centuryJ2000Of(winterSolsticeTDB);
+//winterSolsticeTDB = 2437837.38589;
+winterSolsticeTDB = 2448908.5;
+		double jce = JulianDay.centuryJ2000Of(winterSolsticeTDB);
+		double jme = jce / 10.;
 
 		//improve precision:
 		double correction;
 		do{
 			//Sun's geometric mean longitude (referred to the mean equinox of the date), L0
-			final double meanLongitude = sunGeocentricMeanLongitude(tt);
+			final double meanLongitude = sunGeocentricMeanLongitude(jce);
 			//FIXME WRONG
-//			final double sunMeanLongitude2 = SunPosition.geocentricMeanLongitude(tt);
+//			final double sunMeanLongitude2 = SunPosition.geocentricMeanLongitude(jme);
 			//Sun's mean anomaly, M
-			final double meanAnomaly = sunGeocentricMeanAnomaly(tt);
+			final double meanAnomaly = sunGeocentricMeanAnomaly(jce);
 			//eccentricity of the Earth's orbit, e
-			final double eccentricity = SunPosition.earthOrbitEccentricity(tt);
+			final double eccentricity = SunPosition.earthOrbitEccentricity(jce);
 			//Sun's equation of center, C
-			final double equationOfCenter = SunPosition.equationOfCenter(meanAnomaly, tt);
-			//Sun's true geometric longitude, Ltrue
-			double trueLongitude = MathHelper.mod2pi(meanLongitude + equationOfCenter);
+			final double equationOfCenter = SunPosition.equationOfCenter(meanAnomaly, jce);
+			//Sun's true geometric longitude, ☉ = Ltrue
+			final double trueLongitude = MathHelper.mod2pi(meanLongitude + equationOfCenter);
 			//Sun's true geometric anomaly, ν
 			final double trueAnomaly = MathHelper.mod2pi(meanAnomaly + equationOfCenter);
 			//Sun's radius vector, r
-			final double earthRadiusVector = earthRadiusVector(eccentricity, trueAnomaly);
-			//FIXME WRONG
-//			final double earthRadiusVector2 = SunPosition.radiusVector(tt);
+			final double earthRadiusVector = SunPosition.radiusVector(jme);
 
-			//[arcsec]
-//			final double aberration = ABERRATION_CONSTANT * 1.000_001_018 * (1. - eccentricity * eccentricity);
-//			trueLongitude -= Math.toRadians(
-//				//reduction to the FK5 system
-//				(0.09033
-//				//correction for aberration
-//				+ aberration / earthRadiusVector) / 3600.);
-			final double moonAscendingLongitude = SunPosition.ascendingLongitudeMoon(tt);
-			//Sun's apparent longitude, referred to the true equinox of the date, Lapp
-			double apparentLongitude = sunGeocentricApparentLongitude(trueLongitude, moonAscendingLongitude);
-
-			final double meanLongitudeMoon = moonGeocentricMeanLongitude(tt);
+			//longitude of the ascending node of the Moon's mean orbit on the ecliptic, ☊
+			final double moonAscendingLongitude = SunPosition.ascendingLongitudeMoon(jce);
+			final double meanLongitudeMoon = moonGeocentricMeanLongitude(jce);
 			final double[] nutationCorrection = {Math.toRadians((
-				(-17.1996 - 0.01742 * tt) * StrictMath.sin(moonAscendingLongitude)
-				+ (-1.3187 - 0.000_16 * tt) * StrictMath.sin(2. * meanLongitude)
-				+ (-0.2274 - 0.000_02 * tt) * StrictMath.sin(2. * meanLongitudeMoon)
-				+ (0.2062 + 0.000_02 * tt) * StrictMath.sin(2. * moonAscendingLongitude)
-				+ (0.1426 - 0.000_34 * tt) * StrictMath.sin(meanAnomaly)
+				(-17.1996 - 0.01742 * jce) * StrictMath.sin(moonAscendingLongitude)
+					+ (-1.3187 - 0.000_16 * jce) * StrictMath.sin(2. * meanLongitude)
+					+ (-0.2274 - 0.000_02 * jce) * StrictMath.sin(2. * meanLongitudeMoon)
+					+ (0.2062 + 0.000_02 * jce) * StrictMath.sin(2. * moonAscendingLongitude)
+					+ (0.1426 - 0.000_34 * jce) * StrictMath.sin(meanAnomaly)
 			) / 3600.), 0.};
 			//final double[] nutationCorrection = SunPosition.nutationCorrection(tt);
-			//correction for nutation in longitude
-//			apparentLongitude -= nutationCorrection[0];
 
-			final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+			final double aberration = Math.toRadians(ABERRATION_CONSTANT * 1.000_001_018 * (1. - eccentricity * eccentricity) / 3600.);
+			//Sun's apparent longitude, referred to the true equinox of the date, λ = Lapp
+			double apparentLongitude = sunGeocentricApparentLongitude(trueLongitude, moonAscendingLongitude);
+			apparentLongitude = MathHelper.mod2pi(apparentLongitude
+				//correction for nutation in longitude, ∆ψ
+				- nutationCorrection[0]
+				//reduction to the FK5 system
+				- Math.toRadians(0.09033 / 3600.)
+				//correction for aberration
+				- aberration / earthRadiusVector);
+
+			//mean obliquity of the ecliptic, ɛ0
+			final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
+			//mean obliquity of the ecliptic, ɛ = ɛ0 + Δɛ
+			final double trueEclipticObliquity = meanEclipticObliquity + nutationCorrection[1];
 
 			//[day]
-			correction = 58. * StrictMath.sin(1.5 * Math.PI - apparentLongitude);
+//			correction = 58. * StrictMath.sin(1.5 * Math.PI - apparentLongitude);
+correction = 58. * StrictMath.sin(0.5 * Math.PI - apparentLongitude);
 
 			winterSolsticeTDB += correction;
-			tt = JulianDay.centuryJ2000Of(winterSolsticeTDB);
+			jce = JulianDay.centuryJ2000Of(winterSolsticeTDB);
 		}while(correction > TIME_PRECISION);
 
 		//TDB ~ TDT (the difference is at most 0.0017 s)
 		//https://gssc.esa.int/navipedia/index.php/Transformations_between_Time_Systems#TAI_-_TDT.2C_TCG.2C_TT
-		final double g = Math.toRadians(357.528 + 35999.05 * tt);
+		final double g = Math.toRadians(357.528 + 35999.05 * jce);
 		final double winterSolsticeTDT = winterSolsticeTDB
 			- 0.001658 * StrictMath.sin(g + 0.0167 * StrictMath.sin(g)) / JulianDay.SECONDS_IN_DAY;
 
@@ -252,7 +257,7 @@ public class Winter{
 	}
 
 	/**
-	 * Calculate the geocentric apparent longitude of the Sun, referred to the true equinox of the date.
+	 * Calculate the geocentric apparent longitude of the Sun, referred to the true equinox of the date, λ.
 	 *
 	 * @param geocentricTrueLongitude	Suns geocentric true longitude [rad].
 	 * @param ascendingLongitudeMoon	Longitude of the ascending node of the Moon's mean orbit on the ecliptic [rad].
