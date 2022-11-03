@@ -116,11 +116,11 @@ public final class SunPosition{
 	public static EclipticCoordinate sunEclipticPosition(final double jd){
 		final double jme = JulianDay.millenniumJ2000Of(jd);
 
-		final double geocentricMeanLatitude = geocentricMeanLatitude(jme);
-		final double geocentricMeanLongitude = geocentricMeanLongitude(jme);
+		final double meanEclipticalLatitude = meanEclipticalLatitude(jme);
+		final double meanEclipticalLongitude = meanEclipticalLongitude(jme);
 		final double radiusVector = radiusVector(jme);
 final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI * jd / 365.254902 + 3.091159) + 1.000140;
-		return EclipticCoordinate.create(geocentricMeanLatitude, geocentricMeanLongitude, radiusVector);
+		return EclipticCoordinate.create(meanEclipticalLatitude, meanEclipticalLongitude, radiusVector);
 	}
 
 	/**
@@ -224,14 +224,14 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 
 
 	/**
-	 * Calculate the geocentric mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 * Calculate the ecliptical mean latitude of the Sun, referred to the mean equinox of the date, β.
 	 *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
-	 * @return	The geocentric mean latitude of the Sun [rad].
+	 * @return	The ecliptical mean latitude of the Sun [rad].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
-	private static double geocentricMeanLatitude(final double jme){
+	public static double meanEclipticalLatitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
@@ -249,14 +249,14 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the geocentric mean longitude of the Sun, referred to the mean equinox of the date, L.
+	 * Calculate the ecliptical mean longitude of the Sun, referred to the mean equinox of the date, L.
 	 *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
-	 * @return	The geocentric mean longitude of the Sun [rad].
+	 * @return	The ecliptical mean longitude of the Sun [rad].
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
-	public static double geocentricMeanLongitude(final double jme){
+	public static double meanEclipticalLongitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
 			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);

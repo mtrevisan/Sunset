@@ -153,7 +153,7 @@ public class Winter{
 		//calculate the approximate date
 		double winterSolsticeTDB = winterSolsticeTDB(year);
 //winterSolsticeTDB = 2437837.38589;
-winterSolsticeTDB = 2448908.5;
+//winterSolsticeTDB = 2448908.5;
 		double jce = JulianDay.centuryJ2000Of(winterSolsticeTDB);
 		double jme = jce / 10.;
 
@@ -162,8 +162,7 @@ winterSolsticeTDB = 2448908.5;
 		do{
 			//Sun's geometric mean longitude (referred to the mean equinox of the date), L0
 			final double meanLongitude = sunGeocentricMeanLongitude(jce);
-			//FIXME WRONG
-//			final double sunMeanLongitude2 = SunPosition.geocentricMeanLongitude(jme);
+			//etc etc...
 			//Sun's mean anomaly, M
 			final double meanAnomaly = sunGeocentricMeanAnomaly(jce);
 			//eccentricity of the Earth's orbit, e
@@ -191,8 +190,8 @@ winterSolsticeTDB = 2448908.5;
 
 			final double aberration = Math.toRadians(ABERRATION_CONSTANT * 1.000_001_018 * (1. - eccentricity * eccentricity) / 3600.);
 			//Sun's apparent longitude, referred to the true equinox of the date, λ = Lapp
-			double apparentLongitude = sunGeocentricApparentLongitude(trueLongitude, moonAscendingLongitude);
-			apparentLongitude = MathHelper.mod2pi(apparentLongitude
+			final double apparentLongitude = MathHelper.mod2pi(
+				sunGeocentricApparentLongitude(trueLongitude, moonAscendingLongitude)
 				//correction for nutation in longitude, ∆ψ
 				- nutationCorrection[0]
 				//reduction to the FK5 system
