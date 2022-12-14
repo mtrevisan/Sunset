@@ -410,7 +410,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param earthRadiusVector	Earth radius vector [AU].
 	 * @return	The correction for aberration [rad].
 	 */
-	static double aberrationCorrection(final double earthRadiusVector){
+	public static double aberrationCorrection(final double earthRadiusVector){
 		return StrictMath.toRadians(
 			-20.4898 / (JulianDay.SECONDS_IN_HOUR * earthRadiusVector)
 		);
@@ -424,7 +424,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param deltaAberration	Aberration [rad].
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
-	static double apparentGeocentricLongitude(final double geocentricMeanLongitude, final double deltaPsi, final double deltaAberration){
+	public static double apparentGeocentricLongitude(final double geocentricMeanLongitude, final double deltaPsi, final double deltaAberration){
 		return geocentricMeanLongitude + deltaPsi + deltaAberration;
 	}
 

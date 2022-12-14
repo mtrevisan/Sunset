@@ -46,14 +46,14 @@ public final class JulianDay{
 	private static final int[] F = {428, 459, 122, 153, 183, 214, 244, 275, 306, 336, 367, 397};
 
 	/** Last day of the Julian calendar, that is October 4, 1582, after which 10 day were added [day]. */
-	private static final double JULIAN_CALENDAR_END = 2299160.;
+	private static final double JULIAN_CALENDAR_END = 2_299_160.;
 	private static final int GREGOR_XIII_REFORM_YEAR = 1582;
 
-	public static final double MJD = 2400000.5;
+	public static final double MJD = 2_400_000.5;
 	/** 1.5 Jan 2000 UT - Julian epoch. */
-	private static final double J2000 = 2451545.;
+	private static final double J2000 = 2_451_545.;
 
-	public static final double CIVIL_SAECULUM = 36525.;
+	public static final double CIVIL_SAECULUM = 36_525.;
 	public static final double CIVIL_MILLENNIUM = CIVIL_SAECULUM * 10.;
 	//[°/h]
 	public static final double DEGREES_PER_HOUR = 15.;
