@@ -27,7 +27,6 @@ package io.github.mtrevisan.seasons;
 import io.github.mtrevisan.sunset.JulianDay;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.TimeHelper;
-import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.core.SunPosition;
 
 import java.time.LocalDateTime;
@@ -107,16 +106,21 @@ System.out.println(dateTime);
 			final double meanEclipticalLongitude = SunPosition.meanEclipticalLongitude(jme);
 			//calculate the distance between the center of the Sun and the center of the Earth, R
 			final double radiusVector = SunPosition.radiusVector(jme);
+
 			//calculate corrections of nutation in longitude, ∆ψ
 			final double tt = JulianDay.centuryJ2000Of(utc);
 			final double[] nutation = SunPosition.nutationCorrection(tt);
+
 			//calculate the correction for aberration, ∆τ
 			final double aberration = SunPosition.aberrationCorrection(radiusVector);
-			final double correctionFK5 = Math.toRadians(-0.09033 / 3600.);
+
+			final double correctionFK5 = Math.toRadians(-0.090_33 / 3600.);
+
 			//calculate the apparent longitude of the Sun, Lapp = λ
-			final double apparentGeocentricLongitude = SunPosition.apparentGeocentricLongitude(
-				meanEclipticalLongitude - Math.PI, nutation[0], aberration) + correctionFK5;
-			final double deltaJDE = 58. * StrictMath.sin(Math.PI / 2. - apparentGeocentricLongitude);
+			final double apparentGeocentricLongitude = SunPosition.apparentGeocentricLongitude(meanEclipticalLongitude, nutation[0],
+				aberration) + correctionFK5;
+
+			final double deltaJDE = 58. * StrictMath.sin(3. * Math.PI / 2. - apparentGeocentricLongitude);
 			utc += deltaJDE;
 
 			if(Math.abs(deltaJDE) * JulianDay.SECONDS_IN_DAY < 42.)
@@ -126,18 +130,13 @@ System.out.println(utc);
 
 		final LocalDateTime dateTime2 = JulianDay.dateTimeOf(utc);
 System.out.println(dateTime2);
-
-		//Sun's apparent longitude for the date (2437837.38589)
-		//L=-234.048 rad=270.003272°
-		//R=1.0163018
-		//nutation in longitude dpsi=-12.965", chap 22
-		//formula 27.1: jde+=58*sin(90° - lambda)=0.00603
+System.out.println("2022-12-21T21:49:22");
 
 		//TODO https://www.agopax.it/Libri_astronomia/pdf/Astronomical%20Algorithms.pdf, chap 25
 	}
 
 	/**
-	 * Instant of the "mean" solstice for the years [1000, 3000].
+	 * Instant of the "mean" solstice for the years [-1000, 3000].
 	 *
 	 * @return	JD of Winter Solstice in Julian Ephemeris Days (hence, in Dynamical Time).
 	 */

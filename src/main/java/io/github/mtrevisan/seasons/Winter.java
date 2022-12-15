@@ -195,7 +195,7 @@ public class Winter{
 				//correction for nutation in longitude, ∆ψ
 				- nutationCorrection[0]
 				//reduction to the FK5 system
-				- Math.toRadians(0.09033 / 3600.)
+				- Math.toRadians(0.090_33 / 3600.)
 				//correction for aberration
 				- aberration / earthRadiusVector);
 

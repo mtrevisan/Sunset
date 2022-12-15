@@ -100,6 +100,8 @@ public final class SunPosition{
 	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
 		27.87, 5.79, 2.45};
 
+	private static final double ABERRATION_CONSTANT = 20.49552;
+
 
 	private SunPosition(){}
 
@@ -345,11 +347,10 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 			deltaPsi += (element[x.length] + element[x.length + 1] * tt) * StrictMath.sin(parameter);
 			deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * tt) * StrictMath.cos(parameter);
 		}
-		//[°]
-		deltaPsi /= JulianDay.SECONDS_IN_HOUR * 10_000.;
-		//[°]
-		deltaEpsilon /= JulianDay.SECONDS_IN_HOUR * 10_000.;
-		return new double[]{StrictMath.toRadians(deltaPsi), StrictMath.toRadians(deltaEpsilon)};
+		return new double[]{
+			StrictMath.toRadians(deltaPsi / (JulianDay.SECONDS_IN_HOUR * 10_000.)),
+			StrictMath.toRadians(deltaEpsilon / (JulianDay.SECONDS_IN_HOUR * 10_000.))
+		};
 	}
 
 	//mean elongation of the Moon from the Sun [rad]
@@ -405,14 +406,23 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the correction for aberration (∆τ).
+	 * Calculate the correction for aberration, the annual aberration (∆τ).
+	 * <p>
+	 * As the Earth revolves around the Sun, it is moving at a velocity of approximately 29.78 km/s. The speed of light is approximately
+	 * 300,000 km/s. In the special case where the Earth is moving perpendicularly to the direction of the star, the angle of displacement,
+	 * would therefore be (in radians) the ratio of the two velocities, i.e. vₑ = 2 ⋅ π ⋅ 1 AU / (365.25 ⋅ d) = 29.75, and vₑ / c = 0.00009935
+	 * rad, or about 20.5 arcseconds.
+	 * <br/>
+	 * This quantity is known as the constant of aberration, and is conventionally represented by κ. Its precise accepted value is 20".49552
+	 * (at J2000).
+	 * </p>
 	 *
 	 * @param earthRadiusVector	Earth radius vector [AU].
 	 * @return	The correction for aberration [rad].
 	 */
 	public static double aberrationCorrection(final double earthRadiusVector){
 		return StrictMath.toRadians(
-			-20.4898 / (JulianDay.SECONDS_IN_HOUR * earthRadiusVector)
+			-ABERRATION_CONSTANT / (JulianDay.SECONDS_IN_HOUR * earthRadiusVector)
 		);
 	}
 
