@@ -86,6 +86,7 @@ public final class SunPosition{
 	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_1267};
 
+	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS = {280.466_46, 36_000.769_83, +0.000_303_2};
 	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.527_723_33, 35_999.050_34, -0.000_160_28, -0.000_003_33};
 	private static final double[] SUN_EQUATION_OF_CENTER_1 = {1.914_602, -0.004_817, -0.000_014};
 	private static final double[] SUN_EQUATION_OF_CENTER_2 = {0.019_993, -0.000_101};
@@ -357,6 +358,18 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	private static double meanElongationMoonSun(final double tt){
 		return MathHelper.mod2pi(StrictMath.toRadians(
 			MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS)
+		));
+	}
+
+	/**
+	 * Calculate the geocentric mean longitude of the Sun, L0.
+	 *
+	 * @param tdb	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geocentric mean longitude of the Sun [rad].
+	 */
+	public static double geocentricMeanLongitude(final double tdb){
+		return MathHelper.mod2pi(StrictMath.toRadians(
+			MathHelper.eval(tdb, SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS)
 		));
 	}
 

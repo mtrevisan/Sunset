@@ -20,8 +20,6 @@ import java.util.Locale;
 
 public class Winter{
 
-	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE = {280.46646, 36_000.769_83, 0.000_3032};
-	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.52911, 35_999.050_29, -0.000_1537};
 	private static final double[] MOON_GEOCENTRIC_MEAN_LONGITUDE = {218.3165, 481_267.8813};
 
 	private static final double[] EARTH_WINTER_SOLSTICE = {2451900.05952, 365242.74049, 0.06223, -0.00823, 0.00032};
@@ -65,17 +63,16 @@ public class Winter{
 		return sunset(dateTime, null);
 	}
 
+	//https://github.com/buelowp/sunset/blob/master/src/sunset.cpp
 	public static LocalTime sunset(final LocalDate dateTime, final GeographicLocation location){
 		//pag 109
 		final double ut = JulianDay.of(dateTime);
 		final double tt = JulianDay.centuryJ2000Of(ut);
 
 		//Sun's geometric mean longitude (referred to the mean equinox of the date)
-		final double sunMeanLongitude = sunGeocentricMeanLongitude(tt);
-		//FIXME WRONG
-//			final double sunMeanLongitude2 = SunPosition.geocentricMeanLongitude(tt);
+		final double sunMeanLongitude = SunPosition.geocentricMeanLongitude(tt);
 		//Sun's mean anomaly
-		final double sunMeanAnomaly = sunGeocentricMeanAnomaly(tt);
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(tt);
 		//eccentricity of the Earth's orbit
 		final double eccentricity = SunPosition.earthOrbitEccentricity(tt);
 		//Sun's equation of center
@@ -119,10 +116,9 @@ public class Winter{
 
 
 		//Sun's geometric mean longitude (referred to the mean equinox of the date)
-		final double meanLongitudeSun = sunGeocentricMeanLongitude(tt);
-//		final double meanLongitudeSun2 = SunPosition.geocentricMeanLongitude(tt);
+		final double meanLongitudeSun = SunPosition.geocentricMeanLongitude(tt);
 		//Sun's mean anomaly
-		final double meanAnomaly = sunGeocentricMeanAnomaly(tt);
+		final double meanAnomaly = SunPosition.geocentricMeanAnomaly(tt);
 		//final double meanAnomaly = SunPosition.meanAnomalySun(tt);
 		//EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, ut);
 		final double omega = sunGeocentricApparentLongitude(0., 0.);
@@ -161,10 +157,10 @@ public class Winter{
 		double correction;
 		do{
 			//Sun's geometric mean longitude (referred to the mean equinox of the date), L0
-			final double meanLongitude = sunGeocentricMeanLongitude(jce);
+			final double meanLongitude = SunPosition.geocentricMeanLongitude(jce);
 			//etc etc...
 			//Sun's mean anomaly, M
-			final double meanAnomaly = sunGeocentricMeanAnomaly(jce);
+			final double meanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
 			//eccentricity of the Earth's orbit, e
 			final double eccentricity = SunPosition.earthOrbitEccentricity(jce);
 			//Sun's equation of center, C
@@ -231,28 +227,6 @@ correction = 58. * StrictMath.sin(0.5 * Math.PI - apparentLongitude);
 		}
 
 		return winterSolsticeDateTime;
-	}
-
-	/**
-	 * Calculate the geocentric mean longitude of the Sun, referred to the mean equinox of the date, L.
-	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geocentric mean longitude of the Sun [rad].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
-	 */
-	private static double sunGeocentricMeanLongitude(final double tt){
-		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, SUN_GEOCENTRIC_MEAN_LONGITUDE)));
-	}
-
-	/**
-	 * Calculate the geocentric mean anomaly of the Sun, M.
-	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	The geocentric mean anomaly of the Sun [rad].
-	 */
-	private static double sunGeocentricMeanAnomaly(final double tt){
-		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)));
 	}
 
 	/**
