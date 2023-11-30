@@ -111,13 +111,13 @@ public class SolarEventCalculator{
 		final double ut = JulianDay.of(date);
 		final double dt = TimeHelper.deltaT(date.getYear());
 		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, dt);
-		double tt = JulianDay.centuryJ2000Of(jd);
+		double jce = JulianDay.centuryJ2000Of(jd);
 
 //		//calculate geocentric mean ecliptic coordinate
 //		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 //		final EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
-//		final double[] nutation = SunPosition.nutationCorrection(tt);
-//		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+//		final double[] nutation = SunPosition.nutationCorrection(jce);
+//		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 //		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 //
 //		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
@@ -234,7 +234,7 @@ public class SolarEventCalculator{
 	}
 
 	private static double nutationAndAberrationCorrection(final double tt){
-		return 0.005_69 + 0.004_78 * StrictMath.sin(SunPosition.ascendingLongitudeMoon(tt));
+		return StrictMath.toRadians(0.005_69 + 0.004_78 * StrictMath.sin(SunPosition.ascendingLongitudeMoon(tt)));
 	}
 
 	//WORKS
@@ -247,8 +247,8 @@ public class SolarEventCalculator{
 
 		//calculate an initial guess
 		final double jde0 = MathHelper.eval((year - 2000) / 1000., new double[]{2451900.05952, 365242.74049, -0.06223, -0.00823, 0.00032});
-		final double t = JulianDay.centuryJ2000Of(jde0);
-		final double w = StrictMath.toRadians(35_999.373 * t - 2.47);
+		final double jce = JulianDay.centuryJ2000Of(jde0);
+		final double w = StrictMath.toRadians(35_999.373 * jce - 2.47);
 		final double deltaLambda = 1. + 0.033_4 * StrictMath.cos(w) + 0.000_7 * StrictMath.cos(2. * w);
 
 		final double[] a = {0.00485, 0.00203, 0.00199, 0.00182, 0.00156, 0.00136, 0.00077, 0.00074, 0.00070, 0.00058, 0.00052, 0.00050, 0.00045, 0.00044, 0.00029, 0.00018, 0.00017, 0.00016, 0.00014,
@@ -261,7 +261,7 @@ public class SolarEventCalculator{
 			31436.921, 14577.848, 31931.756, 34777.259, 1222.114, 16859.074};
 		double s = 0.;
 		for(int i = 0; i < a.length; i ++)
-			s += a[i] * StrictMath.cos(StrictMath.toRadians(b[i] + c[i] * t));
+			s += a[i] * StrictMath.cos(StrictMath.toRadians(b[i] + c[i] * jce));
 
 		final double tdt = jde0 + s / deltaLambda;
 
@@ -357,7 +357,7 @@ public class SolarEventCalculator{
 		//[s]
 		final double deltaT = deltaT(2022);
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, deltaT);
-		final double tt = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDay.centuryJ2000Of(jd);
 
 		final EclipticCoordinate eclipticCoordBefore = SunPosition.sunEclipticPosition(jd - 1.);
 		EquatorialCoordinate coordBefore = SunPosition.sunEquatorialPosition(eclipticCoordBefore, jd - 1.);
@@ -365,10 +365,11 @@ public class SolarEventCalculator{
 		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
 		final EclipticCoordinate eclipticCoordAfter = SunPosition.sunEclipticPosition(jd + 1.);
 		EquatorialCoordinate coordAfter = SunPosition.sunEquatorialPosition(eclipticCoordAfter, jd + 1.);
-		final double[] nutation = SunPosition.nutationCorrection(tt);
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
+		final double[] nutation = SunPosition.nutationCorrection(sunMeanAnomaly, jce);
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
-		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
@@ -488,14 +489,15 @@ Sunset hour angle	83.524274
 		final double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
-		final double tt = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDay.centuryJ2000Of(jd);
 
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
-		final double[] nutation = SunPosition.nutationCorrection(tt);
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
+		final double[] nutation = SunPosition.nutationCorrection(sunMeanAnomaly, jce);
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
-		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
@@ -629,6 +631,56 @@ Sunset hour angle	83.524274
 	}
 
 	/**
+	 * Calculate the Equation of Time.
+	 *
+	 * @param sunMeanLongitude	Geocentric mean longitude of the Sun, <code>L0</code>.
+	 * @param sunMeanAnomaly	Geocentric mean anomaly of the Sun, <code>M</code>.
+	 * @param apparentEclipticObliquity	Mean obliquity of the ecliptic, corrected for parallax, <code>ɛ'</code>.
+	 * @param earthEccentricity	Eccentricity of Earth's orbit, <code>e</code>.
+	 * @return	The Equation of Time [min].
+	 */
+	public static double equationOfTime(final double sunMeanLongitude, final double sunMeanAnomaly, final double apparentEclipticObliquity,
+			final double earthEccentricity){
+		double y = StrictMath.tan(apparentEclipticObliquity / 2.);
+		y *= y;
+		final double sin2L0 = StrictMath.sin(2. * sunMeanLongitude);
+		final double cos2L0 = StrictMath.cos(2. * sunMeanLongitude);
+		final double sin4L0 = StrictMath.sin(4. * sunMeanLongitude);
+		final double sinM = StrictMath.sin(sunMeanAnomaly);
+		final double sin2M = StrictMath.sin(2. * sunMeanAnomaly);
+		return 4. * StrictMath.toDegrees(y * sin2L0
+			- 2. * earthEccentricity * sinM
+			+ 4. * earthEccentricity * y * sinM * cos2L0
+			- 0.5 * y * y * sin4L0
+			- 1.25 * earthEccentricity * earthEccentricity * sin2M);
+	}
+
+	/**
+	 * Calculate the sunrise hour angle corrected for refraction.
+	 * The sunset hour angle is the negated value.
+	 *
+	 * @param observerLatitude	Latitude of the observer [deg].
+	 * @param sunApparentDeclination	The Sun's apparent declination [rad].
+	 * @return	The hour angle [rad].
+	 *
+	 * @see <a href="https://www.researchgate.net/publication/266204563_Calculation_of_the_shadow-penumbra_relation_and_its_application_on_efficient_architectural_design">Calculation of the shadow-penumbra relation and its application on efficient architectural design</a>
+	 */
+	public static double sunriseHourAngle(final double observerLatitude, final double sunApparentDeclination){
+		final double lat = StrictMath.toRadians(observerLatitude);
+		final double cosLat = StrictMath.cos(lat);
+		final double tanLat = StrictMath.tan(lat);
+		final double tanSunDeclination = StrictMath.tan(sunApparentDeclination);
+		//the solar zenith angle is the correction for:
+		// - atmospheric refraction at sunrise/sunset
+		// - the size of the solar disk
+		final double atmosphericRefraction = 34. / 60.;
+		final double solarDiskSize = 16. / 60.;
+		final double solarZenithAngle = 90. + atmosphericRefraction + solarDiskSize;
+		return StrictMath.acos((StrictMath.cos(StrictMath.toRadians(solarZenithAngle)))
+			/ (cosLat * cosLat) - tanLat * tanSunDeclination);
+	}
+
+	/**
 	 * Calculate Greenwich Mean Sidereal Time, ΘGMST.
 	 *
 	 * @param ut	Julian Day of Universal Time from J2000.0.
@@ -712,15 +764,16 @@ Sunset hour angle	83.524274
 		final double longitudeHour = getLongitudeHour(date, sunrise);
 
 		final double jd = JulianDay.of(date);
-		final double t = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDay.centuryJ2000Of(jd);
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
-		final double equationOfTime = equationOfTime(eclipticCoord, t);
+		final double equationOfTime = equationOfTime(eclipticCoord, jce);
 		final double geocentricMeanLongitude = eclipticCoord.getLongitude();
-		final double meanAnomaly = geocentricMeanAnomaly(t);
-		final double equationOfCenter = equationOfCenter(meanAnomaly, t);
+		final double meanAnomaly = geocentricMeanAnomaly(jce);
+		final double equationOfCenter = equationOfCenter(meanAnomaly, jce);
 		//Ltrue = L + C
 		final double trueGeocentricLongitude = MathHelper.mod2pi(geocentricMeanLongitude + equationOfCenter);
-		final double[] nutation = SunPosition.nutationCorrection(t);
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
+		final double[] nutation = SunPosition.nutationCorrection(sunMeanAnomaly, jce);
 		final double aberration = SunPosition.aberrationCorrection(eclipticCoord.getDistance());
 		final double apparentGeocentricLatitude = SunPosition.apparentGeocentricLongitude(geocentricMeanLongitude, nutation[0],
 			aberration);
@@ -732,8 +785,8 @@ Sunset hour angle	83.524274
 //		timeDiff = 4 * delta;
 //		timeUTC = 720 - timeDiff - eqTime; // in minutes
 
-		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(t);
-		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, t);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
+		final double apparentEclipticObliquity = apparentEclipticObliquity(meanEclipticObliquity, jce);
 		EquatorialCoordinate coord = EquatorialCoordinate.createFromEcliptical(apparentGeocentricLatitude, apparentGeocentricLongitude,
 			apparentEclipticObliquity);
 		final double apparentDeclination = coord.getDeclination();

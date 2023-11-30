@@ -84,9 +84,9 @@ public final class SunPosition{
 	static final double EARTH_FLATTENING = 1. / 298.25642;
 	//[m]
 	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
-	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_1267};
+	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_126_7};
 
-	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS = {280.466_46, 36_000.769_83, +0.000_303_2};
+	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS = {280.466_46, 36_000.769_83, 0.000_303_2};
 	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.527_723_33, 35_999.050_34, -0.000_160_28, -0.000_003_33};
 	private static final double[] SUN_EQUATION_OF_CENTER_1 = {1.914_602, -0.004_817, -0.000_014};
 	private static final double[] SUN_EQUATION_OF_CENTER_2 = {0.019_993, -0.000_101};
@@ -100,7 +100,9 @@ public final class SunPosition{
 	//https://www.aanda.org/articles/aa/pdf/2003/48/aa4068.pdf
 	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
 		27.87, 5.79, 2.45};
+	private static final double[] MOON_GEOCENTRIC_MEAN_LONGITUDE = {218.3165, 481_267.8813};
 
+	//at J2000
 	private static final double ABERRATION_CONSTANT = 20.49552;
 
 
@@ -136,10 +138,11 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
 	public static EquatorialCoordinate sunEquatorialPosition(final EclipticCoordinate eclipticCoord, final double jd){
-		final double tt = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDay.centuryJ2000Of(jd);
 
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
 		//calculate the nutation in longitude and obliquity
-		final double[] nutation = nutationCorrection(tt);
+		final double[] nutation = nutationCorrection(sunMeanAnomaly, jce);
 		//calculate the aberration correction
 		final double aberration = aberrationCorrection(eclipticCoord.getDistance());
 		//calculate the apparent Sun longitude: Ltrue = L + C
@@ -147,7 +150,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 
 		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
 		//and planets appear to move across the sky): ɛ0
-		final double meanEclipticObliquity = meanEclipticObliquity(tt);
+		final double meanEclipticObliquity = meanEclipticObliquity(jce);
 		//calculate the true obliquity of the ecliptic
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
@@ -164,15 +167,16 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @return	The Sun topocentric position.
 	 */
 	public static HorizontalCoordinate sunTopocentricPosition(final GeographicLocation location, final AtmosphericModel atmosphericModel,
-																				 final EclipticCoordinate eclipticCoord, final double jd){
+			final EclipticCoordinate eclipticCoord, final double jd){
 		final LocalDateTime date = JulianDay.dateTimeOf(jd);
 		final double dt = TimeHelper.deltaT(date.getYear());
 		final double ut = TimeHelper.terrestrialTimeToUniversalTime(jd, dt);
-		final double tt = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDay.centuryJ2000Of(jd);
 
 		final EquatorialCoordinate equatorialCoord = sunEquatorialPosition(eclipticCoord, jd);
-		final double[] nutation = nutationCorrection(tt);
-		final double meanEclipticObliquity = meanEclipticObliquity(tt);
+		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
+		final double[] nutation = nutationCorrection(sunMeanAnomaly, jce);
+		final double meanEclipticObliquity = meanEclipticObliquity(jce);
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
 		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
@@ -227,7 +231,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 
 
 	/**
-	 * Calculate the ecliptical mean latitude of the Sun, referred to the mean equinox of the date, β.
+	 * Calculate the ecliptical mean latitude of the Sun, referred to the mean equinox of the date, <code>β</code>.
 	 *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	The ecliptical mean latitude of the Sun [rad].
@@ -252,7 +256,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the ecliptical mean longitude of the Sun, referred to the mean equinox of the date, L.
+	 * Calculate the ecliptical mean longitude of the Sun, referred to the mean equinox of the date, <code>L</code>.
 	 *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
 	 * @return	The ecliptical mean longitude of the Sun [rad].
@@ -277,7 +281,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the distance between the center of the Sun and the center of the Earth, R.
+	 * Calculate the distance between the center of the Sun and the center of the Earth, <code>R</code>.
 	 * <p>U.S. Naval Observatory function.</p>
 	 *
 	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
@@ -298,7 +302,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the Sun's equation of center, C.
+	 * Calculate the Sun's equation of center, <code>C</code>.
 	 *
 	 * @param geocentricMeanAnomaly	The mean anomaly of the Sun [rad].
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
@@ -313,31 +317,100 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the eccentricity of Earth's orbit, e.
+	 * Calculate the Sun's true longitude, <code>☉ = Ltrue</code>.
+	 *
+	 * @param meanLongitude	The geocentric mean longitude of the Sun [rad].
+	 * @param equationOfCenter	The Sun's equation of center [rad].
+	 * @return	The Sun's true longitude [rad].
+	 */
+	public static double trueLongitude(final double meanLongitude, final double equationOfCenter){
+		return MathHelper.mod2pi(meanLongitude + equationOfCenter);
+	}
+
+	/**
+	 * Calculate the Sun's true anomaly, <code>v</code>.
+	 *
+	 * @param meanAnomaly	The geocentric mean longitude of the Sun [rad].
+	 * @param equationOfCenter	The Sun's equation of center [rad].
+	 * @return	The Sun's true anomaly [rad].
+	 */
+	public static double trueAnomaly(final double meanAnomaly, final double equationOfCenter){
+		return MathHelper.mod2pi(meanAnomaly + equationOfCenter);
+	}
+
+	/**
+	 * Calculate the geocentric apparent longitude of the Sun, referred to the true equinox of the date, <code>λ = Lapp</code>.
+	 *
+	 * @param geocentricTrueLongitude	Suns geocentric true longitude [rad].
+	 * @param ascendingLongitudeMoon	Longitude of the ascending node of the Moon's mean orbit on the ecliptic [rad].
+	 * @param sunMeanAnomaly	The geocentric mean anomaly of the Sun [rad].
+	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The apparent true longitude of the Sun [rad].
+	 */
+	public static double apparentLongitude(final double geocentricTrueLongitude, final double ascendingLongitudeMoon, final double sunMeanAnomaly, final double jce){
+		final double nutationCorrection = nutationAndAberrationCorrection(ascendingLongitudeMoon, sunMeanAnomaly, jce);
+		return geocentricTrueLongitude - nutationCorrection;
+	}
+
+	/**
+	 * Calculate the Sun's apparent declination.
+	 *
+	 * @param meanEclipticObliquity	Mean obliquity of the ecliptic [rad].
+	 * @param apparentLongitude	The Sun's apparent longitude [rad].
+	 * @return	The Sun's apparent declination [rad].
+	 */
+	public static double apparentDeclination(final double meanEclipticObliquity, final double apparentLongitude){
+		return StrictMath.asin(StrictMath.sin(meanEclipticObliquity) * StrictMath.sin(apparentLongitude));
+	}
+
+	private static double nutationAndAberrationCorrection(final double moonAscendingLongitude, final double sunMeanAnomaly, final double jce){
+		final double deltaPsi = Math.toDegrees(nutationCorrection(sunMeanAnomaly, jce)[0]);
+
+		//Sun's radius vector, r [AU]
+		final double earthRadiusVector = SunPosition.radiusVector(jce / 10.);
+		//[deg]
+		final double aberration = 20.4898 / (earthRadiusVector * JulianDay.SECONDS_IN_HOUR);
+
+		return StrictMath.toRadians(aberration + deltaPsi * StrictMath.sin(moonAscendingLongitude));
+	}
+
+	/**
+	 * Calculate the geocentric mean longitude of the Moon, referred to the mean equinox of the date, <code>L'</code>.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	The geocentric mean longitude of the Moon [rad].
+	 */
+	private static double moonGeocentricMeanLongitude(final double tt){
+		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, MOON_GEOCENTRIC_MEAN_LONGITUDE)));
+	}
+
+	/**
+	 * Calculate the eccentricity of Earth's orbit, <code>e</code>.
+	 *
+	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The eccentricity of Earth's orbit.
 	 */
-	public static double earthOrbitEccentricity(final double tt){
-		return MathHelper.eval(tt, EARTH_ORBIT_ECCENTRICITY);
+	public static double earthOrbitEccentricity(final double jce){
+		return MathHelper.eval(jce, EARTH_ORBIT_ECCENTRICITY);
 	}
 
 
 	/**
-	 * Calculate corrections of nutation in longitude (∆ψ) and obliquity (∆ε).
+	 * Calculate corrections of nutation in longitude (<code>∆ψ</code>) and obliquity (<code>∆ε</code>).
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	An array where the first element is ∆ψ [rad], and the second ∆ε [rad].
+	 * @param sunMeanAnomaly	The geocentric mean anomaly of the Sun [rad].
+	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	An array where the first element is <code>∆ψ</code> [rad], and the second <code>∆ε</code> [rad].
 	 *
 	 * http://physics.uwyo.edu/~wiro/planet/nutate.c
 	 * https://iopscience.iop.org/article/10.1086/375641/pdf
 	 */
-	public static double[] nutationCorrection(final double tt){
-		final double d = meanElongationMoonSun(tt);
-		final double m = geocentricMeanAnomaly(tt);
-		final double mp = meanAnomalyMoon(tt);
-		final double f = argumentLatitudeMoon(tt);
-		final double omega = ascendingLongitudeMoon(tt);
+	public static double[] nutationCorrection(final double sunMeanAnomaly, final double jce){
+		final double d = meanElongationMoonSun(jce);
+		final double m = sunMeanAnomaly;
+		final double mp = meanAnomalyMoon(jce);
+		final double f = argumentLatitudeMoon(jce);
+		final double omega = ascendingLongitudeMoon(jce);
 
 		final Collection<Double[]> elements = NUTATION_DATA.get("coeffs");
 		final double[] x = {d, m, mp, f, omega};
@@ -345,8 +418,8 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		double deltaEpsilon = 0.;
 		for(final Double[] element : elements){
 			final double parameter = xyTermSummation(x, element);
-			deltaPsi += (element[x.length] + element[x.length + 1] * tt) * StrictMath.sin(parameter);
-			deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * tt) * StrictMath.cos(parameter);
+			deltaPsi += (element[x.length] + element[x.length + 1] * jce) * StrictMath.sin(parameter);
+			deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * jce) * StrictMath.cos(parameter);
 		}
 		return new double[]{
 			StrictMath.toRadians(deltaPsi / (JulianDay.SECONDS_IN_HOUR * 10_000.)),
@@ -362,7 +435,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the geocentric mean longitude of the Sun, L0.
+	 * Calculate the geocentric mean longitude of the Sun, <code>L0</code>.
 	 *
 	 * @param tdb	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The geocentric mean longitude of the Sun [rad].
@@ -374,7 +447,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the geocentric mean anomaly of the Sun, M.
+	 * Calculate the geocentric mean anomaly of the Sun, <code>M</code>.
 	 *
 	 * @param tdb	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The geocentric mean anomaly of the Sun [rad].
@@ -400,7 +473,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date, ☊.
+	 * Longitude of the ascending node of the Moon's mean orbit on the ecliptic measured from the mean equinox of the date, <code>☊</code>.
 	 *
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	Longitude of the ascending node of the Moon's mean orbit on the ecliptic [rad].
@@ -419,7 +492,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the correction for aberration, the annual aberration (∆τ).
+	 * Calculate the correction for aberration, the annual aberration (<code>∆τ</code>).
 	 * <p>
 	 * As the Earth revolves around the Sun, it is moving at a velocity of approximately 29.78 km/s. The speed of light is approximately
 	 * 300,000 km/s. In the special case where the Earth is moving perpendicularly to the direction of the star, the angle of displacement,
@@ -440,7 +513,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the apparent longitude of the Sun, Lapp = λ.
+	 * Calculate the apparent longitude of the Sun, <code>Lapp = λ</code>.
 	 *
 	 * @param geocentricMeanLongitude	Sun's true geocentric longitude [rad].
 	 * @param deltaPsi	Nutation in longitude [rad].
@@ -452,31 +525,31 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	}
 
 	/**
-	 * Calculate the mean obliquity of the ecliptic, ɛ0.
+	 * Calculate the mean obliquity of the ecliptic, <code>ɛ0</code>.
 	 *
-	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
+	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
-	public static double meanEclipticObliquity(final double tt){
-		final double u = tt / 100.;
+	public static double meanEclipticObliquity(final double jce){
+		final double jme = jce / 10.;
 		return StrictMath.toRadians(
-			MathHelper.eval(u, MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS) / JulianDay.SECONDS_IN_HOUR
+			MathHelper.eval(jme, MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS) / JulianDay.SECONDS_IN_HOUR
 		);
 	}
 
 	/**
-	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, ɛ'.
+	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, <code>ɛ'</code>.
 	 *
 	 * @param meanEclipticObliquity	Mean obliquity of the ecliptic [rad].
 	 * @param tt	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
 	public static double apparentEclipticObliquity(final double meanEclipticObliquity, final double tt){
-		return meanEclipticObliquity + 0.00256 * StrictMath.cos(ascendingLongitudeMoon(tt));
+		return meanEclipticObliquity + StrictMath.toRadians(0.002_56 * StrictMath.cos(ascendingLongitudeMoon(tt)));
 	}
 
 	/**
-	 * True obliquity of the ecliptic corrected for nutation, ɛ.
+	 * True obliquity of the ecliptic corrected for nutation, <code>ɛ</code>.
 	 *
 	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [rad].
 	 * @param obliquityNutation	Corrections of nutation in obliquity (∆ε) [rad].
@@ -488,7 +561,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 
 
 	/**
-	 * Calculate the equatorial horizontal parallax of the Sun, ξ.
+	 * Calculate the equatorial horizontal parallax of the Sun, <code>ξ</code>.
 	 *
 	 * @param radiusVector	Radius vector of the Earth [AU].
 	 * @return	The equatorial horizontal parallax of the Sun [rad].

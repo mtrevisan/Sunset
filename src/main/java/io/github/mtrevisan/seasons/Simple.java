@@ -108,8 +108,8 @@ System.out.println(dateTime);
 			final double radiusVector = SunPosition.radiusVector(jme);
 
 			//calculate corrections of nutation in longitude, ∆ψ
-			final double tt = JulianDay.centuryJ2000Of(utc);
-			final double[] nutation = SunPosition.nutationCorrection(tt);
+			final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jme * 10.);
+			final double[] nutation = SunPosition.nutationCorrection(sunMeanAnomaly, jme);
 
 			//calculate the correction for aberration, ∆τ
 			final double aberration = SunPosition.aberrationCorrection(radiusVector);
@@ -151,10 +151,10 @@ System.out.println("2022-12-21T21:49:22");
 		else
 			jde0 = MathHelper.eval(deltaYear2000 /1000., EARTH_WINTER_SOLSTICE_1000_3000);
 
-		final double tt = JulianDay.centuryJ2000Of(jde0);
-		final double w = Math.toRadians(35_999.373 * tt - 2.47);
+		final double jce = JulianDay.centuryJ2000Of(jde0);
+		final double w = Math.toRadians(35_999.373 * jce - 2.47);
 		final double deltaLambda = 1. + 0.033_4 * StrictMath.cos(w) + 0.000_7 * StrictMath.cos(2. * w);
-		return jde0 + periodicTerms(tt) / deltaLambda;
+		return jde0 + periodicTerms(jce) / deltaLambda;
 	}
 
 	private static double periodicTerms(final double t){

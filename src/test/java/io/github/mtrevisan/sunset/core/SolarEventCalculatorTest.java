@@ -54,12 +54,12 @@ class SolarEventCalculatorTest{
 		double ut = JulianDay.of(2003, 10, 17)
 			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
 		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
-		double tt = JulianDay.centuryJ2000Of(jd);
+		double jce = JulianDay.centuryJ2000Of(jd);
 
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
-		double[] nutation = SunPosition.nutationCorrection(tt);
-		double meanEclipticObliquity = SunPosition.meanEclipticObliquity(tt);
+		double[] nutation = SunPosition.nutationCorrection(jce);
+		double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
 		double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
