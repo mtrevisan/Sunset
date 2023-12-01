@@ -25,7 +25,7 @@
 package io.github.mtrevisan.sunset.core;
 
 import io.github.mtrevisan.sunset.AtmosphericModel;
-import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.ResourceReader;
 import io.github.mtrevisan.sunset.TimeHelper;
@@ -81,10 +81,242 @@ public final class SunPosition{
 		catch(final IOException ignored){}
 	}
 
+	private static final double[] OBLIQUITY_COEFFS = {
+		84381.448, -4680.93, -1.55, 1999.25, 51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45
+	};
+
 	static final double EARTH_FLATTENING = 1. / 298.25642;
 	//[m]
 	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_126_7};
+
+	private static final double[][][] TERMS_L = {
+		{
+			{175347046., 0., 0.},
+			{3341656., 4.6692568, 6283.07585},
+			{34894., 4.6261, 12566.1517},
+			{3497., 2.7441, 5753.3849},
+			{3418., 2.8289, 3.5231},
+			{3136., 3.6277, 77713.7715},
+			{2676., 4.4181, 7860.4194},
+			{2343., 6.1352, 3930.2097},
+			{1324., 0.7425, 11506.7698},
+			{1273., 2.0371, 529.691},
+			{1199., 1.1096, 1577.3435},
+			{990., 5.233, 5884.927},
+			{902., 2.045, 26.298},
+			{857., 3.508, 398.149},
+			{780., 1.179, 5223.694},
+			{753., 2.533, 5507.553},
+			{505., 4.583, 18849.228},
+			{492., 4.205, 775.523},
+			{357., 2.92, 0.067},
+			{317., 5.849, 11790.629},
+			{284., 1.899, 796.298},
+			{271., 0.315, 10977.079},
+			{243., 0.345, 5486.778},
+			{206., 4.806, 2544.314},
+			{205., 1.869, 5573.143},
+			{202., 2.458, 6069.777},
+			{156., 0.833, 213.299},
+			{132., 3.411, 2942.463},
+			{126., 1.083, 20.775},
+			{115., 0.645, 0.98},
+			{103., 0.636, 4694.003},
+			{102., 0.976, 15720.839},
+			{102., 4.267, 7.114},
+			{99., 6.21, 2146.17},
+			{98., 0.68, 155.42},
+			{86., 5.98, 161000.69},
+			{85., 1.3, 6275.96},
+			{85., 3.67, 71430.7},
+			{80., 1.81, 17260.15},
+			{79., 3.04, 12036.46},
+			{75., 1.76, 5088.63},
+			{74., 3.5, 3154.69},
+			{74., 4.68, 801.82},
+			{70., 0.83, 9437.76},
+			{62., 3.98, 8827.39},
+			{61., 1.82, 7084.9},
+			{57., 2.78, 6286.6},
+			{56., 4.39, 14143.5},
+			{56., 3.47, 6279.55},
+			{52., 0.19, 12139.55},
+			{52., 1.33, 1748.02},
+			{51., 0.28, 5856.48},
+			{49., 0.49, 1194.45},
+			{41., 5.37, 8429.24},
+			{41., 2.4, 19651.05},
+			{39., 6.17, 10447.39},
+			{37., 6.04, 10213.29},
+			{37., 2.57, 1059.38},
+			{36., 1.71, 2352.87},
+			{36., 1.78, 6812.77},
+			{33., 0.59, 17789.85},
+			{30., 0.44, 83996.85},
+			{30., 2.74, 1349.87},
+			{25., 3.16, 4690.48}
+		},
+		{
+			{628331966747., 0., 0.},
+			{206059., 2.678235, 6283.07585},
+			{4303., 2.6351, 12566.1517},
+			{425., 1.59, 3.523},
+			{119., 5.796, 26.298},
+			{109., 2.966, 1577.344},
+			{93., 2.59, 18849.23},
+			{72., 1.14, 529.69},
+			{68., 1.87, 398.15},
+			{67., 4.41, 5507.55},
+			{59., 2.89, 5223.69},
+			{56., 2.17, 155.42},
+			{45., 0.4, 796.3},
+			{36., 0.47, 775.52},
+			{29., 2.65, 7.11},
+			{21., 5.34, 0.98},
+			{19., 1.85, 5486.78},
+			{19., 4.97, 213.3},
+			{17., 2.99, 6275.96},
+			{16., 0.03, 2544.31},
+			{16., 1.43, 2146.17},
+			{15., 1.21, 10977.08},
+			{12., 2.83, 1748.02},
+			{12., 3.26, 5088.63},
+			{12., 5.27, 1194.45},
+			{12., 2.08, 4694},
+			{11., 0.77, 553.57},
+			{10., 1.3, 6286.6},
+			{10., 4.24, 1349.87},
+			{9., 2.7, 242.73},
+			{9., 5.64, 951.72},
+			{8., 5.3, 2352.87},
+			{6., 2.65, 9437.76},
+			{6., 4.67, 4690.48}
+		},
+		{
+			{52919., 0., 0.},
+			{8720., 1.0721, 6283.0758},
+			{309., 0.867, 12566.152},
+			{27., 0.05, 3.52},
+			{16., 5.19, 26.3},
+			{16., 3.68, 155.42},
+			{10., 0.76, 18849.23},
+			{9., 2.06, 77713.77},
+			{7., 0.83, 775.52},
+			{5., 4.66, 1577.34},
+			{4., 1.03, 7.11},
+			{4., 3.44, 5573.14},
+			{3., 5.14, 796.3},
+			{3., 6.05, 5507.55},
+			{3., 1.19, 242.73},
+			{3., 6.12, 529.69},
+			{3., 0.31, 398.15},
+			{3., 2.28, 553.57},
+			{2., 4.38, 5223.69},
+			{2., 3.75, 0.98}
+		},
+		{
+			{289., 5.844, 6283.076},
+			{35., 0., 0.},
+			{17., 5.49, 12566.15},
+			{3., 5.2, 155.42},
+			{1., 4.72, 3.52},
+			{1., 5.3, 18849.23},
+			{1., 5.97, 242.73}
+		},
+		{
+			{114., 3.142, 0.},
+			{8., 4.13, 6283.08},
+			{1., 3.84, 12566.15}
+		},
+		{
+			{1., 3.14, 0.}
+		}
+	};
+	private static final double[][][] TERMS_B = {
+		{
+			{280., 3.199, 84334.662},
+			{102., 5.422, 5507.553},
+			{80., 3.88, 5223.69},
+			{44., 3.7, 2352.87},
+			{32., 4., 1577.34}
+		},
+		{
+			{9., 3.9, 5507.55},
+			{6., 1.73, 5223.69}
+		}
+	};
+	private static final double[][][] TERMS_R = {
+		{
+			{100013989., 0., 0.},
+			{1670700., 3.0984635, 6283.07585},
+			{13956., 3.05525, 12566.1517},
+			{3084., 5.1985, 77713.7715},
+			{1628., 1.1739, 5753.3849},
+			{1576., 2.8469, 7860.4194},
+			{925., 5.453, 11506.77},
+			{542., 4.564, 3930.21},
+			{472., 3.661, 5884.927},
+			{346., 0.964, 5507.553},
+			{329., 5.9, 5223.694},
+			{307., 0.299, 5573.143},
+			{243., 4.273, 11790.629},
+			{212., 5.847, 1577.344},
+			{186., 5.022, 10977.079},
+			{175., 3.012, 18849.228},
+			{110., 5.055, 5486.778},
+			{98., 0.89, 6069.78},
+			{86., 5.69, 15720.84},
+			{86., 1.27, 161000.69},
+			{65., 0.27, 17260.15},
+			{63., 0.92, 529.69},
+			{57., 2.01, 83996.85},
+			{56., 5.24, 71430.7},
+			{49., 3.25, 2544.31},
+			{47., 2.58, 775.52},
+			{45., 5.54, 9437.76},
+			{43., 6.01, 6275.96},
+			{39., 5.36, 4694},
+			{38., 2.39, 8827.39},
+			{37., 0.83, 19651.05},
+			{37., 4.9, 12139.55},
+			{36., 1.67, 12036.46},
+			{35., 1.84, 2942.46},
+			{33., 0.24, 7084.9},
+			{32., 0.18, 5088.63},
+			{32., 1.78, 398.15},
+			{28., 1.21, 6286.6},
+			{28., 1.9, 6279.55},
+			{26., 4.59, 10447.39}
+		},
+		{
+			{103019., 1.10749, 6283.07585},
+			{1721., 1.0644, 12566.1517},
+			{702., 3.142, 0.},
+			{32., 1.02, 18849.23},
+			{31., 2.84, 5507.55},
+			{25., 1.32, 5223.69},
+			{18., 1.42, 1577.34},
+			{10., 5.91, 10977.08},
+			{9., 1.42, 6275.96},
+			{9., 0.27, 5486.78}
+		},
+		{
+			{4359., 5.7846, 6283.0758},
+			{124., 5.579, 12566.152},
+			{12., 3.14, 0.},
+			{9., 3.63, 77713.77},
+			{6., 1.87, 5573.14},
+			{3., 5.47, 18849.23}
+		},
+		{
+			{145., 4.273, 6283.076},
+			{7., 3.92, 12566.15}
+		},
+		{
+			{4., 2.56, 6283.08}
+		}
+	};
 
 	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS = {280.466_46, 36_000.769_83, 0.000_303_2};
 	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.527_723_33, 35_999.050_34, -0.000_160_28, -0.000_003_33};
@@ -119,13 +351,82 @@ public final class SunPosition{
 	 * @return	The Sun ecliptic position.
 	 */
 	public static EclipticCoordinate sunEclipticPosition(final double jd){
-		final double jme = JulianDay.millenniumJ2000Of(jd);
+		final double jme = JulianDate.millenniumJ2000Of(jd);
 
 		final double meanEclipticalLatitude = meanEclipticalLatitude(jme);
 		final double meanEclipticalLongitude = meanEclipticalLongitude(jme);
 		final double radiusVector = radiusVector(jme);
 final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI * jd / 365.254902 + 3.091159) + 1.000140;
 		return EclipticCoordinate.create(meanEclipticalLatitude, meanEclipticalLongitude, radiusVector);
+	}
+
+	public static EquatorialCoordinate sunEquatorialPosition(final double jme, final double deltaPsi,
+			final double trueEclipticObliquity){
+		//calculate Earth heliocentric latitude, <code>B</code> [deg]
+		final double[] bTerms = calculateLBRTerms(jme, TERMS_B);
+		final double b = MathHelper.mod(StrictMath.toDegrees(calculateLBRPolynomial(jme, bTerms)), 360.);
+
+		//calculate Earth radius vector, <code>R</code> [AU]
+		final double[] rTerms = calculateLBRTerms(jme, TERMS_R);
+		final double r = calculateLBRPolynomial(jme, rTerms);
+		assert r != 0;
+
+		//calculate Earth heliocentric longitude, <code>L</code> [deg]
+		final double[] lTerms = calculateLBRTerms(jme, TERMS_L);
+		final double l = MathHelper.mod(StrictMath.toDegrees(calculateLBRPolynomial(jme, lTerms)), 360.);
+
+		//calculate geocentric longitude, <code>theta</code> [deg]
+		final double theta = MathHelper.mod(l + 180., 360.);
+
+		//calculate geocentric latitude, beta
+		final double beta = StrictMath.toRadians(-b);
+		final double epsilon = StrictMath.toRadians(trueEclipticObliquity);
+
+		//calculate aberration correction
+		final double deltaTau = -20.4898 / (JulianDate.SECONDS_PER_HOUR * r);
+
+		//calculate the apparent sun longitude
+		final double lambda = StrictMath.toRadians(theta + deltaPsi + deltaTau);
+
+		//calculate the geocentric sun right ascension [deg]
+		final double rightAscension = calculateGeocentricSunRightAscension(beta, epsilon, lambda);
+		//calculate geocentric sun declination [deg]
+		final double declination = StrictMath.toDegrees(calculateGeocentricSunDeclination(beta, epsilon, lambda));
+
+		return EquatorialCoordinate.create(rightAscension, declination);
+	}
+
+	private static double[] calculateLBRTerms(final double jme, final double[][][] termCoeffs){
+		final double[] lbrTerms = {0., 0., 0., 0., 0., 0.};
+		//L0, L1, ... Ln
+		for(int i = 0; i < termCoeffs.length; i ++){
+			double lbrSum = 0;
+			//rows of each Li
+			for(int v = 0; v < termCoeffs[i].length; v ++){
+				//coefficients
+				final double a = termCoeffs[i][v][0];
+				final double b = termCoeffs[i][v][1];
+				final double c = termCoeffs[i][v][2];
+				lbrSum += a * StrictMath.cos(b + c * jme);
+			}
+			lbrTerms[i] = lbrSum;
+		}
+		return lbrTerms;
+	}
+
+	private static double calculateLBRPolynomial(final double jme, final double[] terms){
+		return MathHelper.polynomial(jme, terms) / 1.e8;
+	}
+
+	private static double calculateGeocentricSunRightAscension(final double beta, final double epsilon, final double lambda){
+		final double rightAscension = StrictMath.atan2(StrictMath.sin(lambda) * StrictMath.cos(epsilon)
+			- StrictMath.tan(beta) * StrictMath.sin(epsilon), StrictMath.cos(lambda));
+		return MathHelper.mod(StrictMath.toDegrees(rightAscension), 360.);
+	}
+
+	private static double calculateGeocentricSunDeclination(final double beta, final double epsilon, final double lambda){
+		return StrictMath.asin(StrictMath.sin(beta) * StrictMath.cos(epsilon)
+			+ StrictMath.cos(beta) * StrictMath.sin(epsilon) * StrictMath.sin(lambda));
 	}
 
 	/**
@@ -138,7 +439,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
 	public static EquatorialCoordinate sunEquatorialPosition(final EclipticCoordinate eclipticCoord, final double jd){
-		final double jce = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDate.centuryJ2000Of(jd);
 
 		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
 		//calculate the nutation in longitude and obliquity
@@ -168,10 +469,10 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static HorizontalCoordinate sunTopocentricPosition(final GeographicLocation location, final AtmosphericModel atmosphericModel,
 			final EclipticCoordinate eclipticCoord, final double jd){
-		final LocalDateTime date = JulianDay.dateTimeOf(jd);
+		final LocalDateTime date = JulianDate.dateTimeOf(jd);
 		final double dt = TimeHelper.deltaT(date.getYear());
 		final double ut = TimeHelper.terrestrialTimeToUniversalTime(jd, dt);
-		final double jce = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDate.centuryJ2000Of(jd);
 
 		final EquatorialCoordinate equatorialCoord = sunEquatorialPosition(eclipticCoord, jd);
 		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
@@ -179,8 +480,8 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		final double meanEclipticObliquity = meanEclipticObliquity(jce);
 		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
-		final double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
-		final double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
+		final double meanSiderealTime = TimeHelper.greenwichMeanSiderealTime(ut);
+		final double apparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
 		final double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
 		final double rightAscension = equatorialCoord.getRightAscension();
 		final double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, rightAscension);
@@ -251,7 +552,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		}
 		//transform heliocentric to geocentric
 		return -MathHelper.modpi(
-			MathHelper.eval(jme, parameters) / 100_000_000.
+			MathHelper.polynomial(jme, parameters) / 100_000_000.
 		);
 	}
 
@@ -276,7 +577,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		}
 		//transform heliocentric to geocentric
 		return MathHelper.mod2pi(
-			MathHelper.eval(jme, parameters) / 100_000_000. + StrictMath.PI
+			MathHelper.polynomial(jme, parameters) / 100_000_000. + StrictMath.PI
 		);
 	}
 
@@ -298,7 +599,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 				parameters[i] = parameter;
 			}
 		}
-		return MathHelper.eval(jme, parameters) / 100_000_000.;
+		return MathHelper.polynomial(jme, parameters) / 100_000_000.;
 	}
 
 	/**
@@ -310,8 +611,8 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static double equationOfCenter(final double geocentricMeanAnomaly, final double tt){
 		return Math.toRadians(
-			MathHelper.eval(tt, SUN_EQUATION_OF_CENTER_1) * StrictMath.sin(geocentricMeanAnomaly)
-				+ MathHelper.eval(tt, SUN_EQUATION_OF_CENTER_2) * StrictMath.sin(2. * geocentricMeanAnomaly)
+			MathHelper.polynomial(tt, SUN_EQUATION_OF_CENTER_1) * StrictMath.sin(geocentricMeanAnomaly)
+				+ MathHelper.polynomial(tt, SUN_EQUATION_OF_CENTER_2) * StrictMath.sin(2. * geocentricMeanAnomaly)
 				+ 0.000_289 * StrictMath.sin(3. * geocentricMeanAnomaly)
 		);
 	}
@@ -369,7 +670,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 		//Sun's radius vector, r [AU]
 		final double earthRadiusVector = SunPosition.radiusVector(jce / 10.);
 		//[deg]
-		final double aberration = 20.4898 / (earthRadiusVector * JulianDay.SECONDS_IN_HOUR);
+		final double aberration = 20.4898 / (earthRadiusVector * JulianDate.SECONDS_PER_HOUR);
 
 		return StrictMath.toRadians(aberration + deltaPsi * StrictMath.sin(moonAscendingLongitude));
 	}
@@ -381,7 +682,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @return	The geocentric mean longitude of the Moon [rad].
 	 */
 	private static double moonGeocentricMeanLongitude(final double tt){
-		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, MOON_GEOCENTRIC_MEAN_LONGITUDE)));
+		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.polynomial(tt, MOON_GEOCENTRIC_MEAN_LONGITUDE)));
 	}
 
 	/**
@@ -391,7 +692,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @return	The eccentricity of Earth's orbit.
 	 */
 	public static double earthOrbitEccentricity(final double jce){
-		return MathHelper.eval(jce, EARTH_ORBIT_ECCENTRICITY);
+		return MathHelper.polynomial(jce, EARTH_ORBIT_ECCENTRICITY);
 	}
 
 
@@ -422,15 +723,15 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 			deltaEpsilon += (element[x.length + 2] + element[x.length + 3] * jce) * StrictMath.cos(parameter);
 		}
 		return new double[]{
-			StrictMath.toRadians(deltaPsi / (JulianDay.SECONDS_IN_HOUR * 10_000.)),
-			StrictMath.toRadians(deltaEpsilon / (JulianDay.SECONDS_IN_HOUR * 10_000.))
+			StrictMath.toRadians(deltaPsi / (JulianDate.SECONDS_PER_HOUR * 10_000.)),
+			StrictMath.toRadians(deltaEpsilon / (JulianDate.SECONDS_PER_HOUR * 10_000.))
 		};
 	}
 
 	//mean elongation of the Moon from the Sun [rad]
 	private static double meanElongationMoonSun(final double tt){
 		return MathHelper.mod2pi(StrictMath.toRadians(
-			MathHelper.eval(tt, MOON_MEAN_ELONGATION_PARAMETERS)
+			MathHelper.polynomial(tt, MOON_MEAN_ELONGATION_PARAMETERS)
 		));
 	}
 
@@ -442,7 +743,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static double geocentricMeanLongitude(final double tdb){
 		return MathHelper.mod2pi(StrictMath.toRadians(
-			MathHelper.eval(tdb, SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS)
+			MathHelper.polynomial(tdb, SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS)
 		));
 	}
 
@@ -454,21 +755,21 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static double geocentricMeanAnomaly(final double tdb){
 		return MathHelper.mod2pi(StrictMath.toRadians(
-			MathHelper.eval(tdb, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)
+			MathHelper.polynomial(tdb, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)
 		));
 	}
 
 	//mean anomaly of the Moon [rad]
 	private static double meanAnomalyMoon(final double tt){
 		return MathHelper.mod2pi(StrictMath.toRadians(
-			MathHelper.eval(tt, MOON_MEAN_ANOMALY_PARAMETERS)
+			MathHelper.polynomial(tt, MOON_MEAN_ANOMALY_PARAMETERS)
 		));
 	}
 
 	//Moon's argument of Latitude [rad]
 	private static double argumentLatitudeMoon(final double tt){
 		return MathHelper.mod2pi(StrictMath.toRadians(
-			MathHelper.eval(tt, MOON_ARGUMENT_OF_LATITUDE)
+			MathHelper.polynomial(tt, MOON_ARGUMENT_OF_LATITUDE)
 		));
 	}
 
@@ -480,7 +781,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static double ascendingLongitudeMoon(final double tt){
 		return MathHelper.mod2pi(StrictMath.toRadians(
-			MathHelper.eval(tt, MOON_LONGITUDE_ASCENDING_NODE)
+			MathHelper.polynomial(tt, MOON_LONGITUDE_ASCENDING_NODE)
 		));
 	}
 
@@ -508,7 +809,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 */
 	public static double aberrationCorrection(final double earthRadiusVector){
 		return StrictMath.toRadians(
-			-ABERRATION_CONSTANT / (JulianDay.SECONDS_IN_HOUR * earthRadiusVector)
+			-ABERRATION_CONSTANT / (JulianDate.SECONDS_PER_HOUR * earthRadiusVector)
 		);
 	}
 
@@ -531,10 +832,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @return	Apparent longitude of the Sun [rad].
 	 */
 	public static double meanEclipticObliquity(final double jce){
-		final double jme = jce / 10.;
-		return StrictMath.toRadians(
-			MathHelper.eval(jme, MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS) / JulianDay.SECONDS_IN_HOUR
-		);
+		return MathHelper.polynomial(jce / 100., OBLIQUITY_COEFFS) / JulianDate.SECONDS_PER_HOUR;
 	}
 
 	/**
@@ -551,9 +849,9 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	/**
 	 * True obliquity of the ecliptic corrected for nutation, <code>ɛ</code>.
 	 *
-	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [rad].
-	 * @param obliquityNutation	Corrections of nutation in obliquity (∆ε) [rad].
-	 * @return	Apparent longitude of the Sun [rad].
+	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [deg].
+	 * @param obliquityNutation	Corrections of nutation in obliquity (∆ε) [deg].
+	 * @return	Apparent longitude of the Sun [deg].
 	 */
 	public static double trueEclipticObliquity(final double meanEclipticObliquity, final double obliquityNutation){
 		return meanEclipticObliquity + obliquityNutation;
@@ -567,7 +865,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @return	The equatorial horizontal parallax of the Sun [rad].
 	 */
 	private static double equatorialHorizontalParallax(double radiusVector){
-		return StrictMath.toRadians(8.794 / (JulianDay.SECONDS_IN_HOUR * radiusVector));
+		return StrictMath.toRadians(8.794 / (JulianDate.SECONDS_PER_HOUR * radiusVector));
 	}
 
 }

@@ -24,7 +24,7 @@
  */
 package io.github.mtrevisan.seasons;
 
-import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.core.SunPosition;
@@ -97,12 +97,12 @@ public class Simple{
 		double utc = TimeHelper.terrestrialTimeToUniversalTime(tdt, deltaT);
 System.out.println(utc);
 
-		final LocalDateTime dateTime = JulianDay.dateTimeOf(utc);
+		final LocalDateTime dateTime = JulianDate.dateTimeOf(utc);
 System.out.println(dateTime);
 
 		while(true){
 			//calculate the ecliptical mean longitude of the Sun, referred to the mean equinox of the date
-			final double jme = JulianDay.millenniumJ2000Of(utc);
+			final double jme = JulianDate.millenniumJ2000Of(utc);
 			final double meanEclipticalLongitude = SunPosition.meanEclipticalLongitude(jme);
 			//calculate the distance between the center of the Sun and the center of the Earth, R
 			final double radiusVector = SunPosition.radiusVector(jme);
@@ -114,7 +114,7 @@ System.out.println(dateTime);
 			//calculate the correction for aberration, ∆τ
 			final double aberration = SunPosition.aberrationCorrection(radiusVector);
 
-			final double correctionFK5 = Math.toRadians(-0.090_33 / 3600.);
+			final double correctionFK5 = Math.toRadians(-0.090_33 / JulianDate.SECONDS_PER_HOUR);
 
 			//calculate the apparent longitude of the Sun, Lapp = λ
 			final double apparentGeocentricLongitude = SunPosition.apparentGeocentricLongitude(meanEclipticalLongitude, nutation[0],
@@ -123,12 +123,12 @@ System.out.println(dateTime);
 			final double deltaJDE = 58. * StrictMath.sin(3. * Math.PI / 2. - apparentGeocentricLongitude);
 			utc += deltaJDE;
 
-			if(Math.abs(deltaJDE) * JulianDay.SECONDS_IN_DAY < 42.)
+			if(Math.abs(deltaJDE) * JulianDate.SECONDS_PER_DAY < 42.)
 				break;
 		}
 System.out.println(utc);
 
-		final LocalDateTime dateTime2 = JulianDay.dateTimeOf(utc);
+		final LocalDateTime dateTime2 = JulianDate.dateTimeOf(utc);
 System.out.println(dateTime2);
 System.out.println("2022-12-21T21:49:22");
 
@@ -147,11 +147,11 @@ System.out.println("2022-12-21T21:49:22");
 		final double deltaYear2000 = year - 2000.;
 		final double jde0;
 		if(year < 1000)
-			jde0 = MathHelper.eval(year /1000., EARTH_WINTER_SOLSTICE_MINUS_1000_1000);
+			jde0 = MathHelper.polynomial(year /1000., EARTH_WINTER_SOLSTICE_MINUS_1000_1000);
 		else
-			jde0 = MathHelper.eval(deltaYear2000 /1000., EARTH_WINTER_SOLSTICE_1000_3000);
+			jde0 = MathHelper.polynomial(deltaYear2000 /1000., EARTH_WINTER_SOLSTICE_1000_3000);
 
-		final double jce = JulianDay.centuryJ2000Of(jde0);
+		final double jce = JulianDate.centuryJ2000Of(jde0);
 		final double w = Math.toRadians(35_999.373 * jce - 2.47);
 		final double deltaLambda = 1. + 0.033_4 * StrictMath.cos(w) + 0.000_7 * StrictMath.cos(2. * w);
 		return jde0 + periodicTerms(jce) / deltaLambda;
@@ -181,9 +181,9 @@ System.out.println("2022-12-21T21:49:22");
 				deltaT = DELTA_T_TABLE[(year - DELTA_T_TABLE_FIRST_YEAR) / 2];
 		}
 		else if(year < 948)
-			deltaT = MathHelper.eval(t, new double[]{2177., 497., 44.1});
+			deltaT = MathHelper.polynomial(t, new double[]{2177., 497., 44.1});
 		else{
-			deltaT = MathHelper.eval(t, new double[]{102., 102., 25.3});
+			deltaT = MathHelper.polynomial(t, new double[]{102., 102., 25.3});
 			//special correction to avoid discontinuity in 2000
 			if(year >= 2000 && year <= 2100)
 				deltaT += 0.37 * (year - 2100.);

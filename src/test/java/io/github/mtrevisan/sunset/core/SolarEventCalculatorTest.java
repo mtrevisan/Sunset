@@ -25,7 +25,7 @@
 package io.github.mtrevisan.sunset.core;
 
 import io.github.mtrevisan.sunset.AtmosphericModel;
-import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventException;
 import io.github.mtrevisan.sunset.TimeHelper;
@@ -51,10 +51,10 @@ class SolarEventCalculatorTest{
 		SolarEventCalculator calc = SolarEventCalculator.create(location);
 		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820, 11.);
 
-		double ut = JulianDay.of(2003, 10, 17)
-			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
+		double ut = JulianDate.of(2003, 10, 17)
+			+ JulianDate.timeOf(LocalTime.of(19, 30, 30));
 		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
-		double jce = JulianDay.centuryJ2000Of(jd);
+		double jce = JulianDate.centuryJ2000Of(jd);
 
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
@@ -62,8 +62,8 @@ class SolarEventCalculatorTest{
 		double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
 
-		double meanSiderealTime = TimeHelper.meanSiderealTime(ut);
-		double apparentSiderealTime = TimeHelper.apparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
+		double meanSiderealTime = TimeHelper.greenwichMeanSiderealTime(ut);
+		double apparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(meanSiderealTime, trueEclipticObliquity, nutation[0]);
 		double localMeanSiderealTime = TimeHelper.localMeanSiderealTime(apparentSiderealTime, location);
 		double localHourAngle = TimeHelper.localHourAngle(localMeanSiderealTime, equatorialCoord.getRightAscension());
 

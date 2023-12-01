@@ -38,6 +38,13 @@ public final class MathHelper{
 	}
 
 	/**
+	 * Reduce an value to the range {@code 0} to {@code max}.
+	 */
+	public static double mod(final double x, final double max){
+		return x - max * StrictMath.floor(x / max);
+	}
+
+	/**
 	 * Reduce an angle in radians to the range {@code 0} to {@code 2π}.
 	 */
 	public static double mod2pi(final double angle){
@@ -66,7 +73,7 @@ public final class MathHelper{
 	}
 
 	public static double degToHrs(final double degrees){
-		return degrees / JulianDay.DEGREES_PER_HOUR;
+		return degrees / JulianDate.DEGREES_PER_HOUR;
 	}
 
 	/**
@@ -77,7 +84,7 @@ public final class MathHelper{
 	 * @param p	The polynomial coefficients.
 	 * @return	The value of the polynomial.
 	 */
-	public static double eval(final double x, final double[] p){
+	public static double polynomial(final double x, final double[] p){
 		double result = 0.;
 		for(int i = p.length - 1; i >= 0; i --)
 			result = p[i] + result * x;

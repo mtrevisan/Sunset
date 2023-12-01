@@ -1,5 +1,8 @@
 package io.github.mtrevisan.sunset.test;
 
+import io.github.mtrevisan.sunset.JulianDate;
+
+
 /**
  * Astro functions
  * <p>
@@ -235,8 +238,8 @@ public class AstroLib{
 
 		U = JM / 10.0;
 		E0 = 84381.448 - 4680.93 * U - 1.55 * Math.pow(U, 2) + 1999.25 * Math.pow(U, 3) - 51.38 * Math.pow(U, 4) - 249.67 * Math.pow(U, 5) - 39.05 * Math.pow(U, 6) + 7.12 * Math.pow(U, 7) + 27.87 * Math.pow(U, 8) + 5.79 * Math.pow(U, 9) + 2.45 * Math.pow(U, 10);
-		E = E0 / 3600.0 + deltaEps;
-		lamda = G + deltaPsi + (-20.4898 / (3600. * R));
+		E = E0 / JulianDate.SECONDS_PER_HOUR + deltaEps;
+		lamda = G + deltaPsi + (-20.4898 / (JulianDate.SECONDS_PER_HOUR * R));
 
 		V0 = 280.46061837 + 360.98564736629 * (JD - 2451545) + 0.000387933 * Math.pow(JC, 2) - Math.pow(JC, 3) / 38710000.0;
 		V = limitAngle(V0) + deltaPsi * Math.cos(Utils.DEG_TO_RAD(E));

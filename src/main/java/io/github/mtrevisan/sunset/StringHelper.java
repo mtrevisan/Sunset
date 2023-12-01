@@ -38,7 +38,7 @@ public final class StringHelper{
 
 
 	public static String degreeToHMSString(double degree, final int precision){
-		degree /= JulianDay.DEGREES_PER_HOUR;
+		degree /= JulianDate.DEGREES_PER_HOUR;
 		final int hour = (int)degree;
 		degree -= hour;
 		degree *= 60.;

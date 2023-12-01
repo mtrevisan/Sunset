@@ -25,7 +25,7 @@
 package io.github.mtrevisan.sunset.core;
 
 import io.github.mtrevisan.sunset.AtmosphericModel;
-import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventError;
 import io.github.mtrevisan.sunset.SolarEventException;
@@ -51,30 +51,17 @@ public class SolarEventCalculator{
 	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY = {357.52911, 35_999.050_29, -0.000_1537};
 
 
-	// Calculates the approximate set time of a body which has the specified right ascension and declination.
-// The resultant value will be close to the specified date.
-// Return values are undef if the object is circumpolar for that date.
-//	private double approxRiseSet(date, lat, long, ra, decl, h0 = -0.5667 degrees){
-//		transit = approxTransit[date, long, ra, decl];
-//		H0 = calcHourAngle[lat, decl, h0];
-//
-//		if(H0 == undef)
-//			return [undef, undef]
-//
-//		Htime = H0 / (360 degrees/day);
-//		//   println["transit is $transit"]
-//		//   println["H0 is $H0"]
-//		//   println["Htime is " + (Htime -> "hours")]
-//		set = transit + Htime;
-//		return set;
-//	}
-
 	//https://frinklang.org/frinksamp/sun.frink
 	//https://www.astrouw.edu.pl/~jskowron/pracownia/praca/sunspot_answerbook_expl/expl-5.html
 	//http://co2.aos.wisc.edu/data/code/idl-lib/util/sunrise.pro
 	//https://ebvalaim.pl/en/2015/12/22/calculating-sunrise-and-sunset-times/
 
 	//---
+
+	private enum SunVisibility{
+		NORMAL, ALWAYS_DAY, ALWAYS_NIGHT
+	}
+
 
 	private final GeographicLocation location;
 
@@ -94,6 +81,170 @@ public class SolarEventCalculator{
 	}
 
 
+	/**
+	 * Calculate the times of sunrise, sun transit (solar noon), and sunset for a given day.
+	 * <p>
+	 * The definition of sunrise or sunset can be chosen based on a horizon type (defined via its elevation angle).
+	 * </p>
+	 *
+	 * @param date	Date for which sunrise/transit/sunset are to be calculated.
+	 * @param deltaT	Difference between earth rotation time and terrestrial time (or Universal Time and Terrestrial Time) [s].
+	 * @param solarZenith	Solar zenith (basically, elevation angle) to use as the sunrise/sunset definition.
+	 * 	This can be used to calculate twilight times.
+	 *
+	 * @see <a href="https://www.nrel.gov/docs/fy08osti/34302.pdf">Solar Position Algorithm for Solar Radiation Applications</a>
+	 * @see <a href="https://midcdmz.nrel.gov/spa/">NREL's Solar Position Algorithm (SPA)</a>
+	 */
+	public final SolarEvent solarEvent(final LocalDate date, final double deltaT, final Zenith solarZenith){
+		final double ut = JulianDate.of(date);
+		final double jce = JulianDate.centuryJ2000Of(ut);
+
+		//A.2.1. Calculate the apparent sidereal time at Greenwich at 0 UT, and Greenwich apparent sidereal time
+		final NutationCorrections nutationCorrections = NutationCorrections.calculate(jce);
+		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
+		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutationCorrections.getDeltaEpsilon());
+		final double greenwichMeanSiderealTime = TimeHelper.greenwichMeanSiderealTime(jce);
+		final double greenwichApparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(greenwichMeanSiderealTime, trueEclipticObliquity,
+			nutationCorrections.getDeltaPsi());
+
+
+		//A.2.2. Calculate the geocentric right ascension and declination at 0 TT for day before, same day, and next day
+		final double jd = StrictMath.floor(ut) + 0.5;
+		final EquatorialCoordinate[] equatorialCoords = new EquatorialCoordinate[3];
+		for(int i = 0; i < equatorialCoords.length; i ++){
+			final double jme0 = JulianDate.millenniumJ2000Of(jd + i - 1);
+			equatorialCoords[i] = SunPosition.sunEquatorialPosition(jme0, nutationCorrections.getDeltaPsi(), trueEclipticObliquity);
+		}
+
+
+		//A.2.3. Calculate the approximate sun transit time, <code>m0</code> [day]
+		final double[] m = new double[3];
+		m[0] = (equatorialCoords[1].getRightAscension() - location.getLongitude() - greenwichApparentSiderealTime) / 360.;
+
+
+		//A.2.4. Calculate the local hour angle of the Sun, <code>H0</code>
+		final double phi = StrictMath.toRadians(location.getLatitude());
+		final double delta = StrictMath.toRadians(equatorialCoords[1].getDeclination());
+		final double cosSunLocalHour = (StrictMath.sin(solarZenith.getElevation()) - StrictMath.sin(phi) * StrictMath.sin(delta))
+			/ (StrictMath.cos(phi) * StrictMath.cos(delta));
+
+		SunVisibility type = SunVisibility.NORMAL;
+		if(cosSunLocalHour < -1.)
+			type = SunVisibility.ALWAYS_DAY;
+		else if(cosSunLocalHour > 1.)
+			type = SunVisibility.ALWAYS_NIGHT;
+
+		//[deg]
+		final double sunLocalHour = StrictMath.toDegrees(MathHelper.modpi(StrictMath.acos(cosSunLocalHour)));
+
+
+		//A.2.5. Calculate the approximate sunrise time, <code>m1</code>, in fraction of day
+		m[1] = MathHelper.mod(m[0] - sunLocalHour / 360., 1.);
+
+
+		//A.2.6. Calculate the approximate sunset time, <code>m2</code>, in fraction of day
+		m[2] = MathHelper.mod(m[0] + sunLocalHour / 360., 1.);
+		m[0] = MathHelper.mod(m[0], 1.);
+
+
+		//A.2.8. Calculate the sidereal time at Greenwich [deg] for the sun transit, sunrise, and sunset
+		final double[] greenwichSiderealTime = new double[3];
+		for(int i = 0; i < m.length; i ++)
+			greenwichSiderealTime[i] = greenwichApparentSiderealTime + 360.985647 * m[i];
+
+
+		//A.2.9. Calculate the terms <code>n_i</code>
+		final double[] n = new double[3];
+		for(int i = 0; i < m.length; i ++)
+			n[i] = m[i] + deltaT / JulianDate.SECONDS_PER_DAY;
+
+
+		//A.2.10. Calculate the values alpha'i and delta'i [deg]
+		final double a = limitIfNecessary(equatorialCoords[1].getRightAscension() - equatorialCoords[0].getRightAscension());
+		final double aPrime = limitIfNecessary(equatorialCoords[1].getDeclination() - equatorialCoords[0].getDeclination());
+
+		final double b = limitIfNecessary(equatorialCoords[2].getRightAscension() - equatorialCoords[1].getRightAscension());
+		final double bPrime = limitIfNecessary(equatorialCoords[2].getDeclination() - equatorialCoords[1].getDeclination());
+
+		final double c = b - a;
+		final double cPrime = bPrime - aPrime;
+
+		//apply interpolation
+		final EquatorialCoordinate[] localEquatorialCoords = new EquatorialCoordinate[3];
+		for(int i = 0; i < localEquatorialCoords.length; i ++){
+			final double localRightAscension = equatorialCoords[1].getRightAscension() + (n[i] * (a + b + c * n[i])) / 2.;
+			final double localDeclination = equatorialCoords[1].getDeclination() + (n[i] * (aPrime + bPrime + cPrime * n[i])) / 2.;
+			localEquatorialCoords[i] = EquatorialCoordinate.create(localRightAscension, localDeclination);
+		}
+
+
+		//A.2.11. Calculate the local hour angle for the sun transit, sunrise, and sunset
+		final double[] localHourAngle = new double[3];
+		for(int i = 0; i < localHourAngle.length; i ++)
+			localHourAngle[i] = limitHPrime(greenwichSiderealTime[i] + location.getLongitude() - localEquatorialCoords[i].getRightAscension());
+
+
+		//A.2.12. Calculate the sun altitude for the sun transit, sunrise, and sunset, <code>h_i</code> [rad]
+		final double[] sunAltitude = new double[3];
+		for(int i = 0; i < sunAltitude.length; i ++){
+			final double declinationPrime = StrictMath.toRadians(localEquatorialCoords[i].getDeclination());
+			sunAltitude[i] = StrictMath.asin(StrictMath.sin(phi) * StrictMath.sin(declinationPrime)
+				+ StrictMath.cos(phi) * StrictMath.cos(declinationPrime) * StrictMath.cos(StrictMath.toRadians(localHourAngle[i])));
+		}
+
+
+		//A.2.13. Calculate the sun transit, <code>T</code> [day]
+		final double t = m[0] - localHourAngle[0] / 360.;
+
+
+		//A.2.14. Calculate the sunrise, <code>R</code> [day]
+		final double elevation = solarZenith.getElevation();
+		final double r = m[1] + StrictMath.toDegrees((sunAltitude[1] - elevation)
+			/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[1].getDeclination())) * StrictMath.cos(phi)
+			* StrictMath.sin(StrictMath.toRadians(localHourAngle[1]))));
+
+
+		//A.2.15. Calculate the sunset, <code>S</code> [day]
+		final double s = m[2] + StrictMath.toDegrees((sunAltitude[2] - elevation)
+			/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[2].getDeclination())) * StrictMath.cos(phi)
+			* StrictMath.sin(StrictMath.toRadians(localHourAngle[2]))));
+
+		return switch(type){
+			case NORMAL -> new SolarEvent.RegularDay(addFractionOfDay(date, r), addFractionOfDay(date, t), addFractionOfDay(date, s));
+			case ALWAYS_DAY -> new SolarEvent.AlwaysDay(addFractionOfDay(date, t));
+			case ALWAYS_NIGHT -> new SolarEvent.AlwaysNight(addFractionOfDay(date, t));
+		};
+	}
+
+	/**
+	 * Limit to 0..1 if absolute value > 2.
+	 * <p>
+	 * Refer to A.2.10 in NREL report.
+	 * </p>
+	 */
+	private static double limitIfNecessary(final double val){
+		return (StrictMath.abs(val) > 2.? MathHelper.mod(val, 1.): val);
+	}
+
+	/** Limit H' values according to A.2.11 */
+	private static double limitHPrime(double hPrime){
+		hPrime /= 360.;
+		final double limited = 360. * (hPrime - StrictMath.floor(hPrime));
+		if(limited < -180.)
+			return limited + 360.;
+		if(limited > 180.)
+			return limited - 360.;
+		return limited;
+	}
+
+	private static LocalDateTime addFractionOfDay(final LocalDate date, final double fraction){
+		final int millisPlus = (int)(fraction * JulianDate.MILLISECONDS_PER_DAY);
+		return LocalDateTime.of(date.getYear(), date.getMonthValue(), date.getDayOfMonth(), 0, 0, 0, 0)
+			.plus(millisPlus, ChronoUnit.MILLIS);
+	}
+
+
+
 	//---
 	//https://squarewidget.com/solar-coordinates/
 
@@ -108,10 +259,10 @@ public class SolarEventCalculator{
 	 * @throws SolarEventException   Whenever the Sun never rises or sets.
 	 */
 	public final LocalDateTime sunset(final LocalDate date, final Zenith solarZenith) throws SolarEventException{
-		final double ut = JulianDay.of(date);
+		final double ut = JulianDate.of(date);
 		final double dt = TimeHelper.deltaT(date.getYear());
 		double jd = TimeHelper.universalTimeToTerrestrialTime(ut, dt);
-		double jce = JulianDay.centuryJ2000Of(jd);
+		double jce = JulianDate.centuryJ2000Of(jd);
 
 //		//calculate geocentric mean ecliptic coordinate
 //		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
@@ -206,7 +357,7 @@ public class SolarEventCalculator{
 	 * @return	The geocentric mean anomaly of the Sun [rad].
 	 */
 	private static double geocentricMeanAnomaly(final double tt){
-		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, SUN_GEOCENTRIC_MEAN_ANOMALY)));
+		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.polynomial(tt, SUN_GEOCENTRIC_MEAN_ANOMALY)));
 	}
 
 	/**
@@ -217,8 +368,8 @@ public class SolarEventCalculator{
 	 * @return	The Sun's equation of center [rad].
 	 */
 	private static double equationOfCenter(double geocentricMeanAnomaly, final double tt){
-		return MathHelper.eval(tt, new double[]{1.914602, -0.004817, -0.000014}) * StrictMath.sin(geocentricMeanAnomaly)
-			+ MathHelper.eval(tt, new double[]{0.019993, -0.000101}) * StrictMath.sin(2. * geocentricMeanAnomaly)
+		return MathHelper.polynomial(tt, new double[]{1.914602, -0.004817, -0.000014}) * StrictMath.sin(geocentricMeanAnomaly)
+			+ MathHelper.polynomial(tt, new double[]{0.019993, -0.000101}) * StrictMath.sin(2. * geocentricMeanAnomaly)
 			+ 0.000289 * StrictMath.sin(3. * geocentricMeanAnomaly);
 	}
 
@@ -246,8 +397,8 @@ public class SolarEventCalculator{
 		final int year = 2022;
 
 		//calculate an initial guess
-		final double jde0 = MathHelper.eval((year - 2000) / 1000., new double[]{2451900.05952, 365242.74049, -0.06223, -0.00823, 0.00032});
-		final double jce = JulianDay.centuryJ2000Of(jde0);
+		final double jde0 = MathHelper.polynomial((year - 2000) / 1000., new double[]{2451900.05952, 365242.74049, -0.06223, -0.00823, 0.00032});
+		final double jce = JulianDate.centuryJ2000Of(jde0);
 		final double w = StrictMath.toRadians(35_999.373 * jce - 2.47);
 		final double deltaLambda = 1. + 0.033_4 * StrictMath.cos(w) + 0.000_7 * StrictMath.cos(2. * w);
 
@@ -270,8 +421,8 @@ public class SolarEventCalculator{
 		final double utc = TimeHelper.terrestrialTimeToUniversalTime(tdt, deltaT);
 
 		System.out.println("deltaT: " + deltaT);
-		System.out.println("tdt: " + JulianDay.dateTimeOf(tdt));
-		System.out.println("utc: " + JulianDay.dateTimeOf(utc));
+		System.out.println("tdt: " + JulianDate.dateTimeOf(tdt));
+		System.out.println("utc: " + JulianDate.dateTimeOf(utc));
 	}
 
 	private static double deltaT(final int year){
@@ -294,19 +445,19 @@ public class SolarEventCalculator{
 			/*1780*/
 			16, 16, 16, 16, 16, 16, 15, 15, 14, 13,
 			/*1800*/
-			13.1, 12.5, 12.2, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 11.9, 11.6, 11.0, 10.2, 9.2, 8.2,
+			13.1, 12.5, 12.2, 12., 12., 12., 12., 12., 12., 11.9, 11.6, 11., 10.2, 9.2, 8.2,
 			/*1830*/
 			7.1, 6.2, 5.6, 5.4, 5.3, 5.4, 5.6, 5.9, 6.2, 6.5, 6.8, 7.1, 7.3, 7.5, 7.6,
 			/*1860*/
 			7.7, 7.3, 6.2, 5.2, 2.7, 1.4, -1.2, -2.8, -3.8, -4.8, -5.5, -5.3, -5.6, -5.7, -5.9,
 			/*1890*/
-			-6.0, -6.3, -6.5, -6.2, -4.7, -2.8, -0.1, 2.6, 5.3, 7.7, 10.4, 13.3, 16.0, 18.2, 20.2,
+			-6., -6.3, -6.5, -6.2, -4.7, -2.8, -0.1, 2.6, 5.3, 7.7, 10.4, 13.3, 16., 18.2, 20.2,
 			/*1920*/
-			21.1, 22.4, 23.5, 23.8, 24.3, 24.0, 23.9, 23.9, 23.7, 24.0, 24.3, 25.3, 26.2, 27.3, 28.2,
+			21.1, 22.4, 23.5, 23.8, 24.3, 24., 23.9, 23.9, 23.7, 24., 24.3, 25.3, 26.2, 27.3, 28.2,
 			/*1950*/
-			29.1, 30.0, 30.7, 31.4, 32.2, 33.1, 34.0, 35.0, 36.5, 38.3, 40.2, 42.2, 44.5, 46.5, 48.5,
+			29.1, 30., 30.7, 31.4, 32.2, 33.1, 34., 35., 36.5, 38.3, 40.2, 42.2, 44.5, 46.5, 48.5,
 			/*1980*/
-			50.5, 52.5, 53.8, 54.9, 55.8, 56.9, 58.3, 60.0, 61.6, 63.0, 63.8, 64.3};
+			50.5, 52.5, 53.8, 54.9, 55.8, 56.9, 58.3, 60., 61.6, 63., 63.8, 64.3};
 		//values for Delta T for 2000 thru 2002 from NASA
 		//deltaT = TDT - UTC (in Seconds)
 		double deltaT;
@@ -352,12 +503,12 @@ public class SolarEventCalculator{
 //		final GNSSLocation location = GNSSLocation.create(39.742476, -105.1786, 1830.14);
 //		AtmosphericModel atmosphericModel = AtmosphericModel.create(1021.5, 8.);
 
-		final double ut = JulianDay.of(2022, 12, 22)
-			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
+		final double ut = JulianDate.of(2022, 12, 22)
+			+ JulianDate.timeOf(LocalTime.of(19, 30, 30));
 		//[s]
 		final double deltaT = deltaT(2022);
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, deltaT);
-		final double jce = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDate.centuryJ2000Of(jd);
 
 		final EclipticCoordinate eclipticCoordBefore = SunPosition.sunEclipticPosition(jd - 1.);
 		EquatorialCoordinate coordBefore = SunPosition.sunEquatorialPosition(eclipticCoordBefore, jd - 1.);
@@ -402,9 +553,9 @@ public class SolarEventCalculator{
 		final double v0 = apparentSiderealTime + 360.985647 * m0;
 		final double v1 = apparentSiderealTime + 360.985647 * m1;
 		final double v2 = apparentSiderealTime + 360.985647 * m2;
-		final double n0 = m0 + deltaT / 86400.;
-		final double n1 = m1 + deltaT / 86400.;
-		final double n2 = m2 + deltaT / 86400.;
+		final double n0 = m0 + deltaT / JulianDate.SECONDS_PER_DAY;
+		final double n1 = m1 + deltaT / JulianDate.SECONDS_PER_DAY;
+		final double n2 = m2 + deltaT / JulianDate.SECONDS_PER_DAY;
 		//calculate the Right Ascension and declination
 		double a = coord.getRightAscension() - coordBefore.getRightAscension();
 		double a_prime = coord.getDeclination() - coordBefore.getDeclination();
@@ -486,10 +637,10 @@ Sunset hour angle	83.524274
 		final GeographicLocation location = GeographicLocation.create(39.742476, -105.1786, 1830.14);
 		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820., 11.);
 
-		final double ut = JulianDay.of(2003, 10, 17)
-			+ JulianDay.timeOf(LocalTime.of(19, 30, 30));
+		final double ut = JulianDate.of(2003, 10, 17)
+			+ JulianDate.timeOf(LocalTime.of(19, 30, 30));
 		final double jd = TimeHelper.universalTimeToTerrestrialTime(ut, 67.);
-		final double jce = JulianDay.centuryJ2000Of(jd);
+		final double jce = JulianDate.centuryJ2000Of(jd);
 
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate coord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
@@ -572,7 +723,7 @@ Sunset hour angle	83.524274
 	 * @return	The eccentricity of Earth's orbit.
 	 */
 	private static double earthOrbitEccentricity(final double tt){
-		return MathHelper.eval(tt, new double[]{0.016708634, -0.000042037, -0.0000001267});
+		return MathHelper.polynomial(tt, new double[]{0.016708634, -0.000042037, -0.0000001267});
 	}
 
 	/**
@@ -582,7 +733,7 @@ Sunset hour angle	83.524274
 	 * @return	The equatorial horizontal parallax of the Sun [rad].
 	 */
 	static double equatorialHorizontalParallax(double radiusVector){
-		return StrictMath.toRadians(8.794 / (JulianDay.SECONDS_IN_HOUR * radiusVector));
+		return StrictMath.toRadians(8.794 / (JulianDate.SECONDS_PER_HOUR * radiusVector));
 	}
 
 	/**
@@ -592,7 +743,7 @@ Sunset hour angle	83.524274
 	 * @return	The longitude of the perihelion of the orbit [rad].
 	 */
 	private static double longitudeOfEarthPerihelion(final double tt){
-		return MathHelper.eval(tt, new double[]{102.93735, 1.71946, 0.00046});
+		return MathHelper.polynomial(tt, new double[]{102.93735, 1.71946, 0.00046});
 	}
 
 	/**
@@ -661,20 +812,40 @@ Sunset hour angle	83.524274
 	 *
 	 * @param observerLatitude	Latitude of the observer [deg].
 	 * @param sunApparentDeclination	The Sun's apparent declination [rad].
-	 * @return	The hour angle [rad].
-	 *
-	 * @see <a href="https://www.researchgate.net/publication/266204563_Calculation_of_the_shadow-penumbra_relation_and_its_application_on_efficient_architectural_design">Calculation of the shadow-penumbra relation and its application on efficient architectural design</a>
+	 * @param hourAngle	The hour angle [rad].
+	 * @return	The hour angle for the sunrise [rad].
 	 */
-	public static double sunriseHourAngle(final double observerLatitude, final double sunApparentDeclination){
+	public static double sunriseHourAngle(final double observerLatitude, final double sunApparentDeclination, final double hourAngle){
 		final double lat = StrictMath.toRadians(observerLatitude);
 		final double cosLat = StrictMath.cos(lat);
 		final double tanLat = StrictMath.tan(lat);
+		final double cosSunDeclination = StrictMath.cos(sunApparentDeclination);
 		final double tanSunDeclination = StrictMath.tan(sunApparentDeclination);
+
 		//the solar zenith angle is the correction for:
 		// - atmospheric refraction at sunrise/sunset
 		// - the size of the solar disk
-		final double atmosphericRefraction = 34. / 60.;
+		double atmosphericRefraction = 0.;
+		//[deg]
+		final double solarElevation = 90. - StrictMath.toDegrees(StrictMath.acos((tanLat * tanSunDeclination + StrictMath.cos(hourAngle))
+			* cosLat * cosSunDeclination));
+		//[deg]
+		if(solarElevation < 85.){
+			final double tanSolarElevationRad = StrictMath.tan(StrictMath.toRadians(solarElevation));
+			if(solarElevation >= 5.)
+				atmosphericRefraction = (58.1 / tanSolarElevationRad
+					- 0.07 / StrictMath.pow(tanSolarElevationRad, 3)
+					+ 0.000_086 / StrictMath.pow(tanSolarElevationRad, 5)) / JulianDate.SECONDS_PER_HOUR;
+			else if(solarElevation >= -0.575)
+				atmosphericRefraction = (1735.
+					+ (-518.2 + (103.4 + (-12.79 + 0.711 * solarElevation) * solarElevation) * solarElevation) * solarElevation) / JulianDate.SECONDS_PER_HOUR;
+			else
+				atmosphericRefraction = (-20.774 / tanSolarElevationRad) / JulianDate.SECONDS_PER_HOUR;
+		}
+		//aphelion: 15.657", perihelion: 16.1982"
+		//FIXME
 		final double solarDiskSize = 16. / 60.;
+
 		final double solarZenithAngle = 90. + atmosphericRefraction + solarDiskSize;
 		return StrictMath.acos((StrictMath.cos(StrictMath.toRadians(solarZenithAngle)))
 			/ (cosLat * cosLat) - tanLat * tanSunDeclination);
@@ -687,13 +858,13 @@ Sunset hour angle	83.524274
 	 * @return	mean Sidereal time at Greenwich [rad].
 	 */
 	static double meanSiderealTime(final double ut){
-		final double[] dateAndTime = JulianDay.extractDateAndTime(ut);
-		final double ut0 = JulianDay.centuryJ2000Of(dateAndTime[0]);
+		final double[] dateAndTime = JulianDate.extractDateAndTime(ut);
+		final double ut0 = JulianDate.centuryJ2000Of(dateAndTime[0]);
 		//[s]
-		final double t = dateAndTime[1] * JulianDay.SECONDS_IN_DAY;
+		final double t = dateAndTime[1] * JulianDate.SECONDS_PER_DAY;
 
 		//Greenwich Sidereal Time at midnight [day]
-		final double h0 = MathHelper.eval(ut0, new double[]{24110.54841, 8640184.812866, 0.093104, -6.2e-6}) / JulianDay.SECONDS_IN_DAY;
+		final double h0 = MathHelper.polynomial(ut0, new double[]{24110.54841, 8640184.812866, 0.093104, -6.2e-6}) / JulianDate.SECONDS_PER_DAY;
 		final double earthSiderealRotationRate = earthSiderealRotationRate(ut0);
 		/*
 		This is the difference between UT1 (time using the mean rotating Earth as a clock) and UTC (time that runs at the same rate as
@@ -705,7 +876,7 @@ Sunset hour angle	83.524274
 		final double dUT1 = 0.;
 		//[day]
 		final double h = MathHelper.frac(h0 + earthSiderealRotationRate * (t - dUT1));
-		return StrictMath.toRadians(h * JulianDay.HOURS_IN_DAY * JulianDay.DEGREES_PER_HOUR);
+		return StrictMath.toRadians(h * JulianDate.HOURS_PER_DAY * JulianDate.DEGREES_PER_HOUR);
 		//alternative:
 		//return MathHelper.mod2pi(StrictMath.toRadians(
 		//	MathHelper.eval(JulianDay.centuryJ2000Of(ut), new double[]{280.46061837, 360.98564736629 * JulianDay.CIVIL_SAECULUM, 0.000387933, -1. / 38710000.})
@@ -763,8 +934,8 @@ Sunset hour angle	83.524274
 			throws SolarEventException{
 		final double longitudeHour = getLongitudeHour(date, sunrise);
 
-		final double jd = JulianDay.of(date);
-		final double jce = JulianDay.centuryJ2000Of(jd);
+		final double jd = JulianDate.of(date);
+		final double jce = JulianDate.centuryJ2000Of(jd);
 		final EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		final double equationOfTime = equationOfTime(eclipticCoord, jce);
 		final double geocentricMeanLongitude = eclipticCoord.getLongitude();
@@ -802,7 +973,7 @@ Sunset hour angle	83.524274
 	 */
 	private double getLongitudeHour(final LocalDateTime date, final Boolean sunrise){
 		final double dividend = (sunrise? 6: 18) - getBaseLongitudeHour();
-		return date.getDayOfYear() + JulianDay.timeOf(date) + dividend / 24.;
+		return date.getDayOfYear() + JulianDate.timeOf(date) + dividend / 24.;
 	}
 
 	/**
@@ -825,7 +996,7 @@ Sunset hour angle	83.524274
 		double apparentDeclination) throws SolarEventException{
 		final double cosLocalHour = cosineLocalHour(trueLong, zenith);
 
-		double cosHA = StrictMath.sin(zenith.getAngle())
+		double cosHA = StrictMath.sin(zenith.getElevation())
 			/ (StrictMath.cos(location.getLatitude()) * StrictMath.cos(apparentDeclination))
 			- StrictMath.tan(location.getLatitude()) * StrictMath.tan(apparentDeclination);
 
@@ -845,7 +1016,7 @@ Sunset hour angle	83.524274
 		final double sinDeclination = 0.39782 * StrictMath.sin(trueLong);
 		final double cosDeclination = StrictMath.cos(StrictMath.asin(sinDeclination));
 
-		final double sinZenith = StrictMath.sin(zenith.getAngle());
+		final double sinZenith = StrictMath.sin(zenith.getElevation());
 		final double sinLatitude = StrictMath.sin(location.getLatitude());
 		final double cosLatitude = StrictMath.cos(location.getLongitude());
 
@@ -879,7 +1050,7 @@ Sunset hour angle	83.524274
 
 		final double longitudeQuadrant = 90. * (int)(sunTrueLongitude / 90.);
 		final double rightAscensionQuadrant = 90. * (int)(rightAscension / 90.);
-		return (rightAscension + longitudeQuadrant - rightAscensionQuadrant) / JulianDay.DEGREES_PER_HOUR;
+		return (rightAscension + longitudeQuadrant - rightAscensionQuadrant) / JulianDate.DEGREES_PER_HOUR;
 	}
 
 	@SuppressWarnings("NumericCastThatLosesPrecision")

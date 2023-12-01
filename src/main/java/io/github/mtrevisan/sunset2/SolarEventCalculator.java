@@ -1,6 +1,6 @@
 package io.github.mtrevisan.sunset2;
 
-import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset2.coordinates.GeographicalLocation;
 
@@ -72,10 +72,10 @@ public class SolarEventCalculator{
 	private double computeSolarEventTime(final Zenith solarZenith, ZonedDateTime date, final boolean isSunrise){
 		date = date.withZoneSameInstant(timeZone);
 		final double longitudeHour = getLongitudeHour(date, isSunrise);
-final double jd = JulianDay.of(date.toLocalDateTime());
+final double jd = JulianDate.of(date.toLocalDateTime());
 
 		final double meanAnomaly = getSunMeanAnomaly(longitudeHour);
-final double terrestrialTime = JulianDay.centuryJ2000Of(jd);
+final double terrestrialTime = JulianDate.centuryJ2000Of(jd);
 final double sunGeocentricMeanAnomaly = StrictMath.toDegrees(sunGeocentricMeanAnomaly(terrestrialTime));
 System.out.println(meanAnomaly - sunGeocentricMeanAnomaly);
 		final double sunTrueLong = getSunTrueLongitude(meanAnomaly);
@@ -117,7 +117,7 @@ System.out.println(meanAnomaly - sunGeocentricMeanAnomaly);
 	 * https://squarewidget.com/solar-coordinates/
 	 */
 	private static double sunGeocentricMeanAnomaly(final double tt){
-		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.eval(tt, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)));
+		return MathHelper.mod2pi(StrictMath.toRadians(MathHelper.polynomial(tt, SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS)));
 	}
 
 	/**
@@ -209,7 +209,7 @@ System.out.println(meanAnomaly - sunGeocentricMeanAnomaly);
 
 	private double getLocalTime(final double localMeanTime, final ZonedDateTime date){
 		final double utcTime = localMeanTime - location.getLongitude() / 15.;
-		final double utcOffSet = date.getOffset().getTotalSeconds() / 3600.;;
+		final double utcOffSet = date.getOffset().getTotalSeconds() / JulianDate.SECONDS_PER_HOUR;
 		final double utcOffSetTime = utcTime + utcOffSet;
 		return adjustForDST(utcOffSetTime, date);
 	}

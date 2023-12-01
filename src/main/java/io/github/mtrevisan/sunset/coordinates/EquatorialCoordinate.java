@@ -42,9 +42,9 @@ import io.github.mtrevisan.sunset.StringHelper;
  */
 public final class EquatorialCoordinate{
 
-	//[rad]
+	/** <code>α</code> [rad] */
 	private final double rightAscension;
-	//[rad]
+	/** <code>δ</code> [rad] */
 	private final double declination;
 
 

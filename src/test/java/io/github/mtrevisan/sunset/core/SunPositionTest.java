@@ -25,7 +25,7 @@
 package io.github.mtrevisan.sunset.core;
 
 import io.github.mtrevisan.sunset.AtmosphericModel;
-import io.github.mtrevisan.sunset.JulianDay;
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
@@ -41,8 +41,8 @@ class SunPositionTest{
 
 	@Test
 	void test(){
-		double jd = JulianDay.of(2005, 1, 1)
-			+ JulianDay.timeOf(LocalTime.of(19, 29));
+		double jd = JulianDate.of(2005, 1, 1)
+			+ JulianDate.timeOf(LocalTime.of(19, 29));
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 
 		Assertions.assertEquals("EclipticCoordinate{b: 0° 0' 0.55\", l: 191° 18' 9.93\", r: 1}", eclipticCoord.toString());
@@ -50,8 +50,8 @@ class SunPositionTest{
 
 	@Test
 	void sunEclipticPositionSputnik(){
-		double jd = JulianDay.of(1957, 10, 4)
-			+ JulianDay.timeOf(LocalTime.of(19, 29));
+		double jd = JulianDate.of(1957, 10, 4)
+			+ JulianDate.timeOf(LocalTime.of(19, 29));
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 
 		Assertions.assertEquals("EclipticCoordinate{b: 0° 0' 0.55\", l: 191° 18' 9.93\", r: 1}", eclipticCoord.toString());
@@ -59,8 +59,8 @@ class SunPositionTest{
 
 	@Test
 	void sunEquatorialPositionSputnik(){
-		double jd = JulianDay.of(1957, 10, 4)
-			+ JulianDay.timeOf(LocalTime.of(19, 29));
+		double jd = JulianDate.of(1957, 10, 4)
+			+ JulianDate.timeOf(LocalTime.of(19, 29));
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);
 		EquatorialCoordinate equatorialCoord = SunPosition.sunEquatorialPosition(eclipticCoord, jd);
 
@@ -72,8 +72,8 @@ class SunPositionTest{
 
 	@Test
 	void sunTopocentricPosition(){
-		double jd = JulianDay.of(1957, 10, 4)
-			+ JulianDay.timeOf(LocalTime.of(19, 29));
+		double jd = JulianDate.of(1957, 10, 4)
+			+ JulianDate.timeOf(LocalTime.of(19, 29));
 		GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 23.);
 		AtmosphericModel atmosphericModel = AtmosphericModel.create(1017., 18.);
 		EclipticCoordinate eclipticCoord = SunPosition.sunEclipticPosition(jd);

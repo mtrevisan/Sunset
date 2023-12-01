@@ -24,6 +24,7 @@
  */
 package io.github.mtrevisan.sunset2;
 
+import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset2.coordinates.GeographicalLocation;
 
 import java.time.Instant;
@@ -87,7 +88,7 @@ public class Main{
 	}
 
 	private static double ts2j(long ts){
-		return (ts / 86400.) + 2440587.5;
+		return ts / JulianDate.SECONDS_PER_DAY + 2440587.5;
 	}
 
 }
