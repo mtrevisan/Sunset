@@ -165,7 +165,7 @@ public class SolarEventCalculator{
 
 
 		//A.2.6. Calculate the approximate sunset time, <code>m2</code>, in fraction of day
-		m[2] = MathHelper.mod(m[0] + sunLocalHour / 360., 2.);
+		m[2] = MathHelper.mod(m[0] + sunLocalHour / 360., 1.);
 
 		m[0] = MathHelper.mod(m[0], 1.);
 
@@ -267,9 +267,8 @@ public class SolarEventCalculator{
 	}
 
 	private static LocalDateTime addFractionOfDay(final LocalDate date, final double fraction){
-		final int millisPlus = (int)(fraction * JulianDate.MILLISECONDS_PER_DAY);
-		return LocalDateTime.of(date.getYear(), date.getMonthValue(), date.getDayOfMonth(), 0, 0, 0, 0)
-			.plus(millisPlus, ChronoUnit.MILLIS);
+		return date.atStartOfDay()
+			.plus((int)(fraction * JulianDate.MILLISECONDS_PER_DAY), ChronoUnit.MILLIS);
 	}
 
 
