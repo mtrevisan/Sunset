@@ -27,8 +27,8 @@ package io.github.mtrevisan.sunset;
 
 /** Defines the solar declination (altitude angle) used in computing the sunrise/sunset. */
 public enum Zenith{
-	/** Official sunrise/set is when the sun is 50' below the horizon (to account for refraction). */
-	OFFICIAL(-50. / 60.),
+	/** Official sunrise/set. */
+	OFFICIAL(0.),
 	/** Civil sunrise/set (dawn/dusk) is when the sun is 6 degrees below the horizon. */
 	CIVIL(-6.),
 	/** Nautical sunrise/set is when the sun is 12 degrees below the horizon. */
@@ -45,6 +45,10 @@ public enum Zenith{
 		elevation = StrictMath.toRadians(degrees);
 	}
 
+
+	/**
+	 * @return	The elevation [rad].
+	 */
 	public double getElevation(){
 		return elevation;
 	}

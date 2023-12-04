@@ -24,7 +24,7 @@
  */
 package io.github.mtrevisan.sunset.core;
 
-import io.github.mtrevisan.sunset.AtmosphericModel;
+import io.github.mtrevisan.sunset.coordinates.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.ResourceReader;
@@ -87,8 +87,13 @@ public final class SunPosition{
 
 	static final double EARTH_FLATTENING = 1. / 298.25642;
 	//[m]
-	static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
+	static final double EARTH_EQUATORIAL_RADIUS = 6378136.6;
 	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_126_7};
+
+	//[m]
+	public static final double SUN_EQUATORIAL_RADIUS = 6.95700e8;
+	//[m]
+	public static final double ASTRONOMICAL_UNIT = 1.495978707e11;
 
 	private static final double[][][] TERMS_L = {
 		{
@@ -364,34 +369,35 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 			final double trueEclipticObliquity){
 		//calculate Earth heliocentric latitude, <code>B</code> [deg]
 		final double[] bTerms = calculateLBRTerms(jme, TERMS_B);
-		final double b = MathHelper.mod(StrictMath.toDegrees(calculateLBRPolynomial(jme, bTerms)), 360.);
+		final double earthHeliocentricLatitude = MathHelper.mod(StrictMath.toDegrees(calculateLBRPolynomial(jme, bTerms)), 360.);
 
 		//calculate Earth radius vector, <code>R</code> [AU]
 		final double[] rTerms = calculateLBRTerms(jme, TERMS_R);
-		final double r = calculateLBRPolynomial(jme, rTerms);
-		assert r != 0;
+		final double earthRadiusVector = calculateLBRPolynomial(jme, rTerms);
+		assert earthRadiusVector != 0;
 
 		//calculate Earth heliocentric longitude, <code>L</code> [deg]
 		final double[] lTerms = calculateLBRTerms(jme, TERMS_L);
-		final double l = MathHelper.mod(StrictMath.toDegrees(calculateLBRPolynomial(jme, lTerms)), 360.);
+		final double earthHeliocentricLongitude = MathHelper.mod(StrictMath.toDegrees(calculateLBRPolynomial(jme, lTerms)), 360.);
 
 		//calculate geocentric longitude, <code>theta</code> [deg]
-		final double theta = MathHelper.mod(l + 180., 360.);
+		final double sunGeocentricLongitude = MathHelper.mod(earthHeliocentricLongitude + 180., 360.);
 
-		//calculate geocentric latitude, beta
-		final double beta = StrictMath.toRadians(-b);
-		final double epsilon = StrictMath.toRadians(trueEclipticObliquity);
+		//calculate geocentric latitude, <code>beta</code> [rad]
+		final double sunGeocentricLatitude = StrictMath.toRadians(-earthHeliocentricLatitude);
 
-		//calculate aberration correction
-		final double deltaTau = -20.4898 / (JulianDate.SECONDS_PER_HOUR * r);
+		//calculate aberration correction, <code>delta tau</code>
+		final double aberrationCorrection = -20.4898 / (JulianDate.SECONDS_PER_HOUR * earthRadiusVector);
 
-		//calculate the apparent sun longitude
-		final double lambda = StrictMath.toRadians(theta + deltaPsi + deltaTau);
+		//calculate the apparent sun longitude, <code>lambda</code>
+		//note: should be 0 for Spring equinox, 90 for Summer solstice, 180 for Autumn equinox, 270 for Winter solstice
+		final double apparentSunLongitude = StrictMath.toRadians(sunGeocentricLongitude + deltaPsi + aberrationCorrection);
 
 		//calculate the geocentric sun right ascension [deg]
-		final double rightAscension = calculateGeocentricSunRightAscension(beta, epsilon, lambda);
+		final double eps = StrictMath.toRadians(trueEclipticObliquity);
+		final double rightAscension = calculateGeocentricSunRightAscension(sunGeocentricLatitude, eps, apparentSunLongitude);
 		//calculate geocentric sun declination [deg]
-		final double declination = StrictMath.toDegrees(calculateGeocentricSunDeclination(beta, epsilon, lambda));
+		final double declination = StrictMath.toDegrees(calculateGeocentricSunDeclination(sunGeocentricLatitude, eps, apparentSunLongitude));
 
 		return EquatorialCoordinate.create(rightAscension, declination);
 	}
@@ -864,7 +870,7 @@ final double radiusVectorApprox = 0.016704 * StrictMath.cos(2. * StrictMath.PI *
 	 * @param radiusVector	Radius vector of the Earth [AU].
 	 * @return	The equatorial horizontal parallax of the Sun [rad].
 	 */
-	private static double equatorialHorizontalParallax(double radiusVector){
+	public static double equatorialHorizontalParallax(double radiusVector){
 		return StrictMath.toRadians(8.794 / (JulianDate.SECONDS_PER_HOUR * radiusVector));
 	}
 

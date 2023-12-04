@@ -39,6 +39,8 @@ public final class GeographicLocation{
 	//[m]
 	private final double altitude;
 
+	private AtmosphericModel atmosphere;
+
 
 	/**
 	 * Creates a new instance with the given parameters.
@@ -73,12 +75,22 @@ public final class GeographicLocation{
 			throw new IllegalArgumentException("Degrees out of range -90 <= latitude <= +90: " + latitude);
 		if(longitude >= 180. || longitude < -180.)
 			throw new IllegalArgumentException("Degrees out of range -180 <= longitude < +180: " + longitude);
-		if(altitude < 0. || altitude >= 11_000.)
-			throw new IllegalArgumentException("Meters out of range 0 <= altitude < +11000: " + altitude);
+		if(altitude < -11_000. || altitude >= 9_000.)
+			throw new IllegalArgumentException("Meters out of range -11000 <= altitude < +9000: " + altitude);
 
 		this.latitude = latitude;
 		this.longitude = longitude;
 		this.altitude = altitude;
+	}
+
+	/**
+	 * @param atmosphere	The atmospheric model of the location.
+	 * @return	This instance.
+	 */
+	public GeographicLocation withAtmosphere(final AtmosphericModel atmosphere){
+		this.atmosphere = atmosphere;
+
+		return this;
 	}
 
 
@@ -108,6 +120,16 @@ public final class GeographicLocation{
 	public double getAltitude(){
 		return altitude;
 	}
+
+	/**
+	 * The atmospheric model of the location.
+	 *
+	 * @return	The atmospheric model.
+	 */
+	public AtmosphericModel getAtmosphere(){
+		return atmosphere;
+	}
+
 
 	@Override
 	public String toString(){

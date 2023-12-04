@@ -24,7 +24,6 @@
  */
 package io.github.mtrevisan.sunset.core;
 
-import io.github.mtrevisan.sunset.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventError;
@@ -32,6 +31,7 @@ import io.github.mtrevisan.sunset.SolarEventException;
 import io.github.mtrevisan.sunset.StringHelper;
 import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.Zenith;
+import io.github.mtrevisan.sunset.coordinates.AtmosphericModel;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;
 import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
@@ -99,7 +99,7 @@ public class SolarEventCalculator{
 		final double ut = JulianDate.of(date);
 		final double jce = JulianDate.centuryJ2000Of(ut);
 
-		//A.2.1. Calculate the apparent sidereal time at Greenwich at 0 UT, and Greenwich apparent sidereal time
+		//A.2.1. Calculate the apparent sidereal time at Greenwich at 0 UT
 		final NutationCorrections nutationCorrections = NutationCorrections.calculate(jce);
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutationCorrections.getDeltaEpsilon());
@@ -125,8 +125,23 @@ public class SolarEventCalculator{
 		//A.2.4. Calculate the local hour angle of the Sun, <code>H0</code>
 		final double phi = StrictMath.toRadians(location.getLatitude());
 		final double delta = StrictMath.toRadians(equatorialCoords[1].getDeclination());
-		final double cosSunLocalHour = (StrictMath.sin(solarZenith.getElevation()) - StrictMath.sin(phi) * StrictMath.sin(delta))
-			/ (StrictMath.cos(phi) * StrictMath.cos(delta));
+		//the solar zenith angle is the correction for:
+		// - observer altitude
+		// - atmospheric refraction at sunrise/sunset
+		// - the size of the solar disk
+		final double correctionAltitude = StrictMath.toRadians(-1.75 * StrictMath.sqrt(location.getAltitude())
+			/ JulianDate.MINUTES_PER_HOUR);
+		final double sunRadiusVector = SunPosition.radiusVector(jce / 10.);
+		double trueElevation = solarZenith.getElevation() + correctionAltitude;
+		if(solarZenith == Zenith.OFFICIAL){
+			//Bennett's equation
+			final double atmosphericRefractionCorrection = location.getAtmosphere().atmosphericRefractionCorrection(0.);
+			//[rad]
+			final double sunSolarDiskRadius = StrictMath.atan2(SunPosition.SUN_EQUATORIAL_RADIUS / SunPosition.ASTRONOMICAL_UNIT, sunRadiusVector);
+			trueElevation -= atmosphericRefractionCorrection + sunSolarDiskRadius;
+		}
+		final double cosSunLocalHour = (StrictMath.sin(trueElevation)
+			- StrictMath.sin(phi) * StrictMath.sin(delta)) / (StrictMath.cos(phi) * StrictMath.cos(delta));
 
 		SunVisibility type = SunVisibility.NORMAL;
 		if(cosSunLocalHour < -1.)
@@ -136,6 +151,13 @@ public class SolarEventCalculator{
 
 		//[deg]
 		final double sunLocalHour = StrictMath.toDegrees(MathHelper.modpi(StrictMath.acos(cosSunLocalHour)));
+//FIXME
+////note: Sun's apparent longitude should be 0 for Spring equinox, 90 for Summer solstice, 180 for Autumn equinox, 270 for Winter solstice
+//final double sunApparentLongitude = 2. * StrictMath.PI * 270. / 360.;
+//final double sunApparentDeclination = SunPosition.apparentDeclination(StrictMath.toRadians(meanEclipticObliquity), sunApparentLongitude);
+////[day]
+//final double sunriseHourAngle = SolarEventCalculator.sunriseHourAngle(location.getLatitude(), sunApparentDeclination, sunLocalHour)
+//	/ (2. * StrictMath.PI);
 
 
 		//A.2.5. Calculate the approximate sunrise time, <code>m1</code>, in fraction of day
@@ -143,7 +165,8 @@ public class SolarEventCalculator{
 
 
 		//A.2.6. Calculate the approximate sunset time, <code>m2</code>, in fraction of day
-		m[2] = MathHelper.mod(m[0] + sunLocalHour / 360., 1.);
+		m[2] = MathHelper.mod(m[0] + sunLocalHour / 360., 2.);
+
 		m[0] = MathHelper.mod(m[0], 1.);
 
 
@@ -171,26 +194,29 @@ public class SolarEventCalculator{
 
 		//apply interpolation
 		final EquatorialCoordinate[] localEquatorialCoords = new EquatorialCoordinate[3];
-		for(int i = 0; i < localEquatorialCoords.length; i ++){
-			final double localRightAscension = equatorialCoords[1].getRightAscension() + (n[i] * (a + b + c * n[i])) / 2.;
-			final double localDeclination = equatorialCoords[1].getDeclination() + (n[i] * (aPrime + bPrime + cPrime * n[i])) / 2.;
-			localEquatorialCoords[i] = EquatorialCoordinate.create(localRightAscension, localDeclination);
-		}
+		for(int i = 0; i < localEquatorialCoords.length; i ++)
+			if(!Double.isNaN(n[i])){
+				final double localRightAscension = equatorialCoords[1].getRightAscension() + (n[i] * (a + b + c * n[i])) / 2.;
+				final double localDeclination = equatorialCoords[1].getDeclination() + (n[i] * (aPrime + bPrime + cPrime * n[i])) / 2.;
+				localEquatorialCoords[i] = EquatorialCoordinate.create(localRightAscension, localDeclination);
+			}
 
 
 		//A.2.11. Calculate the local hour angle for the sun transit, sunrise, and sunset
 		final double[] localHourAngle = new double[3];
 		for(int i = 0; i < localHourAngle.length; i ++)
-			localHourAngle[i] = limitHPrime(greenwichSiderealTime[i] + location.getLongitude() - localEquatorialCoords[i].getRightAscension());
+			if(localEquatorialCoords[i] != null)
+				localHourAngle[i] = limitLocalHourAngle(greenwichSiderealTime[i] + location.getLongitude() - localEquatorialCoords[i].getRightAscension());
 
 
 		//A.2.12. Calculate the sun altitude for the sun transit, sunrise, and sunset, <code>h_i</code> [rad]
 		final double[] sunAltitude = new double[3];
-		for(int i = 0; i < sunAltitude.length; i ++){
-			final double declinationPrime = StrictMath.toRadians(localEquatorialCoords[i].getDeclination());
-			sunAltitude[i] = StrictMath.asin(StrictMath.sin(phi) * StrictMath.sin(declinationPrime)
-				+ StrictMath.cos(phi) * StrictMath.cos(declinationPrime) * StrictMath.cos(StrictMath.toRadians(localHourAngle[i])));
-		}
+		for(int i = 0; i < sunAltitude.length; i ++)
+			if(localEquatorialCoords[i] != null){
+				final double decl = StrictMath.toRadians(localEquatorialCoords[i].getDeclination());
+				sunAltitude[i] = StrictMath.asin(StrictMath.sin(phi) * StrictMath.sin(decl)
+					+ StrictMath.cos(phi) * StrictMath.cos(decl) * StrictMath.cos(StrictMath.toRadians(localHourAngle[i])));
+			}
 
 
 		//A.2.13. Calculate the sun transit, <code>T</code> [day]
@@ -198,16 +224,19 @@ public class SolarEventCalculator{
 
 
 		//A.2.14. Calculate the sunrise, <code>R</code> [day]
-		final double elevation = solarZenith.getElevation();
-		final double r = m[1] + StrictMath.toDegrees((sunAltitude[1] - elevation)
-			/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[1].getDeclination())) * StrictMath.cos(phi)
-			* StrictMath.sin(StrictMath.toRadians(localHourAngle[1]))));
-
+		double r = Double.NaN;
+		if(localEquatorialCoords[1] != null)
+			r = m[1] + StrictMath.toDegrees((sunAltitude[1] - solarZenith.getElevation())
+				/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[1].getDeclination())) * StrictMath.cos(phi)
+				* StrictMath.sin(StrictMath.toRadians(localHourAngle[1]))));
 
 		//A.2.15. Calculate the sunset, <code>S</code> [day]
-		final double s = m[2] + StrictMath.toDegrees((sunAltitude[2] - elevation)
-			/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[2].getDeclination())) * StrictMath.cos(phi)
-			* StrictMath.sin(StrictMath.toRadians(localHourAngle[2]))));
+		double s = Double.NaN;
+		if(localEquatorialCoords[1] != null)
+			s = m[2] + StrictMath.toDegrees((sunAltitude[2] - solarZenith.getElevation())
+				/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[2].getDeclination())) * StrictMath.cos(phi)
+				* StrictMath.sin(StrictMath.toRadians(localHourAngle[2]))));
+
 
 		return switch(type){
 			case NORMAL -> new SolarEvent.RegularDay(addFractionOfDay(date, r), addFractionOfDay(date, t), addFractionOfDay(date, s));
@@ -227,9 +256,9 @@ public class SolarEventCalculator{
 	}
 
 	/** Limit H' values according to A.2.11 */
-	private static double limitHPrime(double hPrime){
-		hPrime /= 360.;
-		final double limited = 360. * (hPrime - StrictMath.floor(hPrime));
+	private static double limitLocalHourAngle(double hourAngle){
+		hourAngle /= 360.;
+		final double limited = 360. * (hourAngle - StrictMath.floor(hourAngle));
 		if(limited < -180.)
 			return limited + 360.;
 		if(limited > 180.)
@@ -664,11 +693,11 @@ Sunset hour angle	83.524274
 			throw new IllegalArgumentException("localHourAngle: " + (localHourAngle - 11.105902));
 
 		//calculate the parallax in the sun right ascension: Δα
-		final double equatorialHorizontalParallax = equatorialHorizontalParallax(eclipticCoord.getDistance());
-		final double latitude = StrictMath.toRadians(location.getLatitude());
-		final double u = StrictMath.atan((1. - EARTH_FLATTENING) * StrictMath.tan(latitude));
-		final double chi = StrictMath.cos(u) + (location.getAltitude() / EARTH_EQUATORIAL_RADIUS) * StrictMath.cos(latitude);
-		final double y = 0.99664719 * StrictMath.sin(u) + (location.getAltitude() / EARTH_EQUATORIAL_RADIUS) * StrictMath.sin(latitude);
+		final double equatorialHorizontalParallax = SunPosition.equatorialHorizontalParallax(eclipticCoord.getDistance());
+		final double phi = StrictMath.toRadians(location.getLatitude());
+		final double u = StrictMath.atan((1. - EARTH_FLATTENING) * StrictMath.tan(phi));
+		final double chi = StrictMath.cos(u) + (location.getAltitude() / EARTH_EQUATORIAL_RADIUS) * StrictMath.cos(phi);
+		final double y = 0.99664719 * StrictMath.sin(u) + (location.getAltitude() / EARTH_EQUATORIAL_RADIUS) * StrictMath.sin(phi);
 		final double deltaRightAscension = StrictMath.atan2(
 			-chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.sin(localHourAngle),
 			StrictMath.cos(coord.getDeclination()) - chi * StrictMath.sin(equatorialHorizontalParallax) * StrictMath.cos(localHourAngle)
@@ -690,8 +719,8 @@ Sunset hour angle	83.524274
 			throw new IllegalArgumentException("localHourAngleTopocentric: " + (localHourAngleTopocentric - 11.10629));
 		//calculate the topocentric elevation angle without atmospheric refraction correction: e0
 		final double e0 = StrictMath.asin(
-			StrictMath.sin(latitude) * StrictMath.sin(declinationTopocentric)
-				+ StrictMath.cos(latitude) * StrictMath.cos(declinationTopocentric) * StrictMath.cos(localHourAngleTopocentric)
+			StrictMath.sin(phi) * StrictMath.sin(declinationTopocentric)
+				+ StrictMath.cos(phi) * StrictMath.cos(declinationTopocentric) * StrictMath.cos(localHourAngleTopocentric)
 		);
 		final double deltaE = atmosphericModel.atmosphericRefractionCorrection(e0);
 		//calculate the topocentric elevation angle: e
@@ -703,8 +732,8 @@ Sunset hour angle	83.524274
 		//calculate the topocentric astronomers azimuth angle (measured westward from south): Γ
 		final double azimuthTopocentric = MathHelper.mod2pi(StrictMath.atan2(
 			StrictMath.sin(localHourAngleTopocentric),
-			StrictMath.cos(localHourAngleTopocentric) * StrictMath.sin(latitude)
-				- StrictMath.tan(declinationTopocentric) * StrictMath.cos(latitude)
+			StrictMath.cos(localHourAngleTopocentric) * StrictMath.sin(phi)
+				- StrictMath.tan(declinationTopocentric) * StrictMath.cos(phi)
 		));
 		//calculate the topocentric azimuth angle (measured westward from north): M
 		final double azimuthTopocentricNavigators = MathHelper.mod2pi(azimuthTopocentric + StrictMath.PI);
@@ -724,16 +753,6 @@ Sunset hour angle	83.524274
 	 */
 	private static double earthOrbitEccentricity(final double tt){
 		return MathHelper.polynomial(tt, new double[]{0.016708634, -0.000042037, -0.0000001267});
-	}
-
-	/**
-	 * Calculate the equatorial horizontal parallax of the Sun, ξ.
-	 *
-	 * @param radiusVector	Radius vector of the Earth [AU].
-	 * @return	The equatorial horizontal parallax of the Sun [rad].
-	 */
-	static double equatorialHorizontalParallax(double radiusVector){
-		return StrictMath.toRadians(8.794 / (JulianDate.SECONDS_PER_HOUR * radiusVector));
 	}
 
 	/**
@@ -812,7 +831,7 @@ Sunset hour angle	83.524274
 	 *
 	 * @param observerLatitude	Latitude of the observer [deg].
 	 * @param sunApparentDeclination	The Sun's apparent declination [rad].
-	 * @param hourAngle	The hour angle [rad].
+	 * @param hourAngle	The hour angle [deg].
 	 * @return	The hour angle for the sunrise [rad].
 	 */
 	public static double sunriseHourAngle(final double observerLatitude, final double sunApparentDeclination, final double hourAngle){
@@ -827,20 +846,20 @@ Sunset hour angle	83.524274
 		// - the size of the solar disk
 		double atmosphericRefraction = 0.;
 		//[deg]
-		final double solarElevation = 90. - StrictMath.toDegrees(StrictMath.acos((tanLat * tanSunDeclination + StrictMath.cos(hourAngle))
+		final double solarElevation = 90. - StrictMath.toDegrees(StrictMath.acos((tanLat * tanSunDeclination + StrictMath.cos(StrictMath.toRadians(hourAngle)))
 			* cosLat * cosSunDeclination));
 		//[deg]
 		if(solarElevation < 85.){
-			final double tanSolarElevationRad = StrictMath.tan(StrictMath.toRadians(solarElevation));
+			final double tanSolarElevation = StrictMath.tan(StrictMath.toRadians(solarElevation));
 			if(solarElevation >= 5.)
-				atmosphericRefraction = (58.1 / tanSolarElevationRad
-					- 0.07 / StrictMath.pow(tanSolarElevationRad, 3)
-					+ 0.000_086 / StrictMath.pow(tanSolarElevationRad, 5)) / JulianDate.SECONDS_PER_HOUR;
+				atmosphericRefraction = (58.1 / tanSolarElevation
+					- 0.07 / StrictMath.pow(tanSolarElevation, 3)
+					+ 0.000_086 / StrictMath.pow(tanSolarElevation, 5)) / JulianDate.SECONDS_PER_HOUR;
 			else if(solarElevation >= -0.575)
 				atmosphericRefraction = (1735.
 					+ (-518.2 + (103.4 + (-12.79 + 0.711 * solarElevation) * solarElevation) * solarElevation) * solarElevation) / JulianDate.SECONDS_PER_HOUR;
 			else
-				atmosphericRefraction = (-20.774 / tanSolarElevationRad) / JulianDate.SECONDS_PER_HOUR;
+				atmosphericRefraction = (-20.774 / tanSolarElevation) / JulianDate.SECONDS_PER_HOUR;
 		}
 		//aphelion: 15.657", perihelion: 16.1982"
 		//FIXME

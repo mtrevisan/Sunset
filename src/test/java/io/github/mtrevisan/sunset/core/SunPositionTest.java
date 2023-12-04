@@ -24,7 +24,7 @@
  */
 package io.github.mtrevisan.sunset.core;
 
-import io.github.mtrevisan.sunset.AtmosphericModel;
+import io.github.mtrevisan.sunset.coordinates.AtmosphericModel;
 import io.github.mtrevisan.sunset.JulianDate;
 import io.github.mtrevisan.sunset.coordinates.EclipticCoordinate;
 import io.github.mtrevisan.sunset.coordinates.EquatorialCoordinate;

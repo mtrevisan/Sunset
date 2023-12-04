@@ -42,9 +42,9 @@ import io.github.mtrevisan.sunset.StringHelper;
  */
 public final class EquatorialCoordinate{
 
-	/** <code>α</code> [rad] */
+	/** <code>α</code> [deg] */
 	private final double rightAscension;
-	/** <code>δ</code> [rad] */
+	/** <code>δ</code> [deg] */
 	private final double declination;
 
 
@@ -117,8 +117,8 @@ public final class EquatorialCoordinate{
 	@Override
 	public String toString(){
 		return "EquatorialCoordinate{"
-			+ "α: " + StringHelper.degreeToHMSString(StrictMath.toDegrees(rightAscension), 2)
-			+ ", δ: " + StringHelper.degreeToDegMinSecString(StrictMath.toDegrees(declination), 2)
+			+ "α: " + StringHelper.degreeToHMSString(rightAscension, 2)
+			+ ", δ: " + StringHelper.degreeToDegMinSecString(declination, 2)
 			+ '}';
 	}
 

@@ -5,6 +5,7 @@ import io.github.mtrevisan.sunset.MathHelper;
 import io.github.mtrevisan.sunset.SolarEventException;
 import io.github.mtrevisan.sunset.TimeHelper;
 import io.github.mtrevisan.sunset.Zenith;
+import io.github.mtrevisan.sunset.coordinates.AtmosphericModel;
 import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 import io.github.mtrevisan.sunset.core.SolarEvent;
 import io.github.mtrevisan.sunset.core.SolarEventCalculator;
@@ -41,7 +42,9 @@ public class Winter{
 	//https://www.sunearthtools.com/dp/tools/pos_sun.php
 	public static void main(final String[] args) throws SolarEventException{
 		final int year = 2023;
-		final GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 16.);
+		AtmosphericModel atmosphere = AtmosphericModel.create(1021.1, 7.);
+		final GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 16.)
+			.withAtmosphere(atmosphere);
 
 		final DecimalFormat decimalFormatter = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 
@@ -60,18 +63,20 @@ System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(winterSolstice) 
 
 
 		final double deltaT = TimeHelper.deltaT(winterSolstice.toLocalDate());
-//ZonedDateTime date = winterSolstice
-//	.atZone(ZoneId.of("Etc/UTC"));
-//SunriseResult result = SPA.calculateSunriseTransitSet(date, 45.714920, 12.194179, deltaT, SPA.Horizon.CIVIL_TWILIGHT);
-//if(result instanceof SunriseResult.RegularDay regular)
-//	System.out.println("spa " + regular.sunset());
+ZonedDateTime date = winterSolstice
+	.atZone(ZoneId.of("Etc/UTC"));
+SunriseResult result = SPA.calculateSunriseTransitSet(date, 45.714920, 12.194179, deltaT, SPA.Horizon.CIVIL_TWILIGHT);
+if(result instanceof SunriseResult.RegularDay regular)
+	System.out.println("spa " + regular.sunset());
 		final LocalDate winterSolsticeDate = winterSolstice.toLocalDate();
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
 		SolarEvent solarEvent = calculator.solarEvent(winterSolsticeDate, deltaT, Zenith.CIVIL);
 		if(solarEvent instanceof SolarEvent.RegularDay event){
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(event.sunset()) + " UTC");
+System.out.println("16:04:23.347");
+			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(event.sunset().plusHours(1)) + " CET");
+			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(event.sunset().plusSeconds((long)(MathHelper.mod(location.getLongitude(), 360.) * 24. * 3600. / 360.))) + " LMT");
 		}
-		System.out.println("16:04:23.347");
 
 //		winterSolsticeSunset = sunset(winterSolsticeDate, location);
 //		decimalFormatter.applyPattern("0.######");

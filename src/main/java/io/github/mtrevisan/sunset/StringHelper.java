@@ -62,6 +62,7 @@ public final class StringHelper{
 
 	public static DecimalFormat decimalFormat(final int precision){
 		final DecimalFormat df = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
+		df.setGroupingUsed(false);
 		df.setMaximumFractionDigits(precision);
 		return df;
 	}

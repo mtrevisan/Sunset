@@ -22,13 +22,19 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.sunset.coordinates;
+
+import io.github.mtrevisan.sunset.JulianDate;
+import io.github.mtrevisan.sunset.StringHelper;
 
 
 /**
  * @see <a href="https://en.wikipedia.org/wiki/International_Standard_Atmosphere">International Standard Atmosphere</>
  */
 public final class AtmosphericModel{
+
+	/** [hPa] */
+	public static final double STANDARD_PRESSURE = 1013.25;
 
 	/** [°C] */
 	private static final double ABSOLUTE_ZERO = -273.15;
@@ -68,7 +74,7 @@ public final class AtmosphericModel{
 	 *
 	 * @return	The pressure [hPa].
 	 */
-	public double getPRessure(){
+	public double getPressure(){
 		return pressure;
 	}
 
@@ -83,25 +89,28 @@ public final class AtmosphericModel{
 
 
 	/**
-	 * Calculate the atmospheric refraction correction, Δe.
+	 * Calculate the atmospheric refraction correction, <code>Δe</code>.
 	 *
-	 * @param elevation	The topocentric elevation angle without atmospheric refraction correction [rad].
+	 * @param elevation	The observed topocentric elevation angle without atmospheric refraction correction [rad].
 	 * @return	The correction [rad].
+	 *
+	 * @see <a href="https://digitalcommons.mtu.edu/etdr/697/">Evaluating the Effectiveness of Current Atmospheric Refraction Models in Predicting Sunrise and Sunset Times</a>
+	 * @see <a href="https://github.com/Starlink/starjava/blob/master/pal/src/main/uk/ac/starlink/pal/Pal.java">Pal.java</a>
 	 */
 	public double atmosphericRefractionCorrection(final double elevation){
 		final double elev = StrictMath.toDegrees(elevation);
-		return StrictMath.toRadians((pressure / 1010.)
-			* ((ABSOLUTE_ZERO - 10.) / (ABSOLUTE_ZERO - temperature))
-			* (1.02 / (60. * StrictMath.tan(StrictMath.toRadians(elev + 10.3 / (elev + 5.11)))))
-		);
+		//Bennett-NA's equation [deg]
+		final double deltaElevation = 0.0167 / StrictMath.tan(StrictMath.toRadians(elev + 7.32 / (elev + 4.32)))
+			* (pressure / 1010.) * ((10. - ABSOLUTE_ZERO) / (temperature - ABSOLUTE_ZERO));
+		return StrictMath.toRadians(deltaElevation);
 	}
 
 
 	@Override
 	public String toString(){
 		return "AtmosphericModel{"
-			+ "pressure: " + StringHelper.degreeToHMSString(StrictMath.toDegrees(pressure), 2) + " hPa"
-			+ ", temperature: " + StringHelper.degreeToDegMinSecString(temperature, 1) + " °C"
+			+ "pressure: " + StringHelper.decimalFormat(2).format(pressure) + " hPa"
+			+ ", temperature: " + StringHelper.decimalFormat(1).format(temperature) + " °C"
 			+ '}';
 	}
 
