@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,7 +22,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset.coordinates;
+package io.github.mtrevisan.astro.coordinates;
 
 
 /**
@@ -33,44 +33,44 @@ package io.github.mtrevisan.sunset.coordinates;
  */
 public class OrbitalElements{
 
-	//epoch of orbital elements as Julian Ephemeris Date, t [JD].
+	//epoch of orbital elements as Julian Ephemeris Date [JD].
 	public double t;
 
 	//shape and size of the ellipse:
-	/** Shape of the ellipse (0 = circular, 1 = parabolic, > 1 = hyperbolic), e. */
+	/** Shape of the ellipse (0 = circular, 1 = parabolic, > 1 = hyperbolic), <code>e</code>. */
 	public double eccentricity;
-	/** Semimajor axis, a [AU]. */
+	/** Semimajor axis, <code>a</code> [AU]. */
 	public double semimajorAxis;
 
 	//orientation of the orbital plane in which the ellipse is embedded:
 	/**
 	 * Vertical tilt of the ellipse with respect to the reference plane, measured at the ascending node (where the orbit passes upward
-	 * through the reference plane, the green angle i in the diagram), i [rad].
+	 * through the reference plane), <code>i</code> [rad].
 	 * <p>Tilt angle is measured perpendicular to line of intersection between orbital plane and reference plane.</p>
 	 */
 	public double inclination;
 	/**
 	 * Horizontally orients the ascending node of the ellipse (where the orbit passes upward through the reference plane) with respect to
-	 * the reference frame's vernal point, Ω [rad].
+	 * the reference frame's vernal point, <code>Ω</code> [rad].
 	 */
 	public double longitudeAscendingNode;
 
-	/** Orientation of the ellipse in the orbital plane, as an angle measured from the ascending node to the periapsis, ω [rad]. */
+	/** Orientation of the ellipse in the orbital plane, as an angle measured from the ascending node to the periapsis, <code>ω</code> [rad]. */
 	public double argumentOfPerihelion;
 	/**
 	 * Fraction of an elliptical orbit's period that has elapsed since the orbiting body passed periapsis, expressed as an angle which can
 	 * be used in calculating the position of that body in the classical two-body problem. It is the angular distance from the pericenter
 	 * which a fictitious body would have if it moved in a circular orbit, with constant speed, in the same orbital period as the actual
-	 * body in its elliptical orbit, M [rad].
+	 * body in its elliptical orbit, <code>M</code> [rad].
 	 * <p>
-	 * True anomaly, v, is meanAnomaly + equationOfCenter.
+	 * True anomaly, <code>v = meanAnomaly + equationOfCenter</code>.
 	 * </p>
 	 */
 	public double meanAnomaly;
 
 	/**
 	 *  Angular speed required for a body to complete one orbit, assuming constant speed in a circular orbit which completes in the same
-	 *  time as the variable speed, elliptical orbit of the actual body, n [rad/day].
+	 *  time as the variable speed, elliptical orbit of the actual body, <code>n</code> [rad/day].
 	 */
 	public double meanMotion;
 

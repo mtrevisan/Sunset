@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,12 +22,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.astro.helpers;
 
 
 public final class MathHelper{
 
-	private static final double TWO_PI = StrictMath.PI * 2.;
+	public static final double TWO_PI = StrictMath.PI * 2.;
 
 
 	private MathHelper(){}
@@ -59,12 +59,12 @@ public final class MathHelper{
 	}
 
 	public static double toDegrees(final int degree, final int minute, final double second){
-		return degree + (minute + second / 60.) / 60.;
+		return degree + (minute + second / JulianDate.MINUTES_PER_HOUR) / JulianDate.MINUTES_PER_HOUR;
 	}
 
 	public static double limitRangeHour(double degree){
 		degree %= 24;
-		return (degree < 0.? degree + 24.: degree);
+		return (degree < 0.? degree + JulianDate.HOURS_PER_DAY: degree);
 	}
 
 	public static double limitRangeDay(double value){

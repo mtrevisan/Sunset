@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,10 +22,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset.coordinates;
+package io.github.mtrevisan.astro.coordinates;
 
-import io.github.mtrevisan.sunset.MathHelper;
-import io.github.mtrevisan.sunset.StringHelper;
+import io.github.mtrevisan.astro.helpers.MathHelper;
+import io.github.mtrevisan.astro.helpers.StringHelper;
 
 
 /**
@@ -51,8 +51,8 @@ public final class EquatorialCoordinate{
 	/**
 	 * Creates a new instance with the given parameters.
 	 *
-	 * @param rightAscension	The right ascension [rad].
-	 * @param declination	The declination [rad].
+	 * @param rightAscension	The right ascension [deg].
+	 * @param declination	The declination [deg].
 	 * @return	An instance.
 	 */
 	public static EquatorialCoordinate create(final double rightAscension, final double declination){
@@ -99,7 +99,7 @@ public final class EquatorialCoordinate{
 	/**
 	 * The right ascension.
 	 *
-	 * @return	The right ascension [rad].
+	 * @return	The right ascension [deg].
 	 */
 	public double getRightAscension(){
 		return rightAscension;
@@ -108,7 +108,7 @@ public final class EquatorialCoordinate{
 	/**
 	 * The declination.
 	 *
-	 * @return	The declination [rad].
+	 * @return	The declination [deg].
 	 */
 	public double getDeclination(){
 		return declination;

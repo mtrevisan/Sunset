@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,7 +22,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.astro.helpers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,7 +53,7 @@ public final class JulianDate{
 
 	public static final double MJD = 2_400_000.5;
 	/** 1.5 Jan 2000 UT - Julian epoch. */
-	private static final double J2000 = 2_451_545.;
+	static final double J2000 = 2_451_545.;
 
 	public static final double CIVIL_SAECULUM = 36_525.;
 	public static final double CIVIL_MILLENNIUM = CIVIL_SAECULUM * 10.;
@@ -94,7 +94,7 @@ public final class JulianDate{
 	 * @return	The Julian Date [day].
 	 */
 	public static double of(final ZonedDateTime date){
-		return of(date.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
+		return of(LocalDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC));
 	}
 
 	/**
@@ -128,7 +128,7 @@ public final class JulianDate{
 	}
 
 	/**
-	 * Calculated the Julian Century since JDE2451545, that is J2000.0.
+	 * Calculated the Julian Century since JDE2451545 TT, that is J2000.0.
 	 *
 	 * @param jd	The Julian Date [day].
 	 * @return	The Julian Century.
@@ -138,7 +138,7 @@ public final class JulianDate{
 	}
 
 	/**
-	 * Calculated the Julian Millennium since JDE2451545, that is J2000.0.
+	 * Calculated the Julian Millennium since JDE2451545 TT, that is J2000.0.
 	 *
 	 * @param jd	The Julian Date [day].
 	 * @return	The Julian Century.

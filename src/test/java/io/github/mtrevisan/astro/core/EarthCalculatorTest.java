@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,17 +22,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset.core;
+package io.github.mtrevisan.astro.core;
 
-import io.github.mtrevisan.sunset.Zenith;
-import io.github.mtrevisan.sunset.coordinates.AtmosphericModel;
-import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
-import net.e175.klaus.solarpositioning.SPA;
-import net.e175.klaus.solarpositioning.SunriseResult;
+import io.github.mtrevisan.astro.coordinates.AtmosphericModel;
+import io.github.mtrevisan.astro.coordinates.GeographicLocation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -40,7 +36,7 @@ import java.time.format.DateTimeFormatter;
 
 
 @SuppressWarnings("ALL")
-class SolarEventCalculatorTest{
+class EarthCalculatorTest{
 
 	@Test
 	void testExampleSunriseTransitSet(){
@@ -50,10 +46,13 @@ class SolarEventCalculatorTest{
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(39.742476, -105.1786, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 67., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 67., Zenith.OFFICIAL);
 
-		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2003-10-17T06:12:43.931-07:00", "2003-10-17T11:46:04.959-07:00", "2003-10-17T17:18:51.207-07:00");
+		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
+			"2003-10-17T06:12:43.931-07:00",
+			"2003-10-17T11:46:04.959-07:00",
+			"2003-10-17T17:18:51.207-07:00");
 	}
 
 	@Test
@@ -65,10 +64,13 @@ class SolarEventCalculatorTest{
 		//location is Honningsvåg, Norway (near North Cape)
 		final GeographicLocation location = GeographicLocation.create(70.978056, 25.974722, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 0., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 0., Zenith.OFFICIAL);
 
-		compare(solarEvent, SolarEvent.AlwaysDay.class, date.getOffset(), null, "2015-06-17T12:16:55.717+02:00", null);
+		compare(sunlightPhase, SunlightPhase.AlwaysDay.class, date.getOffset(),
+			null,
+			"2015-06-17T12:16:55.717+02:00",
+			null);
 	}
 
 	@Test
@@ -80,10 +82,13 @@ class SolarEventCalculatorTest{
 		//location is Honningsvåg, Norway (near North Cape)
 		final GeographicLocation location = GeographicLocation.create(70.978056, 25.974722, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 0., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 0., Zenith.OFFICIAL);
 
-		compare(solarEvent, SolarEvent.AlwaysNight.class, date.getOffset(), null, null, null);
+		compare(sunlightPhase, SunlightPhase.AlwaysNight.class, date.getOffset(),
+			null,
+			null,
+			null);
 	}
 
 	@Test
@@ -94,11 +99,14 @@ class SolarEventCalculatorTest{
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(-36.8406, 174.74, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 0., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 0., Zenith.OFFICIAL);
 
 		//NOAA: 7:32, 12:21:41, 17:11
-		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2015-06-17T07:32:29.115+12:00", "2015-06-17T12:21:46.651+12:00", "2015-06-17T17:11:01.320+12:00");
+		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
+			"2015-06-17T07:32:29.115+12:00",
+			"2015-06-17T12:21:46.651+12:00",
+			"2015-06-17T17:11:01.320+12:00");
 	}
 
 	@Test
@@ -109,11 +117,14 @@ class SolarEventCalculatorTest{
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(52.33, 13.3, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 6:49, 11:50:53, 16:52
-		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2015-10-25T06:49:02.979+01:00", "2015-10-25T11:50:55.328+01:00", "2015-10-25T16:51:59.301+01:00");
+		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
+			"2015-10-25T06:49:02.979+01:00",
+			"2015-10-25T11:50:55.328+01:00",
+			"2015-10-25T16:51:59.301+01:00");
 	}
 
 	@Test
@@ -124,11 +135,14 @@ class SolarEventCalculatorTest{
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(52.33, 13.3, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 06:52, 13:12:01, 19:33
-		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2016-03-27T05:52:19.922+01:00", "2016-03-27T12:12:02.218+01:00", "2016-03-27T18:32:48.972+01:00");
+		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
+			"2016-03-27T05:52:19.922+01:00",
+			"2016-03-27T12:12:02.218+01:00",
+			"2016-03-27T18:32:48.972+01:00");
 	}
 
 	@Test
@@ -139,11 +153,14 @@ class SolarEventCalculatorTest{
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(-36.84, 174.74, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 06:36, same, 18:12
-		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2016-04-03T06:36:10.302+12:00", "2016-04-03T12:24:19.284+12:00", "2016-04-03T18:11:54.701+12:00");
+		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
+			"2016-04-03T06:36:10.302+12:00",
+			"2016-04-03T12:24:19.284+12:00",
+			"2016-04-03T18:11:54.701+12:00");
 	}
 
 	@Test
@@ -154,18 +171,21 @@ class SolarEventCalculatorTest{
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(-36.84, 174.74, 0.)
 			.withAtmosphere(atmosphere);
-		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
+		EarthCalculator calculator = EarthCalculator.create(location);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 07:04, 13:12:19, 19:21
-		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2015-09-27T06:04:15.194+12:00", "2015-09-27T12:12:17.453+12:00", "2015-09-27T18:20:55.543+12:00");
+		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
+			"2015-09-27T06:04:15.194+12:00",
+			"2015-09-27T12:12:17.453+12:00",
+			"2015-09-27T18:20:55.543+12:00");
 	}
 
 
-	private static void compare(SolarEvent result, Class<?> refClass, ZoneOffset zoneOffset, String refSunrise, String refTransit, String refSunset){
+	private static void compare(SunlightPhase result, Class<?> refClass, ZoneOffset zoneOffset, String refSunrise, String refTransit, String refSunset){
 		if(refClass != null)
 			Assertions.assertEquals(refClass, result.getClass());
-		if(result instanceof SolarEvent.RegularDay regularDay){
+		if(result instanceof SunlightPhase.RegularDay regularDay){
 			Assertions.assertEquals(refSunrise, regularDay.sunrise().toString());
 			Assertions.assertEquals(refSunset, regularDay.sunset().toString());
 		}
@@ -175,9 +195,9 @@ class SolarEventCalculatorTest{
 
 
 	//	@Test
-//	void localSunPosition() throws SolarEventException{
+//	void localSunPosition() throws SunlightPhaseException{
 //		GeographicLocation location = GeographicLocation.create(39.742476, -105.1786, 1830.14);
-//		SolarEventCalculator calc = SolarEventCalculator.create(location);
+//		EarthCalculator calc = EarthCalculator.create(location);
 //		final AtmosphericModel atmosphericModel = AtmosphericModel.create(820, 11.);
 //
 //		double ut = JulianDate.of(2003, 10, 17)
@@ -242,9 +262,9 @@ class SolarEventCalculatorTest{
 //	}
 
 //	@Test
-//	void astronomicalSunset() throws SolarEventException{
+//	void astronomicalSunset() throws SunlightPhaseException{
 //		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179);
-//		SolarEventCalculator calc = SolarEventCalculator.create(location);
+//		EarthCalculator calc = EarthCalculator.create(location);
 //
 //		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.ASTRONOMICAL);
 //
@@ -252,9 +272,9 @@ class SolarEventCalculatorTest{
 //	}
 
 //	@Test
-//	void civilSunset() throws SolarEventException{
+//	void civilSunset() throws SunlightPhaseException{
 //		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179);
-//		SolarEventCalculator calc = SolarEventCalculator.create(location);
+//		EarthCalculator calc = EarthCalculator.create(location);
 //
 //		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.CIVIL);
 //
@@ -262,9 +282,9 @@ class SolarEventCalculatorTest{
 //	}
 
 //	@Test
-//	void officialSunset() throws SolarEventException{
+//	void officialSunset() throws SunlightPhaseException{
 //		GNSSLocation location = GNSSLocation.create(45.714920, 12.194179);
-//		SolarEventCalculator calc = SolarEventCalculator.create(location);
+//		EarthCalculator calc = EarthCalculator.create(location);
 //
 //		LocalDateTime datetime = calc.sunset(LocalDate.of(2022, 12, 25), Zenith.OFFICIAL);
 //

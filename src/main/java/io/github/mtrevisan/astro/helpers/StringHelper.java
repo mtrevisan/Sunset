@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,7 +22,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.astro.helpers;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -41,10 +41,10 @@ public final class StringHelper{
 		degree /= JulianDate.DEGREES_PER_HOUR;
 		final int hour = (int)degree;
 		degree -= hour;
-		degree *= 60.;
+		degree *= JulianDate.MINUTES_PER_HOUR;
 		final int minute = (int)degree;
 		degree -= minute;
-		degree *= 60.;
+		degree *= JulianDate.MINUTES_PER_HOUR;
 		final double second = degree;
 		final DecimalFormat df = decimalFormat(precision);
 		return hour + "h " + minute + "m " + df.format(second) + "s";
@@ -53,9 +53,9 @@ public final class StringHelper{
 	@SuppressWarnings("NumericCastThatLosesPrecision")
 	public static String degreeToDegMinSecString(final double degree, final int precision){
 		final int hour = (int)degree;
-		final double deg = Math.abs((degree - hour) * 60.);
+		final double deg = Math.abs((degree - hour) * JulianDate.MINUTES_PER_HOUR);
 		final int minute = (int)deg;
-		final double second = (deg - minute) * 60.;
+		final double second = (deg - minute) * JulianDate.MINUTES_PER_HOUR;
 		final DecimalFormat df = decimalFormat(precision);
 		return hour + "° " + minute + "' " + df.format(second) + "\"";
 	}

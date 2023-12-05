@@ -1,7 +1,6 @@
-package io.github.mtrevisan.sunset.core;
+package io.github.mtrevisan.astro.core;
 
-import io.github.mtrevisan.sunset.JulianDate;
-import io.github.mtrevisan.sunset.MathHelper;
+import io.github.mtrevisan.astro.helpers.MathHelper;
 
 
 public class NutationCorrections{
@@ -145,9 +144,9 @@ public class NutationCorrections{
 	};
 
 
-	//[deg]
+	/** Calculate <code>Δψ</code> [rad]. */
 	private final double deltaPsi;
-	//[deg]
+	/** Calculate <code>Δε</code> [rad]. */
 	private final double deltaEpsilon;
 
 
@@ -206,7 +205,7 @@ public class NutationCorrections{
 		double sum = 0.;
 		for(int i = 0; i < deltaPsiOrEpsilonI.length; i ++)
 			sum += deltaPsiOrEpsilonI[i];
-		return sum / 36_000_000.;
+		return StrictMath.toRadians(sum / 36_000_000.);
 	}
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Mauro Trevisan
+ * Copyright (c) 2023 Mauro Trevisan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -22,35 +22,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.astro;
 
 
-/** Defines the solar declination (altitude angle) used in computing the sunrise/sunset. */
-public enum Zenith{
-	/** Official sunrise/set. */
-	OFFICIAL(0.),
-	/** Civil sunrise/set (dawn/dusk) is when the sun is 6 degrees below the horizon. */
-	CIVIL(-6.),
-	/** Nautical sunrise/set is when the sun is 12 degrees below the horizon. */
-	NAUTICAL(-12.),
-	/** Astronomical sunrise/set is when the sun is 18 degrees below the horizon. */
-	ASTRONOMICAL(-18.);
-
-
-	/** Solar elevation [rad]. */
-	private final double elevation;
-
-
-	Zenith(final double degrees){
-		elevation = StrictMath.toRadians(degrees);
-	}
-
-
-	/**
-	 * @return	The elevation [rad].
-	 */
-	public double getElevation(){
-		return elevation;
-	}
-
+public enum SunlightPhaseError{
+	NEVER_RISES,
+	NEVER_SETS
 }

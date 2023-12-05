@@ -1,6 +1,6 @@
-/*
- * Copyright (c) 2022-2022 Mauro Trevisan
- *
+/**
+ * Copyright (c) 2021 Mauro Trevisan
+ * <p>
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
@@ -9,10 +9,10 @@
  * copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following
  * conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -22,42 +22,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset;
+package io.github.mtrevisan.astro.core;
 
-import java.io.Serial;
-
-
-/**
- * Thrown if the Sun never rises or never sets.
- */
-public class SolarEventException extends Exception{
-
-	@Serial
-	private static final long serialVersionUID = 3660516823104741068L;
+import java.time.ZonedDateTime;
 
 
-	/** Type of error. */
-	private final SolarEventError error;
-
-
-	/**
-	 * Constructs a new exception with the specified error.
-	 *
-	 * @param error	The error.
-	 * @return	An instance of this exception.
-	 */
-	public static SolarEventException create(final SolarEventError error){
-		return new SolarEventException(error);
-	}
-
-
-	/**
-	 * Constructs a new exception with the specified error.
-	 *
-	 * @param error	The error.
-	 */
-	private SolarEventException(final SolarEventError error){
-		this.error = error;
-	}
+/** Result types for season calculations. */
+public record SeasonPhase(ZonedDateTime spring, ZonedDateTime summer, ZonedDateTime autumn, ZonedDateTime winter){
 
 }

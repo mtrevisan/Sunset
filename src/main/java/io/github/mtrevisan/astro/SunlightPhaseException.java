@@ -1,6 +1,6 @@
-/**
- * Copyright (c) 2021 Mauro Trevisan
- * <p>
+/*
+ * Copyright (c) 2023 Mauro Trevisan
+ *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
@@ -9,10 +9,10 @@
  * copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following
  * conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -22,38 +22,42 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.github.mtrevisan.sunset.core;
+package io.github.mtrevisan.astro;
 
-import java.time.ZonedDateTime;
+import java.io.Serial;
 
 
-/** Result types for sunrise/sunset calculations. */
-public sealed interface SolarEvent{
+/**
+ * Thrown if the Sun never rises or never sets.
+ */
+public class SunlightPhaseException extends Exception{
 
-	ZonedDateTime transit();
+	@Serial
+	private static final long serialVersionUID = 3660516823104741068L;
+
+
+	/** Type of error. */
+	private final SunlightPhaseError error;
+
+
+	/**
+	 * Constructs a new exception with the specified error.
+	 *
+	 * @param error	The error.
+	 * @return	An instance of this exception.
+	 */
+	public static SunlightPhaseException create(final SunlightPhaseError error){
+		return new SunlightPhaseException(error);
+	}
 
 
 	/**
-	 * Result type for a day with sunrise and sunset.
+	 * Constructs a new exception with the specified error.
 	 *
-	 * @param sunrise	Time of sunrise.
-	 * @param transit	Time of transit (culmination), i.e. when the sun is closest to the zenith.
-	 * @param sunset	Time of sunset.
+	 * @param error	The error.
 	 */
-	record RegularDay(ZonedDateTime sunrise, ZonedDateTime transit, ZonedDateTime sunset) implements SolarEvent{}
-
-	/**
-	 * A day on which the sun is above the horizon all the time (polar day).
-	 *
-	 * @param transit	Time of transit (culmination), i.e. when the sun is closest to the zenith.
-	 */
-	record AlwaysDay(ZonedDateTime transit) implements SolarEvent{}
-
-	/**
-	 * A day on which the sun is below the horizon all the time (polar night).
-	 *
-	 * @param transit	Time of transit (culmination), i.e. when the sun is closest to the zenith.
-	 */
-	record AlwaysNight(ZonedDateTime transit) implements SolarEvent{}
+	private SunlightPhaseException(final SunlightPhaseError error){
+		this.error = error;
+	}
 
 }
