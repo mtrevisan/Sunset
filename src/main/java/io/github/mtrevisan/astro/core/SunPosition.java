@@ -70,6 +70,8 @@ public final class SunPosition{
 //	private static Map<String, Collection<Double[]>> NUTATION_DATA;
 	static{
 		try{
+			//VSOP87 Planetary Theory
+			//https://github.com/THRASTRO/ephem.js
 			EARTH_HELIOCENTRIC_DATA = ResourceReader.read("earthHeliocentric.dat");
 //			EARTH_HELIOCENTRIC_DATA2 = ResourceReader.readData("VSOP2013p3.dat");
 //			NUTATION_DATA = ResourceReader.read("nutation.dat");
@@ -77,8 +79,9 @@ public final class SunPosition{
 		catch(final IOException ignored){}
 	}
 
+	//https://neoprogrammics.com/obliquity-of-the-ecliptic/laskar_paper/index.php
 	private static final double[] OBLIQUITY_COEFFS = {
-		84381.448, -4680.93, -1.55, 1999.25, 51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45
+		84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45
 	};
 
 //	static final double EARTH_FLATTENING = 1. / 298.25642;
@@ -131,7 +134,6 @@ public final class SunPosition{
 		final double aberrationCorrection = aberrationCorrection(sunGeocentricPosition.getDistance());
 
 		//calculate the apparent sun longitude, <code>lambda</code> [rad]
-		//note: should be 0 for Spring equinox, 90 for Summer solstice, 180 for Autumn equinox, 270 for Winter solstice
 		final double apparentSunLongitude = sunGeocentricPosition.getLongitude() + deltaPsi + aberrationCorrection;
 
 		//calculate the geocentric sun right ascension [rad]
@@ -226,35 +228,100 @@ public final class SunPosition{
 	}
 
 
-//	/**
-//	 * Calculated the Sun equatorial position.
-//	 *
-//	 * @param eclipticCoord	Mean ecliptic coordinate of the Sun.
-//	 * @param jd	Julian Day of Terrestrial Time from J2000.0.
-//	 * @return	The Sun equatorial position.
-//	 *
-//	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
-//	 */
-//	public static EquatorialCoordinate sunEquatorialPosition(final EclipticCoordinate eclipticCoord, final double jd){
-//		final double jce = JulianDate.centuryJ2000Of(jd);
-//
-//		final double sunMeanAnomaly = SunPosition.geocentricMeanAnomaly(jce);
-//		//calculate the nutation in longitude and obliquity
-//		final double[] nutation = nutationCorrection(sunMeanAnomaly, jce);
-//		//calculate the aberration correction
-//		final double aberration = aberrationCorrection(eclipticCoord.getDistance());
-//		//calculate the apparent Sun longitude: Ltrue = L + C
-//		final double apparentGeocentricLongitude = apparentGeocentricLongitude(eclipticCoord.getLongitude(), nutation[0], aberration);
-//
-//		//calculate the obliquity of the ecliptic (the inclination of the Earth’s equator with respect to the plane at which the Sun
-//		//and planets appear to move across the sky): ɛ0
-//		final double meanEclipticObliquity = meanEclipticObliquity(jce);
-//		//calculate the true obliquity of the ecliptic
-//		final double trueEclipticObliquity = trueEclipticObliquity(meanEclipticObliquity, nutation[1]);
-//
-//		return EquatorialCoordinate.createFromEcliptical(eclipticCoord.getLatitude(), apparentGeocentricLongitude, trueEclipticObliquity);
-//	}
-//
+	/**
+	 * Calculate the heliocentric mean latitude of the Earth, referred to the mean equinox of the date, <code>β</code>.
+	 *
+	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
+	 * @return	The ecliptical mean latitude of the Sun [rad].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
+	 */
+	public static double earthHeliocentricLatitude(final double jme){
+		final double[] parameters = new double[6];
+		for(int i = 0; i < parameters.length; i ++){
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
+			if(elements != null){
+				double parameter = 0.;
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
+		}
+		return MathHelper.modpi(
+			MathHelper.polynomial(jme, parameters) / 100_000_000.
+		);
+	}
+
+	/**
+	 * Calculate the heliocentric mean longitude of the Earth, referred to the mean equinox of the date, <code>L</code>.
+	 *
+	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
+	 * @return	The ecliptical mean longitude of the Sun [rad].
+	 *
+	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
+	 */
+	public static double earthHeliocentricLongitude(final double jme){
+		final double[] parameters = new double[6];
+		for(int i = 0; i < parameters.length; i ++){
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
+			if(elements != null){
+				double parameter = 0.;
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
+		}
+		return MathHelper.mod2pi(
+			MathHelper.polynomial(jme, parameters) / 100_000_000.
+		);
+	}
+
+	/**
+	 * Calculate the distance between the center of the Sun and the center of the Earth, <code>R</code>.
+	 * <p>U.S. Naval Observatory function.</p>
+	 *
+	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
+	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
+	 */
+	public static double radiusVector(final double jme){
+		final double[] parameters = new double[6];
+		for(int i = 0; i < parameters.length; i ++){
+			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
+			if(elements != null){
+				double parameter = 0.;
+				for(final Double[] element : elements)
+					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
+				parameters[i] = parameter;
+			}
+		}
+		return MathHelper.polynomial(jme, parameters) / 100_000_000.;
+	}
+
+
+	/**
+	 * Calculate the mean obliquity of the ecliptic, <code>ɛ0</code>.
+	 *
+	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
+	 * @return	Apparent longitude of the Sun [rad].
+	 */
+	public static double meanEclipticObliquity(final double jce){
+		return StrictMath.toRadians(
+			MathHelper.polynomial(jce / 100., OBLIQUITY_COEFFS) / JulianDate.SECONDS_PER_HOUR
+		);
+	}
+
+	/**
+	 * True obliquity of the ecliptic corrected for nutation, <code>ɛ</code>.
+	 *
+	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [rad].
+	 * @param obliquityNutation	Corrections of nutation in obliquity (<code>∆ε</code>) [rad].
+	 * @return	Apparent longitude of the Sun [rad].
+	 */
+	public static double trueEclipticObliquity(final double meanEclipticObliquity, final double obliquityNutation){
+		return meanEclipticObliquity + obliquityNutation;
+	}
+
+
 //	/**
 //	 * Calculated the Sun topocentric position.
 //	 *
@@ -326,76 +393,7 @@ public final class SunPosition{
 //		final double topocentricAzimuthNavigators = MathHelper.mod2pi(topocentricAzimuth + StrictMath.PI);
 //		return HorizontalCoordinate.create(topocentricAzimuthNavigators, topocentricElevation, eclipticCoord.getDistance());
 //	}
-//
 
-	/**
-	 * Calculate the heliocentric mean latitude of the Earth, referred to the mean equinox of the date, <code>β</code>.
-	 *
-	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
-	 * @return	The ecliptical mean latitude of the Sun [rad].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
-	 */
-	public static double earthHeliocentricLatitude(final double jme){
-		final double[] parameters = new double[6];
-		for(int i = 0; i < parameters.length; i ++){
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
-			if(elements != null){
-				double parameter = 0.;
-				for(final Double[] element : elements)
-					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-				parameters[i] = parameter;
-			}
-		}
-		return MathHelper.modpi(
-			MathHelper.polynomial(jme, parameters) / 100_000_000.
-		);
-	}
-
-	/**
-	 * Calculate the heliocentric mean longitude of the Earth, referred to the mean equinox of the date, <code>L</code>.
-	 *
-	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
-	 * @return	The ecliptical mean longitude of the Sun [rad].
-	 *
-	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
-	 */
-	public static double earthHeliocentricLongitude(final double jme){
-		final double[] parameters = new double[6];
-		for(int i = 0; i < parameters.length; i ++){
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
-			if(elements != null){
-				double parameter = 0.;
-				for(final Double[] element : elements)
-					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-				parameters[i] = parameter;
-			}
-		}
-		return MathHelper.mod2pi(
-			MathHelper.polynomial(jme, parameters) / 100_000_000.
-		);
-	}
-
-	/**
-	 * Calculate the distance between the center of the Sun and the center of the Earth, <code>R</code>.
-	 * <p>U.S. Naval Observatory function.</p>
-	 *
-	 * @param jme	Julian Ephemeris Millennium of Terrestrial Time from J2000.0.
-	 * @return	Distance between the center of the Sun and the center of the Earth [AU].
-	 */
-	public static double radiusVector(final double jme){
-		final double[] parameters = new double[6];
-		for(int i = 0; i < parameters.length; i ++){
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
-			if(elements != null){
-				double parameter = 0.;
-				for(final Double[] element : elements)
-					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
-				parameters[i] = parameter;
-			}
-		}
-		return MathHelper.polynomial(jme, parameters) / 100_000_000.;
-	}
 
 //	/**
 //	 * Calculate the Sun's equation of center, <code>C</code>.
@@ -592,11 +590,11 @@ public final class SunPosition{
 //	 * <p>
 //	 * As the Earth revolves around the Sun, it is moving at a velocity of approximately 29.78 km/s. The speed of light is approximately
 //	 * 300,000 km/s. In the special case where the Earth is moving perpendicularly to the direction of the star, the angle of displacement,
-//	 * would therefore be (in radians) the ratio of the two velocities, i.e. vₑ = 2 ⋅ π ⋅ 1 AU / (365.25 ⋅ d) = 29.75, and vₑ / c = 0.00009935
-//	 * rad, or about 20.5 arcseconds.
+//	 * would therefore be (in radians) the ratio of the two velocities, i.e. <code>vₑ = 2 ⋅ π ⋅ 1 AU / (365.25 ⋅ d) = 29.75</code>,
+//	 * and <code>vₑ / c = 0.00009935 rad</code>, or about <code>20.5 arcseconds</code>.
 //	 * <br/>
-//	 * This quantity is known as the constant of aberration, and is conventionally represented by κ. Its precise accepted value is 20".49552
-//	 * (at J2000).
+//	 * This quantity is known as the constant of aberration, and is conventionally represented by κ. Its precise accepted value is
+//	 * <code>20".49552</code> (at J2000).
 //	 * </p>
 //	 *
 //	 * @param earthRadiusVector	Earth radius vector [AU].
@@ -616,32 +614,10 @@ public final class SunPosition{
 //	 * @param deltaAberration	Aberration [rad].
 //	 * @return	Apparent longitude of the Sun [rad].
 //	 */
-//	public static double apparentGeocentricLongitude(final double geocentricMeanLongitude, final double deltaPsi, final double deltaAberration){
+//	public static double apparentGeocentricLongitude(final double geocentricMeanLongitude, final double deltaPsi,
+//			final double deltaAberration){
 //		return geocentricMeanLongitude + deltaPsi + deltaAberration;
 //	}
-
-	/**
-	 * Calculate the mean obliquity of the ecliptic, <code>ɛ0</code>.
-	 *
-	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
-	 * @return	Apparent longitude of the Sun [rad].
-	 */
-	public static double meanEclipticObliquity(final double jce){
-		return StrictMath.toRadians(
-			MathHelper.polynomial(jce / 100., OBLIQUITY_COEFFS) / JulianDate.SECONDS_PER_HOUR
-		);
-	}
-
-	/**
-	 * True obliquity of the ecliptic corrected for nutation, <code>ɛ</code>.
-	 *
-	 * @param meanEclipticObliquity	Obliquity of the ecliptic, corrected for parallax [rad].
-	 * @param obliquityNutation	Corrections of nutation in obliquity (<code>∆ε</code>) [rad].
-	 * @return	Apparent longitude of the Sun [rad].
-	 */
-	public static double trueEclipticObliquity(final double meanEclipticObliquity, final double obliquityNutation){
-		return meanEclipticObliquity + obliquityNutation;
-	}
 
 //	/**
 //	 * Calculate the mean obliquity of the ecliptic, corrected for parallax, <code>ɛ'</code>.

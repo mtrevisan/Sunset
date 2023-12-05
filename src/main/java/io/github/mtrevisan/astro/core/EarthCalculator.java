@@ -119,7 +119,8 @@ public class EarthCalculator{
 		//A.2.1. Calculate the apparent sidereal time at Greenwich at 0 UT
 		final NutationCorrections nutationCorrections = NutationCorrections.calculate(jce);
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
-		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity, nutationCorrections.getDeltaEpsilon());
+		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity,
+			nutationCorrections.getDeltaEpsilon());
 		final double greenwichMeanSiderealTime = TimeHelper.greenwichMeanSiderealTime(jce);
 		final double greenwichApparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(greenwichMeanSiderealTime,
 			trueEclipticObliquity, nutationCorrections.getDeltaPsi());
@@ -135,12 +136,12 @@ public class EarthCalculator{
 
 		//A.2.3. Calculate the approximate sun transit time, <code>m0</code> [day]
 		final double[] m = new double[3];
-		m[0] = (StrictMath.toDegrees(equatorialCoords[1].getRightAscension()) - location.getLongitude() - greenwichApparentSiderealTime) / 360.;
+		m[0] = (StrictMath.toDegrees(equatorialCoords[1].getRightAscension()) - location.getLongitude()
+			- greenwichApparentSiderealTime) / 360.;
 
 
 		//A.2.4. Calculate the local hour angle of the Sun, <code>H0</code>
 		final double phi = StrictMath.toRadians(location.getLatitude());
-		final double delta = equatorialCoords[1].getDeclination();
 		//the solar zenith angle is the correction for:
 		// - observer altitude
 		// - atmospheric refraction at sunrise/sunset
@@ -156,7 +157,8 @@ public class EarthCalculator{
 			trueElevation -= atmosphericRefractionCorrection + sunSolarDiskRadius;
 		}
 		final double cosSunLocalHour = (StrictMath.sin(trueElevation)
-			- StrictMath.sin(phi) * StrictMath.sin(delta)) / (StrictMath.cos(phi) * StrictMath.cos(delta));
+			- StrictMath.sin(phi) * StrictMath.sin(equatorialCoords[1].getDeclination()))
+			/ (StrictMath.cos(phi) * StrictMath.cos(equatorialCoords[1].getDeclination()));
 
 		SunVisibility type = SunVisibility.NORMAL;
 		if(cosSunLocalHour < -1.)
@@ -191,11 +193,19 @@ public class EarthCalculator{
 
 
 		//A.2.10. Calculate the values alpha'i and delta'i [deg]
-		final double a = limitIfNecessary(StrictMath.toDegrees(equatorialCoords[1].getRightAscension() - equatorialCoords[0].getRightAscension()));
-		final double aPrime = limitIfNecessary(StrictMath.toDegrees(equatorialCoords[1].getDeclination() - equatorialCoords[0].getDeclination()));
+		final double a = limitIfNecessary(
+			StrictMath.toDegrees(equatorialCoords[1].getRightAscension() - equatorialCoords[0].getRightAscension())
+		);
+		final double aPrime = limitIfNecessary(
+			StrictMath.toDegrees(equatorialCoords[1].getDeclination() - equatorialCoords[0].getDeclination())
+		);
 
-		final double b = limitIfNecessary(StrictMath.toDegrees(equatorialCoords[2].getRightAscension() - equatorialCoords[1].getRightAscension()));
-		final double bPrime = limitIfNecessary(StrictMath.toDegrees(equatorialCoords[2].getDeclination() - equatorialCoords[1].getDeclination()));
+		final double b = limitIfNecessary(
+			StrictMath.toDegrees(equatorialCoords[2].getRightAscension() - equatorialCoords[1].getRightAscension())
+		);
+		final double bPrime = limitIfNecessary(
+			StrictMath.toDegrees(equatorialCoords[2].getDeclination() - equatorialCoords[1].getDeclination())
+		);
 
 		final double c = b - a;
 		final double cPrime = bPrime - aPrime;
@@ -204,8 +214,10 @@ public class EarthCalculator{
 		final EquatorialCoordinate[] localEquatorialCoords = new EquatorialCoordinate[3];
 		for(int i = 0; i < localEquatorialCoords.length; i ++)
 			if(!Double.isNaN(n[i])){
-				final double localRightAscension = StrictMath.toDegrees(equatorialCoords[1].getRightAscension()) + (n[i] * (a + b + c * n[i])) / 2.;
-				final double localDeclination = StrictMath.toDegrees(equatorialCoords[1].getDeclination()) + (n[i] * (aPrime + bPrime + cPrime * n[i])) / 2.;
+				final double localRightAscension = StrictMath.toDegrees(equatorialCoords[1].getRightAscension())
+					+ (n[i] * (a + b + c * n[i])) / 2.;
+				final double localDeclination = StrictMath.toDegrees(equatorialCoords[1].getDeclination())
+					+ (n[i] * (aPrime + bPrime + cPrime * n[i])) / 2.;
 				localEquatorialCoords[i] = EquatorialCoordinate.create(localRightAscension, localDeclination);
 			}
 
@@ -215,7 +227,9 @@ public class EarthCalculator{
 		for(int i = 0; i < localHourAngle.length; i ++)
 			if(localEquatorialCoords[i] != null){
 				final double localSiderealTime = TimeHelper.localSiderealTime(greenwichSiderealTime[i], location);
-				localHourAngle[i] = TimeHelper.localHourAngle(localSiderealTime, localEquatorialCoords[i].getRightAscension());
+				localHourAngle[i] = StrictMath.toRadians(
+					TimeHelper.localHourAngle(localSiderealTime, localEquatorialCoords[i].getRightAscension())
+				);
 			}
 
 
@@ -225,12 +239,12 @@ public class EarthCalculator{
 			if(localEquatorialCoords[i] != null){
 				final double declination = StrictMath.toRadians(localEquatorialCoords[i].getDeclination());
 				sunAltitude[i] = StrictMath.asin(StrictMath.sin(phi) * StrictMath.sin(declination)
-					+ StrictMath.cos(phi) * StrictMath.cos(declination) * StrictMath.cos(StrictMath.toRadians(localHourAngle[i])));
+					+ StrictMath.cos(phi) * StrictMath.cos(declination) * StrictMath.cos(localHourAngle[i]));
 			}
 
 
 		//A.2.13. Calculate the sun transit, <code>T</code> [day]
-		final double ttTransit = m[0] - localHourAngle[0] / 360.;
+		final double ttTransit = m[0] - localHourAngle[0] / MathHelper.TWO_PI;
 
 
 		//A.2.14. Calculate the sunrise, <code>R</code> [day]
@@ -240,7 +254,7 @@ public class EarthCalculator{
 				/ (MathHelper.TWO_PI
 				* StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[1].getDeclination()))
 				* StrictMath.cos(phi)
-				* StrictMath.sin(StrictMath.toRadians(localHourAngle[1])));
+				* StrictMath.sin(localHourAngle[1]));
 
 		//A.2.15. Calculate the sunset, <code>S</code> [day]
 		double ttSunset = Double.NaN;
@@ -249,7 +263,7 @@ public class EarthCalculator{
 				/ (MathHelper.TWO_PI
 				* StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[2].getDeclination()))
 				* StrictMath.cos(phi)
-				* StrictMath.sin(StrictMath.toRadians(localHourAngle[2])));
+				* StrictMath.sin(localHourAngle[2]));
 
 
 		return switch(type){
@@ -411,7 +425,8 @@ public class EarthCalculator{
 ////		final double radiusVector = SunPosition.radiusVector(t);
 ////		final double radiusVector2 = radiusVector(eccentricity, trueAnomaly);
 ////		final double aberration = SunPosition.aberrationCorrection(SunPosition.radiusVector(t));
-////		final double apparentGeocentricLongitude = SunPosition.apparentGeocentricLongitude(geocentricMeanLongitude, nutation[0], aberration);
+////		final double apparentGeocentricLongitude = SunPosition.apparentGeocentricLongitude(geocentricMeanLongitude, nutation[0],
+////			aberration);
 ////		final double longitudeOfEarthPerihelion = longitudeOfEarthPerihelion(t);
 //
 //		LocalDateTime sunsetLocalDateTime = LocalDateTime.of(date, LocalTime.MIDNIGHT);
@@ -439,13 +454,14 @@ public class EarthCalculator{
 //		final int year = 2022;
 //
 //		//calculate an initial guess
-//		final double jde0 = MathHelper.polynomial((year - 2000) / 1000., new double[]{2451900.05952, 365242.74049, -0.06223, -0.00823, 0.00032});
+//		final double jde0 = MathHelper.polynomial((year - 2000) / 1000., new double[]{2451900.05952, 365242.74049, -0.06223, -0.00823,
+//			0.00032});
 //		final double jce = JulianDate.centuryJ2000Of(jde0);
 //		final double w = StrictMath.toRadians(35_999.373 * jce - 2.47);
 //		final double deltaLambda = 1. + 0.033_4 * StrictMath.cos(w) + 0.000_7 * StrictMath.cos(2. * w);
 //
-//		final double[] a = {0.00485, 0.00203, 0.00199, 0.00182, 0.00156, 0.00136, 0.00077, 0.00074, 0.00070, 0.00058, 0.00052, 0.00050, 0.00045, 0.00044, 0.00029, 0.00018, 0.00017, 0.00016, 0.00014,
-//			0.00012, 0.00012, 0.00012, 0.00009, 0.00008};
+//		final double[] a = {0.00485, 0.00203, 0.00199, 0.00182, 0.00156, 0.00136, 0.00077, 0.00074, 0.00070, 0.00058, 0.00052, 0.00050,
+//			0.00045, 0.00044, 0.00029, 0.00018, 0.00017, 0.00016, 0.00014, 0.00012, 0.00012, 0.00012, 0.00009, 0.00008};
 //		final double[] b = {324.96, 337.23, 342.08, 27.85, 73.14, 171.52, 222.54, 296.72, 243.58, 119.81, 297.17, 21.02,
 //			247.54, 325.15, 60.93, 155.12, 288.79, 198.04, 199.76, 95.39, 287.11, 320.81, 227.73, 15.45};
 //		final double[] c = {1934.136, 32964.467, 20.186, 445267.112, 45036.886, 22518.443,
@@ -573,9 +589,11 @@ public class EarthCalculator{
 //		//calculate the sun transit [UT day]
 //		final double transit = m0 - h_prime0 / MathHelper.TWO_PI;
 //		//calculate the sunrise [UT day]
-//		final double sunrise = m1 + (hh1 - h_prime0) / (MathHelper.TWO_PI * StrictMath.cos(delta1) * StrictMath.cos(latitude) * StrictMath.sin(h_prime1));
+//		final double sunrise = m1 + (hh1 - h_prime0) / (MathHelper.TWO_PI * StrictMath.cos(delta1) * StrictMath.cos(latitude)
+//			* StrictMath.sin(h_prime1));
 //		//calculate the sunset [UT day]
-//		final double sunset = m2 + (hh2 - h_prime1) / (MathHelper.TWO_PI * StrictMath.cos(delta2) * StrictMath.cos(latitude) * StrictMath.sin(h_prime2));
+//		final double sunset = m2 + (hh2 - h_prime1) / (MathHelper.TWO_PI * StrictMath.cos(delta2) * StrictMath.cos(latitude)
+//			* StrictMath.sin(h_prime2));
 //		System.out.println(StringHelper.degreeToHMSString(sunrise * MathHelper.TWO_PI, 0));
 //		System.out.println(StringHelper.degreeToHMSString(transit * MathHelper.TWO_PI, 0));
 //		System.out.println(StringHelper.degreeToHMSString(sunset * MathHelper.TWO_PI, 0));
