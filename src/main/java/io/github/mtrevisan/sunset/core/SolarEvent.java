@@ -24,13 +24,13 @@
  */
 package io.github.mtrevisan.sunset.core;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 
 /** Result types for sunrise/sunset calculations. */
 public sealed interface SolarEvent{
 
-	LocalDateTime transit();
+	ZonedDateTime transit();
 
 
 	/**
@@ -40,20 +40,20 @@ public sealed interface SolarEvent{
 	 * @param transit	Time of transit (culmination), i.e. when the sun is closest to the zenith.
 	 * @param sunset	Time of sunset.
 	 */
-	record RegularDay(LocalDateTime sunrise, LocalDateTime transit, LocalDateTime sunset) implements SolarEvent{}
+	record RegularDay(ZonedDateTime sunrise, ZonedDateTime transit, ZonedDateTime sunset) implements SolarEvent{}
 
 	/**
 	 * A day on which the sun is above the horizon all the time (polar day).
 	 *
 	 * @param transit	Time of transit (culmination), i.e. when the sun is closest to the zenith.
 	 */
-	record AlwaysDay(LocalDateTime transit) implements SolarEvent{}
+	record AlwaysDay(ZonedDateTime transit) implements SolarEvent{}
 
 	/**
 	 * A day on which the sun is below the horizon all the time (polar night).
 	 *
 	 * @param transit	Time of transit (culmination), i.e. when the sun is closest to the zenith.
 	 */
-	record AlwaysNight(LocalDateTime transit) implements SolarEvent{}
+	record AlwaysNight(ZonedDateTime transit) implements SolarEvent{}
 
 }

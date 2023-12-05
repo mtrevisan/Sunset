@@ -28,6 +28,7 @@ import io.github.mtrevisan.sunset.Zenith;
 import io.github.mtrevisan.sunset.coordinates.AtmosphericModel;
 import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 import net.e175.klaus.solarpositioning.SPA;
+import net.e175.klaus.solarpositioning.SunriseResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -43,117 +44,121 @@ class SolarEventCalculatorTest{
 
 	@Test
 	void testExampleSunriseTransitSet(){
-		LocalDate time = LocalDate.of(2003, 10, 17);
+		ZonedDateTime date = ZonedDateTime.of(2003, 10, 17, 0, 0, 0, 0,
+			ZoneOffset.ofHours(-7));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(39.742476, -105.1786, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 67., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 67., Zenith.OFFICIAL);
 
-//		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(-7), "2003-10-17T06:12:43-07:00", "2003-10-17T11:46:04-07:00", "2003-10-17T17:18:51-07:00");
-		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(-7), "2003-10-17T06:17:08.662-07:00", "2003-10-17T11:46:04.958-07:00", "2003-10-17T17:15:54.134-07:00");
+		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2003-10-17T06:12:43.931-07:00", "2003-10-17T11:46:04.959-07:00", "2003-10-17T17:18:51.207-07:00");
 	}
 
 	@Test
 	void testAllDay(){
-		LocalDate time = LocalDate.of(2015, 6, 17);
+		ZonedDateTime date = ZonedDateTime.of(2015, 6, 17, 0, 0, 0, 0,
+			ZoneOffset.ofHours(2));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		//location is Honningsvåg, Norway (near North Cape)
 		final GeographicLocation location = GeographicLocation.create(70.978056, 25.974722, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 0., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 0., Zenith.OFFICIAL);
 
-		compare(solarEvent, SolarEvent.AlwaysDay.class, ZoneOffset.ofHours(2), null, "2015-06-17T12:16:55.717+02:00", null);
+		compare(solarEvent, SolarEvent.AlwaysDay.class, date.getOffset(), null, "2015-06-17T12:16:55.717+02:00", null);
 	}
 
 	@Test
 	void testAllNight(){
-		LocalDate time = LocalDate.of(2015, 1, 17);
+		ZonedDateTime date = ZonedDateTime.of(2015, 1, 17, 0, 0, 0, 0,
+			ZoneOffset.ofHours(2));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		//location is Honningsvåg, Norway (near North Cape)
 		final GeographicLocation location = GeographicLocation.create(70.978056, 25.974722, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 0., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 0., Zenith.OFFICIAL);
 
-		compare(solarEvent, SolarEvent.AlwaysNight.class, ZoneOffset.ofHours(2), null, null, null);
+		compare(solarEvent, SolarEvent.AlwaysNight.class, date.getOffset(), null, null, null);
 	}
 
 	@Test
 	void testNonZeroSunriseTransitSet(){
-		LocalDate time = LocalDate.of(2015, 6, 17);
+		ZonedDateTime date = ZonedDateTime.of(2015, 6, 17, 0, 0, 0, 0,
+			ZoneOffset.ofHours(12));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(-36.8406, 174.74, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 0., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 0., Zenith.OFFICIAL);
 
 		//NOAA: 7:32, 12:21:41, 17:11
-//		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(12), "2015-06-17T07:32:26+12:00", "2015-06-17T12:21:46+12:00", "2015-06-17T17:11:03+12:00");
-		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(12), "2015-06-17T07:37:32.354+12:00", "2015-06-17T12:21:46.655+12:00", "2015-06-17T17:06:17.792+12:00");
+		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2015-06-17T07:32:29.115+12:00", "2015-06-17T12:21:46.651+12:00", "2015-06-17T17:11:01.320+12:00");
 	}
 
 	@Test
 	void testDSToffDayBerlin(){
-		LocalDate time = LocalDate.of(2015, 10, 25);
+		ZonedDateTime date = ZonedDateTime.of(2015, 10, 25, 0, 0, 0, 0,
+			ZoneOffset.ofHours(1));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(52.33, 13.3, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 68., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 6:49, 11:50:53, 16:52
-//		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(1), "2015-10-25T06:49:02+01:00", "2015-10-25T11:50:55+01:00", "2015-10-25T16:51:59+01:00");
-		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(1), "2015-10-25T06:54:48.063+01:00", "2015-10-25T11:50:55.328+01:00", "2015-10-25T16:46:14.078+01:00");
+		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2015-10-25T06:49:02.979+01:00", "2015-10-25T11:50:55.328+01:00", "2015-10-25T16:51:59.301+01:00");
 	}
 
 	@Test
 	void testDSTonDayBerlin(){
-		LocalDate time = LocalDate.of(2016, 3, 27);
+		ZonedDateTime date = ZonedDateTime.of(2016, 3, 27, 0, 0, 0, 0,
+			ZoneOffset.ofHours(1));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(52.33, 13.3, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 68., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 06:52, 13:12:01, 19:33
-		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(1), "2016-03-27T06:52:19+02:00", "2016-03-27T13:12:02+02:00", "2016-03-27T19:32:49+02:00");
+		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2016-03-27T05:52:19.922+01:00", "2016-03-27T12:12:02.218+01:00", "2016-03-27T18:32:48.972+01:00");
 	}
 
 	@Test
 	void testDSToffDayAuckland(){
-		LocalDate time = LocalDate.of(2016, 4, 3);
+		ZonedDateTime date = ZonedDateTime.of(2016, 4, 3, 0, 0, 0, 0,
+			ZoneOffset.ofHours(12));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(-36.84, 174.74, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 68., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 06:36, same, 18:12
-//		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(12), "2016-04-03T06:36:09+12:00", "2016-04-03T12:24:19+12:00", "2016-04-03T18:11:55+12:00");
-		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(12), "2016-04-03T06:41:12.981+12:00", "2016-04-03T12:24:19.285+12:00", "2016-04-03T18:07:44.036+12:00");
+		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2016-04-03T06:36:10.302+12:00", "2016-04-03T12:24:19.284+12:00", "2016-04-03T18:11:54.701+12:00");
 	}
 
 	@Test
 	void testDSTonDayAuckland(){
-		LocalDate time = LocalDate.of(2015, 9, 27);
+		ZonedDateTime date = ZonedDateTime.of(2015, 9, 27, 0, 0, 0, 0,
+			ZoneOffset.ofHours(12));
 
 		AtmosphericModel atmosphere = AtmosphericModel.create(1010., 10.);
 		final GeographicLocation location = GeographicLocation.create(-36.84, 174.74, 0.)
 			.withAtmosphere(atmosphere);
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(time, 68., Zenith.OFFICIAL);
+		SolarEvent solarEvent = calculator.solarEvent(date, 68., Zenith.OFFICIAL);
 
 		//NOAA: 07:04, 13:12:19, 19:21
-		compare(solarEvent, SolarEvent.RegularDay.class, ZoneOffset.ofHours(12), "2015-09-27T07:04:14+13:00", "2015-09-27T13:12:17+13:00", "2015-09-27T19:20:56+13:00");
+		compare(solarEvent, SolarEvent.RegularDay.class, date.getOffset(), "2015-09-27T06:04:15.194+12:00", "2015-09-27T12:12:17.453+12:00", "2015-09-27T18:20:55.543+12:00");
 	}
 
 
@@ -161,19 +166,11 @@ class SolarEventCalculatorTest{
 		if(refClass != null)
 			Assertions.assertEquals(refClass, result.getClass());
 		if(result instanceof SolarEvent.RegularDay regularDay){
-			Assertions.assertEquals(refSunrise, toZoned(regularDay.sunrise(), zoneOffset).toString());
-			Assertions.assertEquals(refSunset, toZoned(regularDay.sunset(), zoneOffset).toString());
+			Assertions.assertEquals(refSunrise, regularDay.sunrise().toString());
+			Assertions.assertEquals(refSunset, regularDay.sunset().toString());
 		}
 		if(refTransit != null)
-			Assertions.assertEquals(refTransit, toZoned(result.transit(), zoneOffset).toString());
-	}
-	private static ZonedDateTime toZoned(LocalDateTime local, ZoneOffset zoneOffset){
-		ZonedDateTime date = ZonedDateTime.ofLocal(local.plusSeconds(zoneOffset.getTotalSeconds()), zoneOffset.normalized(), zoneOffset);
-		if(date.getDayOfMonth() < local.getDayOfMonth())
-			date = date.plusDays(1l);
-		else if(date.getDayOfMonth() > local.getDayOfMonth())
-			date = date.minusDays(1l);
-		return date;
+			Assertions.assertEquals(refTransit, result.transit().toString());
 	}
 
 

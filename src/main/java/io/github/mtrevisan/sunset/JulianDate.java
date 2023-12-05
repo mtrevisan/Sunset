@@ -27,13 +27,15 @@ package io.github.mtrevisan.sunset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 
 /**
- * <The Julian day is the Julian day number for the preceding noon plus the fraction of the day (counting 86400 seconds) since that instant.
+ * <The Julian Date is the number for the preceding noon plus the fraction of the day (counting 86400 seconds) since that instant.
  *
  * <p>
- * A Julian day number is defined as continuous number associated with the solar day and is zero at Greenwich mean noon on 1st of January
+ * A Julian Date number is defined as continuous number associated with the solar day and is zero at Greenwich mean noon on 1st of January
  * 4713 BC.
  * </p>
  *
@@ -66,10 +68,10 @@ public final class JulianDate{
 
 
 	/**
-	 * Calculate Julian Day at 0 UTC.
+	 * Calculate Julian Date at 0 UTC.
 	 *
 	 * @param date	The date.
-	 * @return	The Julian Day [day].
+	 * @return	The Julian Date [day].
 	 */
 	public static double of(final LocalDateTime date){
 		final double jdNoon = of(date.toLocalDate());
@@ -86,22 +88,32 @@ public final class JulianDate{
 	}
 
 	/**
-	 * Calculate Julian Day at 0 UTC.
+	 * Calculate Julian Date at 0 UTC.
 	 *
 	 * @param date	The date.
-	 * @return	The Julian Day [day].
+	 * @return	The Julian Date [day].
+	 */
+	public static double of(final ZonedDateTime date){
+		return of(date.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
+	}
+
+	/**
+	 * Calculate Julian Date at 0 UTC.
+	 *
+	 * @param date	The date.
+	 * @return	The Julian Date [day].
 	 */
 	public static double of(final LocalDate date){
 		return of(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
 	}
 
 	/**
-	 * Calculate Julian Day at 0 UTC.
+	 * Calculate Julian Date at 0 UTC.
 	 *
 	 * @param year	The year.
 	 * @param month	The month (1 is January).
 	 * @param day	The day.
-	 * @return	The Julian Day [day].
+	 * @return	The Julian Date [day].
 	 */
 	public static double of(final int year, final int month, final int day){
 		final int z = year + (month - 14) / 12;
@@ -118,7 +130,7 @@ public final class JulianDate{
 	/**
 	 * Calculated the Julian Century since JDE2451545, that is J2000.0.
 	 *
-	 * @param jd	The Julian Day [day].
+	 * @param jd	The Julian Date [day].
 	 * @return	The Julian Century.
 	 */
 	public static double centuryJ2000Of(final double jd){
@@ -128,7 +140,7 @@ public final class JulianDate{
 	/**
 	 * Calculated the Julian Millennium since JDE2451545, that is J2000.0.
 	 *
-	 * @param jd	The Julian Day [day].
+	 * @param jd	The Julian Date [day].
 	 * @return	The Julian Century.
 	 */
 	public static double millenniumJ2000Of(final double jd){
@@ -136,10 +148,10 @@ public final class JulianDate{
 	}
 
 	/**
-	 * Calculated the Modified Julian Day starting at midnight since JDE2451545, that is J2000.0.
+	 * Calculated the Modified Julian Date starting at midnight since JDE2451545, that is J2000.0.
 	 *
-	 * @param jd	The Julian Day [day].
-	 * @return	The Modified Julian Day starting at midnight.
+	 * @param jd	The Julian Date [day].
+	 * @return	The Modified Julian Date starting at midnight.
 	 */
 	public static double mjdOf(final double jd){
 		return jd - MJD;

@@ -39,6 +39,7 @@ import io.github.mtrevisan.sunset.coordinates.GeographicLocation;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
 
@@ -95,7 +96,7 @@ public class SolarEventCalculator{
 	 * @see <a href="https://www.nrel.gov/docs/fy08osti/34302.pdf">Solar Position Algorithm for Solar Radiation Applications</a>
 	 * @see <a href="https://midcdmz.nrel.gov/spa/">NREL's Solar Position Algorithm (SPA)</a>
 	 */
-	public final SolarEvent solarEvent(final LocalDate date, final double deltaT, final Zenith solarZenith){
+	public final SolarEvent solarEvent(final ZonedDateTime date, final double deltaT, final Zenith solarZenith){
 		final double ut = JulianDate.of(date);
 		final double jce = JulianDate.centuryJ2000Of(ut);
 
@@ -109,10 +110,9 @@ public class SolarEventCalculator{
 
 
 		//A.2.2. Calculate the geocentric right ascension and declination at 0 TT for day before, same day, and next day
-		final double jd = StrictMath.floor(ut) + 0.5;
 		final EquatorialCoordinate[] equatorialCoords = new EquatorialCoordinate[3];
 		for(int i = 0; i < equatorialCoords.length; i ++){
-			final double jme0 = JulianDate.millenniumJ2000Of(jd + i - 1);
+			final double jme0 = JulianDate.millenniumJ2000Of(ut + i - 1);
 			equatorialCoords[i] = SunPosition.sunEquatorialPosition(jme0, nutationCorrections.getDeltaPsi(), trueEclipticObliquity);
 		}
 
@@ -226,14 +226,16 @@ public class SolarEventCalculator{
 		//A.2.14. Calculate the sunrise, <code>R</code> [day]
 		double r = Double.NaN;
 		if(localEquatorialCoords[1] != null)
-			r = m[1] + StrictMath.toDegrees((sunAltitude[1] - solarZenith.getElevation())
-				/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[1].getDeclination())) * StrictMath.cos(phi)
-				* StrictMath.sin(StrictMath.toRadians(localHourAngle[1]))));
+			r = m[1] + (sunAltitude[1] - trueElevation)
+				/ (2. * StrictMath.PI
+				* StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[1].getDeclination()))
+				* StrictMath.cos(phi)
+				* StrictMath.sin(StrictMath.toRadians(localHourAngle[1])));
 
 		//A.2.15. Calculate the sunset, <code>S</code> [day]
 		double s = Double.NaN;
 		if(localEquatorialCoords[1] != null)
-			s = m[2] + StrictMath.toDegrees((sunAltitude[2] - solarZenith.getElevation())
+			s = m[2] + StrictMath.toDegrees((sunAltitude[2] - trueElevation)
 				/ (360. * StrictMath.cos(StrictMath.toRadians(localEquatorialCoords[2].getDeclination())) * StrictMath.cos(phi)
 				* StrictMath.sin(StrictMath.toRadians(localHourAngle[2]))));
 
@@ -266,8 +268,8 @@ public class SolarEventCalculator{
 		return limited;
 	}
 
-	private static LocalDateTime addFractionOfDay(final LocalDate date, final double fraction){
-		return date.atStartOfDay()
+	private static ZonedDateTime addFractionOfDay(final ZonedDateTime date, final double fraction){
+		return date.truncatedTo(ChronoUnit.DAYS)
 			.plus((int)(fraction * JulianDate.MILLISECONDS_PER_DAY), ChronoUnit.MILLIS);
 	}
 

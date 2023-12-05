@@ -68,9 +68,8 @@ ZonedDateTime date = winterSolstice
 SunriseResult result = SPA.calculateSunriseTransitSet(date, 45.714920, 12.194179, deltaT, SPA.Horizon.CIVIL_TWILIGHT);
 if(result instanceof SunriseResult.RegularDay regular)
 	System.out.println("spa " + regular.sunset());
-		final LocalDate winterSolsticeDate = winterSolstice.toLocalDate();
 		SolarEventCalculator calculator = SolarEventCalculator.create(location);
-		SolarEvent solarEvent = calculator.solarEvent(winterSolsticeDate, deltaT, Zenith.CIVIL);
+		SolarEvent solarEvent = calculator.solarEvent(date, deltaT, Zenith.CIVIL);
 		if(solarEvent instanceof SolarEvent.RegularDay event){
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(event.sunset()) + " UTC");
 System.out.println("16:04:23.347");
