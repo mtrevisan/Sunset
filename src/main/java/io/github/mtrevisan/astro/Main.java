@@ -24,16 +24,10 @@ public class Main{
 		final ZoneId zoneId = ZoneId.of("Europe/Rome");
 		//Padova 3 °C, Treviso 4 °C, Venezia 1015.5 hPa 4 °C, Verona 3 °C, Vicenza 3 °C
 		AtmosphericModel atmosphere = AtmosphericModel.create(1021.1, 4.);
-		//16:53
-//		final GeographicLocation location = GeographicLocation.create(45.4421304114541, 10.622970782783327, 0.)
-		//16:52
-//		final GeographicLocation location = GeographicLocation.create(45.63956478260069, 13.100940416786331, 0.)
-		//16:55
-//		final GeographicLocation location = GeographicLocation.create(44.79124286512801, 12.398222626853773, 0.)
-		//16:49
-//		final GeographicLocation location = GeographicLocation.create(46.68058098966078, 12.477496139552612, 0.)
-		//18:42
-//		final GeographicLocation location = GeographicLocation.create(45.827049477073956, 10.857018789615736, 16.)
+		//cortina: 16:56
+//		final GeographicLocation location = GeographicLocation.create(46.54056257185929, 12.135682113077916, 1224.)
+		//portogruaro: 16:52
+//		final GeographicLocation location = GeographicLocation.create(45.776955464421896, 12.840035227634429, 7.)
 		//16:53
 		final GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 16.)
 			.withAtmosphere(atmosphere);
@@ -50,7 +44,7 @@ System.out.println("ws " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelp
 //if(result instanceof SunriseResult.RegularDay regular)
 //	System.out.println("spa " + regular.sunset());
 		EarthCalculator calculator = EarthCalculator.create(location);
-		SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice.plusMonths(3), Zenith.CIVIL);
+		SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
 			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(utcSunset) + " UTC");
