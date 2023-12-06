@@ -38,24 +38,32 @@ public final class MathHelper{
 	}
 
 	/**
-	 * Reduce an value to the range {@code 0} to {@code max}.
+	 * Reduce a value to the range {@code 0} to {@code max}.
 	 */
 	public static double mod(final double x, final double max){
-		return x - max * StrictMath.floor(x / max);
+		return (x % max + max) % max;
+	}
+
+	/**
+	 * Reduce a value to the range {@code min} to {@code max}.
+	 */
+	public static double mod(final double x, final double min, final double max){
+		final double normalized = (x - min) % (max - min);
+		return (normalized >= 0.? normalized + min: normalized + max);
 	}
 
 	/**
 	 * Reduce an angle in radians to the range {@code 0} to {@code 2π}.
 	 */
 	public static double mod2pi(final double angle){
-		return angle - TWO_PI * StrictMath.floor(angle / TWO_PI);
+		return (angle % TWO_PI + TWO_PI) % TWO_PI;
 	}
 
 	/**
 	 * Reduce an angle in radians to the range {@code -π} to {@code π}.
 	 */
-	public static double modpi(final double angle){
-		return angle - TWO_PI * StrictMath.floor((angle - -StrictMath.PI) / TWO_PI);
+	public static double modpipi(final double angle){
+		return (angle + StrictMath.PI) % TWO_PI - StrictMath.PI;
 	}
 
 	public static double toDegrees(final int degree, final int minute, final double second){

@@ -38,7 +38,7 @@ import java.time.temporal.ChronoUnit;
 
 public class EarthCalculator{
 
-//	private static final double EARTH_FLATTENING = 1. / 298.25642;
+	//	private static final double EARTH_FLATTENING = 1. / 298.25642;
 //	//[m]
 //	private static final double EARTH_EQUATORIAL_RADIUS = 6378140.;
 //
@@ -54,6 +54,12 @@ public class EarthCalculator{
 
 	//1 s
 	private static final double TIME_PRECISION = 1. / JulianDate.SECONDS_PER_DAY;
+	/**
+	 * <a href="https://en.wikipedia.org/wiki/Sidereal_time#Relationship_between_solar_time_and_sidereal_time_intervals">Sidereal time</a>
+	 * <a href="https://iers-conventions.obspm.fr/content/tn36.pdf">IERS Conventions 2010</a>
+	 */
+	//[deg/day]
+	private static final double[] EARTH_SIDEREAL_ROTATION_RATE_COEFF = {0., 1.002_737_811_911_354_48 * 360., 5.900_6e-11 * 360., -5.9e-15 * 360.};
 
 
 	private enum SunVisibility{
@@ -121,9 +127,10 @@ public class EarthCalculator{
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity,
 			nutationCorrections.getDeltaEpsilon());
+		final double moonLongitudeAscendingNode = NutationCorrections.moonLongitudeAscendingNode(jce);
 		final double greenwichMeanSiderealTime = TimeHelper.greenwichMeanSiderealTime(jce);
 		final double greenwichApparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(greenwichMeanSiderealTime,
-			trueEclipticObliquity, nutationCorrections.getDeltaPsi());
+			nutationCorrections.getDeltaPsi(), trueEclipticObliquity, moonLongitudeAscendingNode);
 
 
 		//A.2.2. Calculate the geocentric right ascension and declination at 0 TT for day before, same day, and next day
@@ -167,7 +174,7 @@ public class EarthCalculator{
 			type = SunVisibility.ALWAYS_NIGHT;
 
 		//[rad]
-		final double sunLocalHour = MathHelper.modpi(StrictMath.acos(cosSunLocalHour));
+		final double sunLocalHour = MathHelper.modpipi(StrictMath.acos(cosSunLocalHour));
 
 
 		//A.2.5. Calculate the approximate sunrise time, <code>m1</code>, in fraction of day
@@ -180,10 +187,10 @@ public class EarthCalculator{
 		m[0] = MathHelper.mod(m[0], 1.);
 
 
-		//A.2.8. Calculate the sidereal time at Greenwich [deg] for the sun transit, sunrise, and sunset
+		//A.2.8. Calculate the mean sidereal time at Greenwich [deg] for the sun transit, sunrise, and sunset
 		final double[] greenwichSiderealTime = new double[3];
 		for(int i = 0; i < m.length; i ++)
-			greenwichSiderealTime[i] = greenwichApparentSiderealTime + 360.985647 * m[i];
+			greenwichSiderealTime[i] = greenwichApparentSiderealTime + MathHelper.polynomial(m[i], EARTH_SIDEREAL_ROTATION_RATE_COEFF);
 
 
 		//A.2.9. Calculate the terms <code>n_i</code>

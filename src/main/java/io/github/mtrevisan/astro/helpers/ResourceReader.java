@@ -147,7 +147,7 @@ public final class ResourceReader{
 		}
 	}
 
-	public static Map<String, Collection<Double[]>> read(final String filename) throws IOException{
+	public static Map<String, List<double[]>> read(final String filename) throws IOException{
 		final ClassLoader classLoader = ResourceReader.class.getClassLoader();
 		final InputStream is = classLoader.getResourceAsStream(filename);
 		if(is == null)
@@ -156,10 +156,10 @@ public final class ResourceReader{
 		try(
 				final InputStreamReader sr = new InputStreamReader(is, StandardCharsets.UTF_8);
 				final BufferedReader reader = new BufferedReader(sr)){
-			final Map<String, Collection<Double[]>> result = new HashMap<>(0);
+			final Map<String, List<double[]>> result = new HashMap<>(0);
 			String key = null;
 			String line;
-			Collection<Double[]> values = new LinkedList<>();
+			List<double[]> values = new LinkedList<>();
 			while((line = reader.readLine()) != null){
 				if(line.isEmpty()){
 					result.put(key, values);
@@ -175,9 +175,10 @@ public final class ResourceReader{
 				}
 
 				final String[] parameters = StringUtils.split(line, ' ');
-				values.add(Arrays.stream(parameters)
-					.map(Double::valueOf)
-					.toArray(Double[]::new));
+				final double[] array = new double[parameters.length];
+				for(int i = 0; i < parameters.length; i ++)
+					array[i] = Double.parseDouble(parameters[i]);
+				values.add(array);
 			}
 			if(key != null)
 				result.put(key, values);

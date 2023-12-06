@@ -50,9 +50,9 @@ class EarthCalculatorTest{
 		SunlightPhase sunlightPhase = calculator.sunlightPhase(date, 67., Zenith.OFFICIAL);
 
 		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
-			"2003-10-17T06:12:43.931-07:00",
-			"2003-10-17T11:46:04.959-07:00",
-			"2003-10-17T17:18:51.207-07:00");
+			"2003-10-17T06:12:43.934-07:00",
+			"2003-10-17T11:46:04.963-07:00",
+			"2003-10-17T17:18:51.213-07:00");
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class EarthCalculatorTest{
 
 		compare(sunlightPhase, SunlightPhase.AlwaysDay.class, date.getOffset(),
 			null,
-			"2015-06-17T12:16:55.717+02:00",
+			"2015-06-17T12:16:55.721+02:00",
 			null);
 	}
 
@@ -104,9 +104,9 @@ class EarthCalculatorTest{
 
 		//NOAA: 7:32, 12:21:41, 17:11
 		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
-			"2015-06-17T07:32:29.115+12:00",
-			"2015-06-17T12:21:46.651+12:00",
-			"2015-06-17T17:11:01.320+12:00");
+			"2015-06-17T07:32:29.118+12:00",
+			"2015-06-17T12:21:46.656+12:00",
+			"2015-06-17T17:11:01.326+12:00");
 	}
 
 	@Test
@@ -122,9 +122,9 @@ class EarthCalculatorTest{
 
 		//NOAA: 6:49, 11:50:53, 16:52
 		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
-			"2015-10-25T06:49:02.979+01:00",
-			"2015-10-25T11:50:55.328+01:00",
-			"2015-10-25T16:51:59.301+01:00");
+			"2015-10-25T06:49:02.981+01:00",
+			"2015-10-25T11:50:55.332+01:00",
+			"2015-10-25T16:51:59.307+01:00");
 	}
 
 	@Test
@@ -140,9 +140,9 @@ class EarthCalculatorTest{
 
 		//NOAA: 06:52, 13:12:01, 19:33
 		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
-			"2016-03-27T05:52:19.922+01:00",
-			"2016-03-27T12:12:02.218+01:00",
-			"2016-03-27T18:32:48.972+01:00");
+			"2016-03-27T05:52:19.924+01:00",
+			"2016-03-27T12:12:02.223+01:00",
+			"2016-03-27T18:32:48.978+01:00");
 	}
 
 	@Test
@@ -158,9 +158,9 @@ class EarthCalculatorTest{
 
 		//NOAA: 06:36, same, 18:12
 		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
-			"2016-04-03T06:36:10.302+12:00",
-			"2016-04-03T12:24:19.284+12:00",
-			"2016-04-03T18:11:54.701+12:00");
+			"2016-04-03T06:36:10.305+12:00",
+			"2016-04-03T12:24:19.288+12:00",
+			"2016-04-03T18:11:54.707+12:00");
 	}
 
 	@Test
@@ -176,9 +176,9 @@ class EarthCalculatorTest{
 
 		//NOAA: 07:04, 13:12:19, 19:21
 		compare(sunlightPhase, SunlightPhase.RegularDay.class, date.getOffset(),
-			"2015-09-27T06:04:15.194+12:00",
-			"2015-09-27T12:12:17.453+12:00",
-			"2015-09-27T18:20:55.543+12:00");
+			"2015-09-27T06:04:15.197+12:00",
+			"2015-09-27T12:12:17.457+12:00",
+			"2015-09-27T18:20:55.550+12:00");
 	}
 
 

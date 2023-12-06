@@ -65,16 +65,14 @@ https://hal-mines-paristech.archives-ouvertes.fr/hal-00725987/document
 */
 public final class SunPosition{
 
-	private static Map<String, Collection<Double[]>> EARTH_HELIOCENTRIC_DATA;
+	private static Map<String, List<double[]>> EARTH_HELIOCENTRIC_DATA;
 	private static Map<ResourceReader.VariableIndex, List<ResourceReader.VSOP2013Data>> EARTH_HELIOCENTRIC_DATA2;
-//	private static Map<String, Collection<Double[]>> NUTATION_DATA;
 	static{
 		try{
 			//VSOP87 Planetary Theory
 			//https://github.com/THRASTRO/ephem.js
 			EARTH_HELIOCENTRIC_DATA = ResourceReader.read("earthHeliocentric.dat");
 //			EARTH_HELIOCENTRIC_DATA2 = ResourceReader.readData("VSOP2013p3.dat");
-//			NUTATION_DATA = ResourceReader.read("nutation.dat");
 		}
 		catch(final IOException ignored){}
 	}
@@ -91,8 +89,12 @@ public final class SunPosition{
 
 	//[m]
 	public static final double SUN_EQUATORIAL_RADIUS = 6.95700e8;
-	//[m]
-	public static final double ASTRONOMICAL_UNIT = 1.495978707e11;
+	/**
+	 * [m]
+	 *
+	 * <a href="https://iers-conventions.obspm.fr/content/tn36.pdf">IERS Conventions 2010</a>
+	 */
+	public static final double ASTRONOMICAL_UNIT = 1.495_978_707_00e11;
 
 //	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS = {280.466_46, 36_000.769_83, 0.000_303_2};
 //	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.527_723_33, 35_999.050_34, -0.000_160_28, -0.000_003_33};
@@ -239,15 +241,15 @@ public final class SunPosition{
 	public static double earthHeliocentricLatitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
+			final Collection<double[]> elements = EARTH_HELIOCENTRIC_DATA.get("B" + i);
 			if(elements != null){
 				double parameter = 0.;
-				for(final Double[] element : elements)
+				for(final double[] element : elements)
 					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 				parameters[i] = parameter;
 			}
 		}
-		return MathHelper.modpi(
+		return MathHelper.modpipi(
 			MathHelper.polynomial(jme, parameters) / 100_000_000.
 		);
 	}
@@ -263,10 +265,10 @@ public final class SunPosition{
 	public static double earthHeliocentricLongitude(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
+			final Collection<double[]> elements = EARTH_HELIOCENTRIC_DATA.get("L" + i);
 			if(elements != null){
 				double parameter = 0.;
-				for(final Double[] element : elements)
+				for(final double[] element : elements)
 					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 				parameters[i] = parameter;
 			}
@@ -286,10 +288,10 @@ public final class SunPosition{
 	public static double radiusVector(final double jme){
 		final double[] parameters = new double[6];
 		for(int i = 0; i < parameters.length; i ++){
-			final Collection<Double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
+			final Collection<double[]> elements = EARTH_HELIOCENTRIC_DATA.get("R" + i);
 			if(elements != null){
 				double parameter = 0.;
-				for(final Double[] element : elements)
+				for(final double[] element : elements)
 					parameter += element[0] * StrictMath.cos(element[1] + element[2] * jme);
 				parameters[i] = parameter;
 			}
