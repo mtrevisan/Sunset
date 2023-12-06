@@ -37,11 +37,6 @@ public class Main{
 		final ZonedDateTime winterSolstice = EarthCalculator.season(year, zoneId, Season.WINTER);
 System.out.println("ws " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
 
-//ZonedDateTime date = winterSolstice
-//	.atZone(ZoneId.of("Etc/UTC"));
-//SunriseResult result = SPA.calculateSunriseTransitSet(date, 45.714920, 12.194179, deltaT, SPA.Horizon.CIVIL_TWILIGHT);
-//if(result instanceof SunriseResult.RegularDay regular)
-//	System.out.println("spa " + regular.sunset());
 		final EarthCalculator calculator = EarthCalculator.create(location);
 		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
