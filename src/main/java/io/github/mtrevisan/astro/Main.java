@@ -20,7 +20,7 @@ public class Main{
 	//https://www.nrel.gov/docs/fy08osti/34302.pdf
 	//https://www.sunearthtools.com/dp/tools/pos_sun.php
 	public static void main(final String[] args){
-		final int year = 2022;
+		final int year = 2023;
 		final ZoneId zoneId = ZoneId.of("Europe/Rome");
 		//Padova 3 °C, Treviso 4 °C, Venezia 1015.5 hPa 4 °C, Verona 3 °C, Vicenza 3 °C
 		AtmosphericModel atmosphere = AtmosphericModel.create(1021.1, 4.);
@@ -32,6 +32,8 @@ public class Main{
 //		final GeographicLocation location = GeographicLocation.create(44.79124286512801, 12.398222626853773, 0.)
 		//16:49
 //		final GeographicLocation location = GeographicLocation.create(46.68058098966078, 12.477496139552612, 0.)
+		//18:42
+//		final GeographicLocation location = GeographicLocation.create(45.827049477073956, 10.857018789615736, 16.)
 		//16:53
 		final GeographicLocation location = GeographicLocation.create(45.714920, 12.194179, 16.)
 			.withAtmosphere(atmosphere);
