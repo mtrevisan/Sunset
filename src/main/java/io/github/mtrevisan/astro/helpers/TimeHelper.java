@@ -26,9 +26,11 @@ package io.github.mtrevisan.astro.helpers;
 
 import io.github.mtrevisan.astro.coordinates.GeographicLocation;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 
 /**
@@ -39,8 +41,22 @@ import java.time.ZonedDateTime;
  */
 public final class TimeHelper{
 
-	/** Lunar acceleration parameter ["/cy^2]. */
-	private static final double LUNAR_ACCELERATION = -25.7376;
+	/**
+	 * NOTE: EVERY MONTH UPDATE THIS FILE!!!
+	 *
+	 * @see <a href="https://maia.usno.navy.mil/ser7/deltat.data">Delta T (ΔT) values</a>
+	 */
+	private static List<double[]> DELTA_T_DATA;
+	static{
+		try{
+			DELTA_T_DATA = ResourceReader.readPlain("deltat.dat");
+		}
+		catch(final IOException ignored){}
+	}
+
+
+	/** Lunar acceleration parameter (as of 2002 of −25.858±0.003″/cy2) ["/cy^2]. */
+	private static final double LUNAR_ACCELERATION = -25.858;
 
 	private static final double[] GREENWICH_MEAN_SIDEREAL_TIME_COEFFS = {280.460_618_375, 360.985_647_366_29 * JulianDate.CIVIL_SAECULUM,
 		0.000_387_933, -1. / 38_710_000.};
@@ -246,29 +262,66 @@ public final class TimeHelper{
 			u = (year - 1950.) / 100.;
 			deltaT = MathHelper.polynomial(u, new double[]{29.07, 40.7, -1. / 0.0233, 1. / 0.002547});
 		}
-		else if(year <= 1986.){
+		else if(year < 1973. + 2./12.){
 			u = (year - 1975.) / 100.;
 			deltaT = MathHelper.polynomial(u, new double[]{45.45, 106.7, -1. / 0.026, -1. / 0.000718});
 		}
-		else if(year <= 2005.){
-			u = (year - 2000.) / 100.;
-			deltaT = MathHelper.polynomial(u, new double[]{63.86, 33.45, -603.74, 1727.5, 65181.4, 237359.9});
-		}
-		else if(year < 2015.){
-			u = (year - 2005.) / 100.;
-			deltaT = MathHelper.polynomial(u, new double[]{64.69, 29.30});
-		}
+		else if(year <= 2023. + 10./12.)
+			//interpolate the table between 19730201 and 20231001
+			deltaT = interpolateModern(year);
+//		else if(year <= 1986.){
+//			u = (year - 1975.) / 100.;
+//			deltaT = MathHelper.polynomial(u, new double[]{45.45, 106.7, -1. / 0.026, -1. / 0.000718});
+//		}
+//		else if(year <= 2005.){
+//			u = (year - 2000.) / 100.;
+//			deltaT = MathHelper.polynomial(u, new double[]{63.86, 33.45, -603.74, 1727.5, 65181.4, 237359.9});
+//		}
+//		else if(year < 2015.){
+//			u = (year - 2005.) / 100.;
+//			deltaT = MathHelper.polynomial(u, new double[]{64.69, 29.30});
+//		}
 		else if(year <= 3000.){
 			u = (year - 2015.) / 100.;
 			deltaT = MathHelper.polynomial(u, new double[]{67.62, 36.45, 39.755});
 		}
 
-		double yat2 = 0.;
 		if(year < 1955.5){
 			final double yat = (year - 1955.5) / 100.;
-			yat2 = 0.91072 * yat * yat;
+			deltaT -= 0.91072 * yat * yat * (LUNAR_ACCELERATION + 26.);
 		}
-		return deltaT - yat2 * (LUNAR_ACCELERATION + 26.);
+		return deltaT;
+	}
+
+	private static double interpolateModern(final double year){
+		int low = 0;
+		int high = DELTA_T_DATA.size() - 1;
+		while(low <= high){
+			final int mid = (low + high) / 2;
+
+			final double[] dataCurrent = DELTA_T_DATA.get(mid);
+			final double[] dataNext = DELTA_T_DATA.get(mid + 1);
+			final LocalDate currentDate = LocalDate.of((int)dataCurrent[0], (int)dataCurrent[1], (int)dataCurrent[2]);
+			final LocalDate nextDate = LocalDate.of((int)dataNext[0], (int)dataNext[1], (int)dataNext[2]);
+			final double yearCurrent = currentDate.getYear() + currentDate.getDayOfYear() / (currentDate.isLeapYear()? 366.: 365.);
+			final double yearNext = nextDate.getYear() + nextDate.getDayOfYear() / (nextDate.isLeapYear()? 366.: 365.);
+
+			if(yearCurrent <= year && year <= yearNext){
+				final LocalDate targetDate = LocalDate.of((int)year, 1, 1)
+					.plusDays((long)(MathHelper.frac(year) * (JulianDate.isLeapYear((int)year)? 366.: 365.)));
+
+				final double startValue = dataCurrent[3];
+				final double endValue = dataNext[3];
+				final double daysBetween = (double)java.time.temporal.ChronoUnit.DAYS.between(currentDate, nextDate);
+				final double daysToTarget = (double)java.time.temporal.ChronoUnit.DAYS.between(currentDate, targetDate);
+				return startValue + (endValue - startValue) * (daysToTarget / daysBetween);
+			}
+			else if(year < yearCurrent)
+				high = mid - 1;
+			else
+				low = mid + 1;
+		}
+		throw new IllegalArgumentException("Date not in ∆T table: cannot be!");
 	}
 
 

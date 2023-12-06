@@ -32,8 +32,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -183,6 +181,28 @@ public final class ResourceReader{
 			if(key != null)
 				result.put(key, values);
 			return result;
+		}
+	}
+
+	public static List<double[]> readPlain(final String filename) throws IOException{
+		final ClassLoader classLoader = ResourceReader.class.getClassLoader();
+		final InputStream is = classLoader.getResourceAsStream(filename);
+		if(is == null)
+			throw new IllegalArgumentException("file not found! " + filename);
+
+		try(
+			final InputStreamReader sr = new InputStreamReader(is, StandardCharsets.UTF_8);
+			final BufferedReader reader = new BufferedReader(sr)){
+			String line;
+			List<double[]> values = new LinkedList<>();
+			while((line = reader.readLine()) != null){
+				final String[] parameters = StringUtils.split(line, ' ');
+				final double[] array = new double[parameters.length];
+				for(int i = 0; i < parameters.length; i ++)
+					array[i] = Double.parseDouble(parameters[i]);
+				values.add(array);
+			}
+			return values;
 		}
 	}
 

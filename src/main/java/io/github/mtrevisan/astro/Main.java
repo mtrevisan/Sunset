@@ -20,7 +20,7 @@ public class Main{
 	//https://www.nrel.gov/docs/fy08osti/34302.pdf
 	//https://www.sunearthtools.com/dp/tools/pos_sun.php
 	public static void main(final String[] args){
-		final int year = 2023;
+		final int year = 2022;
 		final ZoneId zoneId = ZoneId.of("Europe/Rome");
 		//Padova 3 °C, Treviso 4 °C, Venezia 1015.5 hPa 4 °C, Verona 3 °C, Vicenza 3 °C
 		AtmosphericModel atmosphere = AtmosphericModel.create(1021.1, 4.);

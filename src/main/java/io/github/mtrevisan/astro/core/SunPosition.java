@@ -77,6 +77,7 @@ public final class SunPosition{
 		catch(final IOException ignored){}
 	}
 
+
 	//https://neoprogrammics.com/obliquity-of-the-ecliptic/laskar_paper/index.php
 	private static final double[] OBLIQUITY_COEFFS = {
 		84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45

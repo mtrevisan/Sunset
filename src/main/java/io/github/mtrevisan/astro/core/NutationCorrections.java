@@ -13,13 +13,14 @@ import java.util.Map;
  */
 public class NutationCorrections{
 
-	private static Map<String, List<double[]>> NUTATION_DATA;
+	private static List<double[]> NUTATION_DATA;
 	static{
 		try{
-			NUTATION_DATA = ResourceReader.read("nutation.dat");
+			NUTATION_DATA = ResourceReader.readPlain("nutation.dat");
 		}
 		catch(final IOException ignored){}
 	}
+
 
 	/**
 	 * IAU 2010 theory, <code>D</code> [deg]
@@ -84,9 +85,8 @@ public class NutationCorrections{
 	private NutationCorrections(final double jce){
 		//calculate nutation corrections
 		final double[] nutationTerms = nutationTerms(jce);
-		final List<double[]> elements = NUTATION_DATA.get("coeffs");
-		final double[] deltaPsiCoeffs = deltaPsiCoeffs(jce, nutationTerms, elements);
-		final double[] deltaEpsilonCoeffs = deltaEpsilonCoeffs(jce, nutationTerms, elements);
+		final double[] deltaPsiCoeffs = deltaPsiCoeffs(jce, nutationTerms, NUTATION_DATA);
+		final double[] deltaEpsilonCoeffs = deltaEpsilonCoeffs(jce, nutationTerms, NUTATION_DATA);
 		deltaPsi = deltaPsiEpsilon(deltaPsiCoeffs);
 		deltaEpsilon = deltaPsiEpsilon(deltaEpsilonCoeffs);
 	}
