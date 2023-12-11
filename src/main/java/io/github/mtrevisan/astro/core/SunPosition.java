@@ -79,6 +79,7 @@ public final class SunPosition{
 
 
 	//https://neoprogrammics.com/obliquity-of-the-ecliptic/laskar_paper/index.php
+	//https://www.aanda.org/articles/aa/pdf/2003/48/aa4068.pdf
 	private static final double[] OBLIQUITY_COEFFS = {
 		84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45
 	};
@@ -88,14 +89,15 @@ public final class SunPosition{
 //	static final double EARTH_EQUATORIAL_RADIUS = 6378136.6;
 //	private static final double[] EARTH_ORBIT_ECCENTRICITY = {0.016_708_634, -0.000_042_037, -0.000_000_126_7};
 
-	//[m]
+	/** Sun equatorial radius [m]. */
 	public static final double SUN_EQUATORIAL_RADIUS = 6.95700e8;
 	/**
-	 * [m]
+	 * Astronomical unit [m], <code>±4 m</code>.
 	 *
 	 * <a href="https://iers-conventions.obspm.fr/content/tn36.pdf">IERS Conventions 2010</a>
+	 * <a href="https://perfectastronomy.com/astronomy-course/astronomical-constants/"></a>
 	 */
-	public static final double ASTRONOMICAL_UNIT = 1.495_978_707_00e11;
+	public static final double ASTRONOMICAL_UNIT = 149_597_870_691.;
 
 //	private static final double[] SUN_GEOCENTRIC_MEAN_LONGITUDE_PARAMETERS = {280.466_46, 36_000.769_83, 0.000_303_2};
 //	private static final double[] SUN_GEOCENTRIC_MEAN_ANOMALY_PARAMETERS = {357.527_723_33, 35_999.050_34, -0.000_160_28, -0.000_003_33};
@@ -103,18 +105,11 @@ public final class SunPosition{
 //	private static final double[] SUN_EQUATION_OF_CENTER_2 = {0.019_993, -0.000_101};
 //
 //	//http://vadimchazov.narod.ru/besmfore.htm
-//	private static final double[] MOON_MEAN_ELONGATION_PARAMETERS = {297.850_363_06, 445_267.111_48, -0.001_914_17, 0.000_005_28};
-//	private static final double[] MOON_MEAN_ANOMALY_PARAMETERS = {134.962_981_39, 477_198.867_398_055_6, 0.008_697_22, 0.000_017_78};
-//	private static final double[] MOON_ARGUMENT_OF_LATITUDE = {93.271_910_28, 483_202.017_538_055_5, -0.003_682_50, 0.000_003_06};
-////	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.044_522_22, -1934.1362608, 0.002070833, 1. / 450000.};
-//	private static final double[] MOON_LONGITUDE_ASCENDING_NODE = {125.04, -1934.136};
-//	//https://www.aanda.org/articles/aa/pdf/2003/48/aa4068.pdf
-//	private static final double[] MEAN_ECLIPTIC_OBLIQUITY_PARAMETERS = {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12,
-//		27.87, 5.79, 2.45};
-//	private static final double[] MOON_GEOCENTRIC_MEAN_LONGITUDE = {218.3165, 481_267.8813};
 //
-//	//at J2000
-//	private static final double ABERRATION_CONSTANT = 20.49552;
+//	private static final double[] MOON_GEOCENTRIC_MEAN_LONGITUDE = {218.3165, 481_267.8813};
+
+	//["]
+	private static final double ABERRATION_CONSTANT = 20.495_51;
 
 
 	private SunPosition(){}
@@ -209,13 +204,24 @@ public final class SunPosition{
 	}
 
 	/**
-	 * Calculate the aberration correction, <code>delta tau</code> [rad]
+	 * Calculate the correction for aberration, the annual aberration (<code>∆τ</code>).
+	 * <p>
+	 * As the Earth revolves around the Sun, it is moving at a velocity of approximately 29.78 km/s. The speed of light is approximately
+	 * 300,000 km/s. In the special case where the Earth is moving perpendicularly to the direction of the star, the angle of displacement,
+	 * would therefore be (in radians) the ratio of the two velocities, i.e. <code>vₑ = 2 ⋅ π ⋅ 1 AU / (365.25 ⋅ d) = 29.75</code>,
+	 * and <code>vₑ / c = 0.00009935 rad</code>, or about <code>20.5 arcseconds</code>.
+	 * <br/>
+	 * This quantity is known as the constant of aberration, and is conventionally represented by <code>κ</code>. Its precise accepted value
+	 * is <code>20".49552</code> (at J2000).
+	 * </p>
 	 *
 	 * @param earthRadiusVector	Earth radius vector [AU].
-	 * @return	The aberration correction [rad].
+	 * @return	The correction for aberration [rad].
 	 */
-	private static double aberrationCorrection(final double earthRadiusVector){
-		return StrictMath.toRadians(-20.4898 / (JulianDate.SECONDS_PER_HOUR * earthRadiusVector));
+	public static double aberrationCorrection(final double earthRadiusVector){
+		return StrictMath.toRadians(
+			-ABERRATION_CONSTANT / (JulianDate.SECONDS_PER_HOUR * earthRadiusVector)
+		);
 	}
 
 	private static double geocentricSunRightAscension(final double beta, final double epsilon, final double lambda){
@@ -460,17 +466,6 @@ public final class SunPosition{
 //		return StrictMath.asin(StrictMath.sin(meanEclipticObliquity) * StrictMath.sin(apparentLongitude));
 //	}
 //
-//	private static double nutationAndAberrationCorrection(final double moonAscendingLongitude, final double sunMeanAnomaly, final double jce){
-//		final double deltaPsi = Math.toDegrees(nutationCorrection(sunMeanAnomaly, jce)[0]);
-//
-//		//Sun's radius vector, r [AU]
-//		final double earthRadiusVector = SunPosition.radiusVector(jce / 10.);
-//		//[deg]
-//		final double aberration = 20.4898 / (earthRadiusVector * JulianDate.SECONDS_PER_HOUR);
-//
-//		return StrictMath.toRadians(aberration + deltaPsi * StrictMath.sin(moonAscendingLongitude));
-//	}
-//
 //	/**
 //	 * Calculate the geocentric mean longitude of the Moon, referred to the mean equinox of the date, <code>L'</code>.
 //	 *
@@ -587,28 +582,7 @@ public final class SunPosition{
 //			result += x[j] * terms[j];
 //		return result;
 //	}
-//
-//	/**
-//	 * Calculate the correction for aberration, the annual aberration (<code>∆τ</code>).
-//	 * <p>
-//	 * As the Earth revolves around the Sun, it is moving at a velocity of approximately 29.78 km/s. The speed of light is approximately
-//	 * 300,000 km/s. In the special case where the Earth is moving perpendicularly to the direction of the star, the angle of displacement,
-//	 * would therefore be (in radians) the ratio of the two velocities, i.e. <code>vₑ = 2 ⋅ π ⋅ 1 AU / (365.25 ⋅ d) = 29.75</code>,
-//	 * and <code>vₑ / c = 0.00009935 rad</code>, or about <code>20.5 arcseconds</code>.
-//	 * <br/>
-//	 * This quantity is known as the constant of aberration, and is conventionally represented by κ. Its precise accepted value is
-//	 * <code>20".49552</code> (at J2000).
-//	 * </p>
-//	 *
-//	 * @param earthRadiusVector	Earth radius vector [AU].
-//	 * @return	The correction for aberration [rad].
-//	 */
-//	public static double aberrationCorrection(final double earthRadiusVector){
-//		return StrictMath.toRadians(
-//			-ABERRATION_CONSTANT / (JulianDate.SECONDS_PER_HOUR * earthRadiusVector)
-//		);
-//	}
-//
+
 //	/**
 //	 * Calculate the apparent longitude of the Sun, <code>Lapp = λ</code>.
 //	 *
