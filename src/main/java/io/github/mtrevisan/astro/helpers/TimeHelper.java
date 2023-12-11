@@ -25,6 +25,7 @@
 package io.github.mtrevisan.astro.helpers;
 
 import io.github.mtrevisan.astro.coordinates.GeographicLocation;
+import io.github.mtrevisan.astro.core.NutationCorrections;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -369,6 +370,24 @@ public final class TimeHelper{
 		//[rad/s]
 		final double rate = 7.292_115_855_3e-5 + 4.3e-15 * ut;
 		return rate * JulianDate.SECONDS_PER_DAY / MathHelper.TWO_PI;
+	}
+
+	/**
+	 * Calculate Greenwich Apparent Sidereal Time, <code>Θ_{GAST}</code>.
+	 *
+	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
+	 * @param nutationCorrections	Nutation corrections.
+	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [rad].
+	 * @return apparent Sidereal time at Greenwich [deg].
+	 *
+	 * @see #greenwichApparentSiderealTime(double, double, double, double)
+	 */
+	public static double greenwichApparentSiderealTime(final double jce, final NutationCorrections nutationCorrections,
+			final double trueEclipticObliquity){
+		final double moonLongitudeAscendingNode = NutationCorrections.moonLongitudeAscendingNode(jce);
+		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(jce);
+		return greenwichApparentSiderealTime(greenwichMeanSiderealTime, nutationCorrections.getDeltaPsi(), trueEclipticObliquity,
+			moonLongitudeAscendingNode);
 	}
 
 	/**
