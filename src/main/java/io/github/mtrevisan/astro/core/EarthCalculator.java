@@ -127,8 +127,10 @@ public class EarthCalculator{
 		final double meanEclipticObliquity = SunPosition.meanEclipticObliquity(jce);
 		final double trueEclipticObliquity = SunPosition.trueEclipticObliquity(meanEclipticObliquity,
 			nutationCorrections.getDeltaEpsilon());
-		final double greenwichApparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(jce, nutationCorrections,
-			trueEclipticObliquity);
+		final double moonLongitudeAscendingNode = NutationCorrections.moonLongitudeAscendingNode(jce);
+		final double greenwichMeanSiderealTime = TimeHelper.greenwichMeanSiderealTime(jce);
+		final double greenwichApparentSiderealTime = TimeHelper.greenwichApparentSiderealTime(greenwichMeanSiderealTime,
+			nutationCorrections.getDeltaPsi(), trueEclipticObliquity, moonLongitudeAscendingNode);
 
 
 		//A.2.2. Calculate the geocentric right ascension and declination at 0 TT for day before, same day, and next day
@@ -231,7 +233,7 @@ public class EarthCalculator{
 		final double[] localHourAngle = new double[3];
 		for(int i = 0; i < localHourAngle.length; i ++)
 			if(localEquatorialCoords[i] != null){
-				final double localSiderealTime = TimeHelper.localSiderealTime(greenwichSiderealTime[i], location);
+				final double localSiderealTime = TimeHelper.localSiderealTime(greenwichSiderealTime[i], location.getLongitude());
 				localHourAngle[i] = StrictMath.toRadians(
 					TimeHelper.localHourAngle(localSiderealTime, localEquatorialCoords[i].getRightAscension())
 				);
