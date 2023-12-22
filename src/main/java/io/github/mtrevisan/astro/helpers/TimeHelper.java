@@ -24,9 +24,6 @@
  */
 package io.github.mtrevisan.astro.helpers;
 
-import io.github.mtrevisan.astro.coordinates.GeographicLocation;
-import io.github.mtrevisan.astro.core.NutationCorrections;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -152,11 +149,12 @@ public final class TimeHelper{
 	 * Convert <a href="https://en.wikipedia.org/wiki/Universal_Time">Universal Time</a> to
 	 * <a href="https://en.wikipedia.org/wiki/Solar_time#Apparent_solar_time">Apparent Solar Time</a>.
 	 *
-	 * @param zonedDateTime	Julian Date of Universal Time. [day]
+	 * @param zonedDateTime	Julian Date of Universal Time [day].
+	 * @param longitude	The observer longitude [deg].
 	 * @return	The Solar Time.
 	 */
-	public static LocalDateTime universalTimeToApparentSolarTime(final ZonedDateTime zonedDateTime, final GeographicLocation location){
-		final double longitude = MathHelper.mod(location.getLongitude(), 360.) / 360. * JulianDate.SECONDS_PER_DAY;
+	public static LocalDateTime universalTimeToApparentSolarTime(final ZonedDateTime zonedDateTime, double longitude){
+		longitude = MathHelper.mod(longitude, 360.) / 360. * JulianDate.SECONDS_PER_DAY;
 		final int offset = zonedDateTime.getOffset().getTotalSeconds();
 		return zonedDateTime.toLocalDateTime()
 			.plusSeconds(Math.round(longitude - offset));
@@ -375,24 +373,6 @@ public final class TimeHelper{
 	/**
 	 * Calculate Greenwich Apparent Sidereal Time, <code>Θ_{GAST}</code>.
 	 *
-	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
-	 * @param nutationCorrections	Nutation corrections.
-	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [rad].
-	 * @return apparent Sidereal time at Greenwich [deg].
-	 *
-	 * @see #greenwichApparentSiderealTime(double, double, double, double)
-	 */
-	public static double greenwichApparentSiderealTime(final double jce, final NutationCorrections nutationCorrections,
-			final double trueEclipticObliquity){
-		final double moonLongitudeAscendingNode = NutationCorrections.moonLongitudeAscendingNode(jce);
-		final double greenwichMeanSiderealTime = greenwichMeanSiderealTime(jce);
-		return greenwichApparentSiderealTime(greenwichMeanSiderealTime, nutationCorrections.getDeltaPsi(), trueEclipticObliquity,
-			moonLongitudeAscendingNode);
-	}
-
-	/**
-	 * Calculate Greenwich Apparent Sidereal Time, <code>Θ_{GAST}</code>.
-	 *
 	 * @param greenwichMeanSiderealTime	Greenwich Mean Sidereal Time [deg].
 	 * @param deltaPsi	Nutation in longitude [deg].
 	 * @param trueEclipticObliquity	Obliquity of the ecliptic, corrected for nutation [rad].
@@ -418,10 +398,11 @@ public final class TimeHelper{
 	 * Calculate Local Mean Sidereal Time, <code>Θ_{LMST}</code>.
 	 *
 	 * @param meanSiderealTime	Greenwich Mean Sidereal Time [deg].
+	 * @param longitude	The observer longitude [deg].
 	 * @return	The apparent local Sidereal time at Greenwich [deg].
 	 */
-	public static double localSiderealTime(final double meanSiderealTime, final GeographicLocation location){
-		return meanSiderealTime + location.getLongitude();
+	public static double localSiderealTime(final double meanSiderealTime, final double longitude){
+		return meanSiderealTime + longitude;
 	}
 
 	/**

@@ -42,7 +42,7 @@ System.out.println("ws " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelp
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
 			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(utcSunset) + " UTC");
-System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(utcSunset, location)) + " LMT");
+System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(utcSunset, location.getLongitude())) + " LMT");
 		}
 	}
 
