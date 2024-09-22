@@ -34,8 +34,9 @@ public class Main{
 //		final DecimalFormat decimalFormatter = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 
 
-		final ZonedDateTime winterSolstice = EarthCalculator.season(year, zoneId, Season.WINTER);
-System.out.println("ws " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
+		final Season season = Season.WINTER;
+		final ZonedDateTime winterSolstice = EarthCalculator.season(year, zoneId, season);
+System.out.println(season + " " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
 
 		final EarthCalculator calculator = EarthCalculator.create(location);
 		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
