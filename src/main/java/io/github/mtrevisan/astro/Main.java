@@ -33,7 +33,6 @@ public class Main{
 
 //		final DecimalFormat decimalFormatter = (DecimalFormat)NumberFormat.getNumberInstance(Locale.US);
 
-
 		final Season season = Season.WINTER;
 		final ZonedDateTime winterSolstice = EarthCalculator.season(year, zoneId, season);
 System.out.println(season + " " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
