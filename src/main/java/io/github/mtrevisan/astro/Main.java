@@ -20,7 +20,7 @@ public class Main{
 	//https://www.nrel.gov/docs/fy08osti/34302.pdf
 	//https://www.sunearthtools.com/dp/tools/pos_sun.php
 	public static void main(final String[] args){
-		final int year = 2023;
+		final int year = 2024;
 		final ZoneId zoneId = ZoneId.of("Europe/Rome");
 		final AtmosphericModel atmosphere = AtmosphericModel.create(1021.1, 4.);
 		//cortina: 16:56 (2000), 16:58 (1900-1800), 16:57 (1700), 16:56 (1600), 16:55 (1500), 16:53 (1400), 16:50 (1300), 16:47 (1200), 16:41 (1100), 16:33 (1000)
