@@ -157,8 +157,9 @@ public class EarthCalculator{
 			/ JulianDate.MINUTES_PER_HOUR);
 		double trueElevation = solarZenith.getElevation() + correctionAltitude;
 		if(solarZenith == Zenith.OFFICIAL){
-			//Bennett's equation
-			final double atmosphericRefractionCorrection = location.getAtmosphere().atmosphericRefractionCorrection(0.);
+			//Bennett's equation (with a geometric elevation of 0°)
+			final double atmosphericRefractionCorrection = location.getAtmosphere()
+				.atmosphericRefractionCorrection(0.);
 			//[rad]
 			final double sunSolarDiskRadius = solarDiskRadius(jce);
 			trueElevation -= atmosphericRefractionCorrection + sunSolarDiskRadius;
@@ -282,7 +283,7 @@ public class EarthCalculator{
 	}
 
 	/**
-	 * Calculate the Sun's disk radius.
+	 * Calculate the apparent Sun's disk radius.
 	 *
 	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The Sun disk radius [rad].

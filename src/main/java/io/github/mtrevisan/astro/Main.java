@@ -38,7 +38,7 @@ public class Main{
 System.out.println(season + " " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
 
 		final EarthCalculator calculator = EarthCalculator.create(location);
-		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
+		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.OFFICIAL);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
 			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(utcSunset) + " UTC");
