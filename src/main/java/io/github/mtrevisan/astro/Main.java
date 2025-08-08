@@ -1,11 +1,8 @@
 package io.github.mtrevisan.astro;
 
-import io.github.mtrevisan.astro.core.Season;
-import io.github.mtrevisan.astro.core.Zenith;
+import io.github.mtrevisan.astro.core.*;
 import io.github.mtrevisan.astro.coordinates.AtmosphericModel;
 import io.github.mtrevisan.astro.coordinates.GeographicLocation;
-import io.github.mtrevisan.astro.core.SunlightPhase;
-import io.github.mtrevisan.astro.core.EarthCalculator;
 import io.github.mtrevisan.astro.helpers.TimeHelper;
 
 import java.time.ZoneId;
@@ -38,7 +35,10 @@ public class Main{
 System.out.println(season + " " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
 
 		final EarthCalculator calculator = EarthCalculator.create(location);
-		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.OFFICIAL);
+		//"un'ora dopo il tramonto" corrisponderebbe a circa -15.83°
+//		final ZenithInterface zenith = Zenith.NAUTICAL;
+		final ZenithInterface zenith = () -> StrictMath.toRadians(-15.83);
+		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, zenith);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
 			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(utcSunset) + " UTC");
