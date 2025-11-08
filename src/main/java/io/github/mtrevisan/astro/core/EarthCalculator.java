@@ -99,7 +99,7 @@ public class EarthCalculator{
 	 * @see <a href="https://www.nrel.gov/docs/fy08osti/34302.pdf">Solar Position Algorithm for Solar Radiation Applications</a>
 	 * @see <a href="https://midcdmz.nrel.gov/spa/">NREL's Solar Position Algorithm (SPA)</a>
 	 */
-	public final SunlightPhase sunlightPhase(final ZonedDateTime date, final Zenith solarZenith){
+	public final SunlightPhase sunlightPhase(final ZonedDateTime date, final ZenithInterface solarZenith){
 		return sunlightPhase(date, TimeHelper.deltaT(date), solarZenith);
 	}
 
@@ -118,7 +118,8 @@ public class EarthCalculator{
 	 * @see <a href="https://www.nrel.gov/docs/fy08osti/34302.pdf">Solar Position Algorithm for Solar Radiation Applications</a>
 	 * @see <a href="https://midcdmz.nrel.gov/spa/">NREL's Solar Position Algorithm (SPA)</a>
 	 */
-	public final SunlightPhase sunlightPhase(final ZonedDateTime date, final double deltaT, final Zenith solarZenith){
+	public final SunlightPhase sunlightPhase(final ZonedDateTime date, final double deltaT,
+			final ZenithInterface solarZenith){
 		final double ut = JulianDate.of(date.truncatedTo(ChronoUnit.DAYS));
 		final double jce = JulianDate.centuryJ2000Of(ut);
 
@@ -157,8 +158,9 @@ public class EarthCalculator{
 			/ JulianDate.MINUTES_PER_HOUR);
 		double trueElevation = solarZenith.getElevation() + correctionAltitude;
 		if(solarZenith == Zenith.OFFICIAL){
-			//Bennett's equation
-			final double atmosphericRefractionCorrection = location.getAtmosphere().atmosphericRefractionCorrection(0.);
+			//Bennett's equation (with a geometric elevation of 0°)
+			final double atmosphericRefractionCorrection = location.getAtmosphere()
+				.atmosphericRefractionCorrection(0.);
 			//[rad]
 			final double sunSolarDiskRadius = solarDiskRadius(jce);
 			trueElevation -= atmosphericRefractionCorrection + sunSolarDiskRadius;
@@ -282,7 +284,7 @@ public class EarthCalculator{
 	}
 
 	/**
-	 * Calculate the Sun's disk radius.
+	 * Calculate the apparent Sun's disk radius.
 	 *
 	 * @param jce	Julian Century of Terrestrial Time from J2000.0.
 	 * @return	The Sun disk radius [rad].

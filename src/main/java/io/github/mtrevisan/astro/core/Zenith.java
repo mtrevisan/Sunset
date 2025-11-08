@@ -26,7 +26,7 @@ package io.github.mtrevisan.astro.core;
 
 
 /** Defines the solar declination (altitude angle) used in computing the sunrise/sunset. */
-public enum Zenith{
+public enum Zenith implements ZenithInterface{
 	/** Official sunrise/set. */
 	OFFICIAL(0.),
 	/** Civil sunrise/set (dawn/dusk) is when the sun is 6 degrees below the horizon. */
@@ -49,6 +49,7 @@ public enum Zenith{
 	/**
 	 * @return	The elevation [rad].
 	 */
+	@Override
 	public double getElevation(){
 		return elevation;
 	}

@@ -1,11 +1,8 @@
 package io.github.mtrevisan.astro;
 
-import io.github.mtrevisan.astro.core.Season;
-import io.github.mtrevisan.astro.core.Zenith;
+import io.github.mtrevisan.astro.core.*;
 import io.github.mtrevisan.astro.coordinates.AtmosphericModel;
 import io.github.mtrevisan.astro.coordinates.GeographicLocation;
-import io.github.mtrevisan.astro.core.SunlightPhase;
-import io.github.mtrevisan.astro.core.EarthCalculator;
 import io.github.mtrevisan.astro.helpers.TimeHelper;
 
 import java.time.ZoneId;
@@ -20,7 +17,7 @@ public class Main{
 	//https://www.nrel.gov/docs/fy08osti/34302.pdf
 	//https://www.sunearthtools.com/dp/tools/pos_sun.php
 	public static void main(final String[] args){
-		final int year = 2024;
+		final int year = 2025;
 		final ZoneId zoneId = ZoneId.of("Europe/Rome");
 		final AtmosphericModel atmosphere = AtmosphericModel.create(1021.1, 4.);
 		//cortina: 16:56 (2000), 16:58 (1900-1800), 16:57 (1700), 16:56 (1600), 16:55 (1500), 16:53 (1400), 16:50 (1300), 16:47 (1200), 16:41 (1100), 16:33 (1000)
@@ -38,7 +35,10 @@ public class Main{
 System.out.println(season + " " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
 
 		final EarthCalculator calculator = EarthCalculator.create(location);
-		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
+		//"un'ora dopo il tramonto" corrisponderebbe a circa -15.83°
+//		final ZenithInterface zenith = Zenith.NAUTICAL;
+		final ZenithInterface zenith = () -> StrictMath.toRadians(-15.83);
+		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, zenith);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
 			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
 			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(utcSunset) + " UTC");
