@@ -1,13 +1,17 @@
 package io.github.mtrevisan.astro;
 
-import io.github.mtrevisan.astro.core.*;
+import io.github.mtrevisan.astro.core.Season;
+import io.github.mtrevisan.astro.core.Zenith;
 import io.github.mtrevisan.astro.coordinates.AtmosphericModel;
 import io.github.mtrevisan.astro.coordinates.GeographicLocation;
+import io.github.mtrevisan.astro.core.SunlightPhase;
+import io.github.mtrevisan.astro.core.EarthCalculator;
 import io.github.mtrevisan.astro.helpers.TimeHelper;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 
 public class Main{
@@ -32,17 +36,25 @@ public class Main{
 
 		final Season season = Season.WINTER;
 		final ZonedDateTime winterSolstice = EarthCalculator.season(year, zoneId, season);
-System.out.println(season + " " + DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)) + " UTC");
+System.out.println(season + " " + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(TimeHelper.terrestrialTimeToUniversalTime(winterSolstice)));
 
 		final EarthCalculator calculator = EarthCalculator.create(location);
-		//"un'ora dopo il tramonto" corrisponderebbe a circa -15.83°
-//		final ZenithInterface zenith = Zenith.NAUTICAL;
-		final ZenithInterface zenith = () -> StrictMath.toRadians(-15.83);
-		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, zenith);
+		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
 			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
-			System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(utcSunset) + " UTC");
+			System.out.println(DateTimeFormatter.ISO_OFFSET_TIME.format(utcSunset));
 System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(utcSunset, location.getLongitude())) + " LMT");
+
+
+			final ZonedDateTime nextDay = winterSolstice.plusDays(1);
+			final SunlightPhase sunlightPhaseNextDay = calculator.sunlightPhase(nextDay, Zenith.CIVIL);
+			final ZonedDateTime sunsetNextDay = ((SunlightPhase.RegularDay)sunlightPhaseNextDay).sunset();
+			final long dayDuration = ChronoUnit.SECONDS.between(event.sunset(), sunsetNextDay);
+			final long hourDuration = dayDuration / 24;
+
+			final ZonedDateTime utc1HourAfterSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset().plusSeconds(hourDuration));
+			System.out.println("Panevin: " + DateTimeFormatter.ISO_OFFSET_TIME.format(utc1HourAfterSunset));
+System.out.println("Panevin: " + DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(utc1HourAfterSunset, location.getLongitude())) + " LMT");
 		}
 	}
 
