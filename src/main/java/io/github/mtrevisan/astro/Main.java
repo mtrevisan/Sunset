@@ -41,20 +41,17 @@ System.out.println(season + " " + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
 		final EarthCalculator calculator = EarthCalculator.create(location);
 		final SunlightPhase sunlightPhase = calculator.sunlightPhase(winterSolstice, Zenith.CIVIL);
 		if(sunlightPhase instanceof SunlightPhase.RegularDay event){
-			final ZonedDateTime utcSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
-			System.out.println(DateTimeFormatter.ISO_OFFSET_TIME.format(utcSunset));
-System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(utcSunset, location.getLongitude())) + " LMT");
+			final ZonedDateTime datetimeSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset());
+			System.out.println(DateTimeFormatter.ISO_OFFSET_TIME.format(datetimeSunset));
+System.out.println(DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(datetimeSunset, location.getLongitude())) + " LMT");
 
 
-			final ZonedDateTime nextDay = winterSolstice.plusDays(1);
-			final SunlightPhase sunlightPhaseNextDay = calculator.sunlightPhase(nextDay, Zenith.CIVIL);
-			final ZonedDateTime sunsetNextDay = ((SunlightPhase.RegularDay)sunlightPhaseNextDay).sunset();
-			final long dayDuration = ChronoUnit.SECONDS.between(event.sunset(), sunsetNextDay);
-			final long hourDuration = dayDuration / 24;
+			final double nightDuration = ChronoUnit.SECONDS.between(event.sunrise(), event.sunset());
+			final long nightHourDuration = Math.round(nightDuration / (60. * 12.));
 
-			final ZonedDateTime utc1HourAfterSunset = TimeHelper.terrestrialTimeToUniversalTime(event.sunset().plusSeconds(hourDuration));
-			System.out.println("Panevin: " + DateTimeFormatter.ISO_OFFSET_TIME.format(utc1HourAfterSunset));
-System.out.println("Panevin: " + DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(utc1HourAfterSunset, location.getLongitude())) + " LMT");
+			final ZonedDateTime datetimeSunsetPlus1Hour = datetimeSunset.plusMinutes(nightHourDuration);
+			System.out.println("Panevin: " + DateTimeFormatter.ISO_OFFSET_TIME.format(datetimeSunsetPlus1Hour));
+System.out.println("Panevin: " + DateTimeFormatter.ISO_LOCAL_TIME.format(TimeHelper.universalTimeToApparentSolarTime(datetimeSunsetPlus1Hour, location.getLongitude())) + " LMT");
 		}
 	}
 
