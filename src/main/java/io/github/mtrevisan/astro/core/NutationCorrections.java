@@ -27,7 +27,7 @@ public class NutationCorrections{
 	 *
 	 * <a href="https://iers-conventions.obspm.fr/content/tn36.pdf">IERS Conventions 2010</a>
 	 */
-	private static final double[] MOON_MEAN_ELONGATION_COEFFS = {297.850_195_47, 1_602_961_601.209_0/3600., -6.370_6/3600., 0.006_593/3600.,
+	public static final double[] MOON_MEAN_ELONGATION_COEFFS = {297.850_195_47, 1_602_961_601.209_0/3600., -6.370_6/3600., 0.006_593/3600.,
 		-0.000_031_69/3600.};
 	/**
 	 * IAU 2010 theory, <code>l'</code> [deg]

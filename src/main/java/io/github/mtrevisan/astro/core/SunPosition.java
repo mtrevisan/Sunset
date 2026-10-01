@@ -187,7 +187,7 @@ public final class SunPosition{
 	 *
 	 * @see <a href="https://squarewidget.com/solar-coordinates/">Solar coordinates</a>
 	 */
-	static double apparentSunLongitude(final double jme, final double deltaPsi){
+	public static double apparentSunLongitude(final double jme, final double deltaPsi){
 		//calculate Earth heliocentric longitude, <code>L</code> [rad]
 		final double earthHeliocentricLongitude = earthHeliocentricLongitude(jme);
 		//calculate Earth radius vector, <code>R</code> [AU]
